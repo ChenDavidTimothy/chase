@@ -1,0 +1,8 @@
+{
+  "name": "Chase.Runtime",
+  "rootNamespace": "Chase",
+  "references": [
+    "Unity.InputSystem"
+  ],
+  "autoReferenced": true
+}
