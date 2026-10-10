@@ -28,8 +28,11 @@ namespace Chase
         ChaseBot bot;
         ChaseKeyboard keyboard;
         ChaseCameraRig cameraRig;
+        IChaseActionSource chaserSource;
+        IChaseActionSource evaderSource;
         ChasePhase beforePause;
         bool timeoutPending;
+        float activePhysicsClock;
         int currentSpawn;
 
         static readonly Vector3[,] SpawnPairs = {
@@ -74,12 +77,20 @@ namespace Chase
             visual.transform.SetParent(actor.transform, false);
             visual.transform.localScale = new Vector3(tuning.radius * 2f,
                 tuning.standingHeight * .5f, tuning.radius * 2f);
-            if (Application.isPlaying) Destroy(visual.GetComponent<Collider>());
-            else DestroyImmediate(visual.GetComponent<Collider>());
+            // Primitive mesh colliders would otherwise remain active until the
+            // next frame, creating transient extra physical bodies.
+            Collider visualCollider=visual.GetComponent<Collider>();
+            visualCollider.enabled=false;
+            if (Application.isPlaying) Destroy(visualCollider);
+            else DestroyImmediate(visualCollider);
             Material material = new Material(Shader.Find("Standard"));
             material.color = color;
             visual.GetComponent<Renderer>().material = material;
-            GameObject front = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            // Unity's WebGL code stripping may omit SphereCollider when no sphere
+            // exists in the authored scene. A small cube uses the already
+            // included BoxCollider (immediately disabled), so the visual marker
+            // does not introduce a platform-specific physics dependency.
+            GameObject front = GameObject.CreatePrimitive(PrimitiveType.Cube);
             front.name = "Facing indicator";
             front.transform.SetParent(visual.transform, false);
             front.transform.localPosition = new Vector3(0f,.25f,.53f);
@@ -87,8 +98,10 @@ namespace Chase
             front.GetComponent<Renderer>().material = new Material(Shader.Find("Standard")) {
                 color = new Color(.97f,.96f,.72f)
             };
-            if (Application.isPlaying) Destroy(front.GetComponent<Collider>());
-            else DestroyImmediate(front.GetComponent<Collider>());
+            Collider frontCollider=front.GetComponent<Collider>();
+            frontCollider.enabled=false;
+            if (Application.isPlaying) Destroy(frontCollider);
+            else DestroyImmediate(frontCollider);
             ChaseMotor motor = actor.AddComponent<ChaseMotor>();
             motor.Initialize(tuning, visual.transform);
             ChaseTagContact tag = actor.AddComponent<ChaseTagContact>();
@@ -105,6 +118,7 @@ namespace Chase
             }
             Winner = null;
             timeoutPending = false;
+            activePhysicsClock = 0f;
             Remaining = tuning.roundDuration;
             CountdownRemaining = tuning.countdown;
             Phase = ChasePhase.Countdown;
@@ -113,7 +127,10 @@ namespace Chase
             Evader.ResetMotor(HumanRole == ChaseRole.Evader ? first : second);
             bot.Initialize(Opponent, Human, HumanRole == ChaseRole.Evader ?
                 ChaseRole.Chaser : ChaseRole.Evader);
-            keyboard.Clear();
+            chaserSource = HumanRole == ChaseRole.Chaser ? (IChaseActionSource)keyboard : bot;
+            evaderSource = HumanRole == ChaseRole.Evader ? (IChaseActionSource)keyboard : bot;
+            chaserSource.ResetSource();
+            evaderSource.ResetSource();
             Physics.SyncTransforms();
             cameraRig.ResetView();
         }
@@ -154,15 +171,26 @@ namespace Chase
             }
         }
 
+        // A self-play harness can replace either source without changing match rules
+        // or the physical motor. Sources are reset whenever assigned.
+        public void AssignActionSource(ChaseRole role, IChaseActionSource source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (role == ChaseRole.Chaser) chaserSource = source;
+            else evaderSource = source;
+            source.ResetSource();
+        }
+
         void FixedUpdate()
         {
             if (Phase != ChasePhase.Active) return;
             // Physics collision callbacks for the previous step have already run.
             // Deferring timeout gives collision/tag priority in the final step.
             if (timeoutPending) { Finish(ChaseRole.Evader); return; }
-            float now = Time.fixedTime;
-            Human.Simulate(keyboard.Consume(), Time.fixedDeltaTime, now);
-            Opponent.Simulate(bot.Decide(now), Time.fixedDeltaTime, now);
+            activePhysicsClock += Time.fixedDeltaTime;
+            float now = activePhysicsClock;
+            Chaser.Simulate(chaserSource.ReadAction(now), Time.fixedDeltaTime, now);
+            Evader.Simulate(evaderSource.ReadAction(now), Time.fixedDeltaTime, now);
             Remaining = Mathf.Max(0f, Remaining - Time.fixedDeltaTime);
             if (Remaining <= 0f) timeoutPending = true;
         }

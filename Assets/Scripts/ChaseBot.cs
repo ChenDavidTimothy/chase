@@ -5,12 +5,18 @@ namespace Chase
 {
     // Simple grid navigator: plans around solid tall obstacles and support posts.
     // Hurdles and shelf roofs remain traversable by the shared motor.
-    public sealed class ChaseBot : MonoBehaviour
+    public sealed class ChaseBot : MonoBehaviour, IChaseActionSource
     {
         const int Size = 21;
         const float Spacing = 0.53f;
         readonly bool[,] walkable = new bool[Size, Size];
         readonly List<Vector3> path = new List<Vector3>();
+        readonly float[] cost = new float[Size*Size];
+        readonly float[] estimate = new float[Size*Size];
+        readonly int[] previous = new int[Size*Size];
+        readonly bool[] closed = new bool[Size*Size];
+        readonly bool[] open = new bool[Size*Size];
+        readonly Collider[] scanHits = new Collider[32];
         ChaseMotor motor;
         ChaseMotor opponent;
         ChaseRole role;
@@ -29,6 +35,7 @@ namespace Chase
             ScanGrid();
             path.Clear();
             nextPlan = nextChoice = -1f;
+            lastJumpTime = -10f;
             initialized = true;
         }
 
@@ -41,10 +48,11 @@ namespace Chase
                     bool good = Mathf.Abs(p.x) < 5.5f && Mathf.Abs(p.z) < 5.5f;
                     if (good)
                     {
-                        Collider[] hits = Physics.OverlapSphere(p + Vector3.up * 0.95f,
-                            0.47f, ~0, QueryTriggerInteraction.Ignore);
-                        foreach (Collider c in hits)
-                            if (c.GetComponent<ChaseBlocker>() != null) { good = false; break; }
+                        int hitCount=Physics.OverlapSphereNonAlloc(p + Vector3.up * .95f,
+                            .47f,scanHits,~0,QueryTriggerInteraction.Ignore);
+                        if(hitCount==scanHits.Length) good=false;
+                        for(int i=0;i<hitCount && good;i++)
+                            if(scanHits[i].GetComponent<ChaseBlocker>()!=null) good=false;
                     }
                     walkable[x, z] = good;
                 }
@@ -82,12 +90,9 @@ namespace Chase
             Vector2Int start = ClosestOpen(motor.Body.position);
             Vector2Int goal = ClosestOpen(destination);
             int count = Size * Size;
-            float[] cost = new float[count];
-            float[] estimate = new float[count];
-            int[] previous = new int[count];
-            bool[] closed = new bool[count];
-            bool[] open = new bool[count];
-            for (int i = 0; i < count; i++) { cost[i] = float.MaxValue; previous[i] = -1; }
+            for (int i = 0; i < count; i++)
+            { cost[i]=float.MaxValue; estimate[i]=float.MaxValue; previous[i]=-1;
+              closed[i]=false; open[i]=false; }
             int first = Key(start.x, start.y), last = Key(goal.x, goal.y);
             cost[first] = 0f;
             estimate[first] = Vector2Int.Distance(start, goal);
@@ -158,6 +163,14 @@ namespace Chase
             return best;
         }
 
+        public void ResetSource()
+        {
+            path.Clear();
+            waypointIndex = 0;
+            nextPlan = nextChoice = -1f;
+            lastJumpTime = -10f;
+        }
+        public ChaseAction ReadAction(float clock) => Decide(clock);
         public ChaseAction Decide(float now)
         {
             if (!initialized) return new ChaseAction(Vector2.zero, false, false);

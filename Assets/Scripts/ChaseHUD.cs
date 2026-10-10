@@ -41,9 +41,17 @@ namespace Chase
             Block(new Rect(w-176,12,162,75),new Color(.035f,.065f,.12f,.83f));
             GUI.Label(new Rect(w-162,16,150,27),"TIME LEFT",small);
             GUI.Label(new Rect(w-162,40,155,40),match.Remaining.ToString("00.0")+" s",header);
-            Block(new Rect(14,h-59,Mathf.Min(w-28,780),45),new Color(.035f,.065f,.12f,.80f));
-            GUI.Label(new Rect(24,h-52,w-45,36),
-                "WASD MOVE    UP / SPACE JUMP-VAULT    DOWN / SHIFT DUCK-SLIDE    R RESTART    ESC PAUSE",small);
+            // Keep controls inside the visible viewport even on short HiDPI
+            // browser canvases. The arena sits centrally, leaving this corner clear.
+            float controlWidth=Mathf.Min(w-28f,430f);
+            Block(new Rect(14,125,controlWidth,71),
+                new Color(.035f,.065f,.12f,.80f));
+            GUI.Label(new Rect(24,132,controlWidth-15f,20),
+                "WASD MOVE    UP / SPACE JUMP-VAULT",small);
+            GUI.Label(new Rect(24,152,controlWidth-15f,20),
+                "DOWN / SHIFT CROUCH-SLIDE    R RESTART",small);
+            GUI.Label(new Rect(24,172,controlWidth-15f,20),
+                "ENTER NEXT ROUND    TAB ROLE    ESC PAUSE",small);
             if (match.Phase == ChasePhase.Active) return;
             float panelWidth=Mathf.Min(500,w-30);
             Rect rect=new Rect((w-panelWidth)/2f,h*.23f,panelWidth,137);

@@ -225,5 +225,69 @@ namespace Chase.Tests
                 Object.DestroyImmediate(shelf);
             }
         }
+        sealed class ConstantSource : IChaseActionSource
+        {
+            public int Calls;
+            public int Resets;
+            public ChaseAction ReadAction(float clock)
+            {
+                Calls++;
+                return new ChaseAction(new Vector2(9f,9f),true,false);
+            }
+            public void ResetSource() => Resets++;
+        }
+
+        [Test]
+        public void IndependentActionSourcesCannotBypassSharedMotor()
+        {
+            GameObject host=new GameObject("Action assignment match");
+            ChaseMatch match=null;
+            try
+            {
+                match=host.AddComponent<ChaseMatch>();
+                var flags=BindingFlags.NonPublic|BindingFlags.Instance;
+                typeof(ChaseMatch).GetMethod("Awake",flags).Invoke(match,null);
+                var red=new ConstantSource();
+                var blue=new ConstantSource();
+                match.AssignActionSource(ChaseRole.Chaser,red);
+                match.AssignActionSource(ChaseRole.Evader,blue);
+                typeof(ChaseMatch).GetField("<Phase>k__BackingField",flags)
+                    .SetValue(match,ChasePhase.Active);
+                typeof(ChaseMatch).GetMethod("FixedUpdate",flags).Invoke(match,null);
+                Assert.AreEqual(1,red.Calls);
+                Assert.AreEqual(1,blue.Calls);
+                Assert.AreEqual(1,red.Resets);
+                Assert.AreEqual(1,blue.Resets);
+                Assert.Less(match.Chaser.HorizontalVelocity.magnitude,.41f);
+                Assert.Less(match.Evader.HorizontalVelocity.magnitude,.41f);
+                Assert.AreEqual(70f,match.Chaser.Body.mass);
+                Assert.AreEqual(70f,match.Evader.Body.mass);
+            }
+            finally
+            {
+                if(host!=null)Object.DestroyImmediate(host);
+                if(match!=null && match.ArenaCamera!=null)
+                    Object.DestroyImmediate(match.ArenaCamera.gameObject);
+            }
+        }
+
+        [Test]
+        public void VaultExitDistanceAccountsForDirection()
+        {
+            GameObject box=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                box.transform.position=Vector3.zero;
+                box.transform.localScale=new Vector3(2.2f,.15f,.55f);
+                ChaseVaultSurface roof=box.AddComponent<ChaseVaultSurface>();
+                Assert.IsTrue(roof.TryExitDistance(new Vector3(0,0,-.275f),
+                    Vector3.forward,out float straight));
+                Assert.AreEqual(.55f,straight,.03f);
+                Assert.IsTrue(roof.TryExitDistance(new Vector3(0,0,-.275f),
+                    new Vector3(.5f,0,.8660254f),out float diagonal));
+                Assert.Greater(diagonal,straight);
+            }
+            finally {Object.DestroyImmediate(box);}
+        }
     }
 }

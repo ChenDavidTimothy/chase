@@ -11,6 +11,17 @@ public static class ChaseSceneBuilder
     [MenuItem("Chase/Rebuild Arena")]
     public static void Build()
     {
+        // Explicit confirmation protects hand-authored scene edits and assets.
+        if (!EditorUtility.DisplayDialog("Rebuild CHASE arena?",
+            "This regenerates Assets/Scenes/SampleScene.unity and the CHASE materials. " +
+            "Commit or back up any scene changes first. Proceed with overwrite?",
+            "Rebuild saved scene", "Cancel")) return;
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildConfirmed();
+    }
+
+    static void BuildConfirmed()
+    {
         if (!AssetDatabase.IsValidFolder(folder))
             AssetDatabase.CreateFolder("Assets","Materials");
         Floor = MakeMaterial("Ground",new Color(.105f,.17f,.23f));

@@ -55,3 +55,30 @@ not depend on a runtime Pipeline server.
 ML-Agents integration is not included in v0.1. Future policy implementations
 should provide `ChaseAction` values to the existing `ChaseMotor`, with observations
 from `ChaseObservationSensor`.
+
+## v0.1.1 validation
+
+CHASE v0.1.1 retains the original arena, action space and physics values, with
+corrected normal-validated grounding, held-jump edge detection, validated solid
+vault traversal, crouch clearance, and a collision-preserving physics motor.
+
+Input providers implement `IChaseActionSource.ReadAction` and can be assigned
+independently with `ChaseMatch.AssignActionSource`. All sources use the same
+`ChaseMotor` and therefore have no separate physics or movement advantages.
+Future RL policies can use `ChaseObservationSensor.FillPolicyVector`, providing
+59 ordered bounded floats in a reusable caller-owned buffer. No ML packages are
+installed.
+
+The PlayMode suite exercises actual `Physics.Simulate(0.02)` steps, repeated
+vaults and underpasses, physical tag callbacks, timer ordering, camera
+framing, and 300 scripted matches. Read the detailed evidence and limitations
+in [`docs/CHASE-v0.1.1-validation.md`](docs/CHASE-v0.1.1-validation.md).
+
+The **Chase > Rebuild Arena** editor command now requires explicit confirmation
+before replacing saved scene content or material assets.
+
+Web builds select the responsive `Assets/WebGLTemplates/ChaseResponsive` page
+template. It keeps the whole arena, score, timer, and controls visible in
+modern desktop browser windows. A local WebGL build must be served via HTTP
+with the correct `Content-Encoding: gzip` headers for `.gz` resources; opening
+`index.html` directly from disk is not supported.

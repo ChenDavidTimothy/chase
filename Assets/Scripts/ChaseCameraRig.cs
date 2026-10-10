@@ -18,6 +18,7 @@ namespace Chase
         readonly Dictionary<Renderer,Color> faded = new Dictionary<Renderer,Color>();
         readonly HashSet<Renderer> currentOccluders = new HashSet<Renderer>();
         readonly List<Renderer> toRestore = new List<Renderer>();
+        readonly RaycastHit[] occlusionHits = new RaycastHit[64];
 
         public void Initialize(ChaseMatch owner)
         {
@@ -33,7 +34,7 @@ namespace Chase
         void RecalculateFraming()
         {
             if (attachedCamera == null) return;
-            float aspect = Mathf.Max(0.8f, attachedCamera.aspect);
+            float aspect = Mathf.Max(0.15f, attachedCamera.aspect);
             float tanY = Mathf.Tan(attachedCamera.fieldOfView * .5f * Mathf.Deg2Rad);
             float tanX = tanY * aspect;
             Vector3 forward = transform.forward, right = transform.right, up = transform.up;
@@ -83,21 +84,8 @@ namespace Chase
         void RevealOccluders()
         {
             currentOccluders.Clear();
-            ChaseMotor[] actors = { match.Human, match.Opponent };
-            foreach (ChaseMotor actor in actors)
-            {
-                if (actor == null) continue;
-                Vector3 target = actor.Body.position + Vector3.up*.20f;
-                Vector3 ray = target-transform.position;
-                RaycastHit[] hits = Physics.RaycastAll(transform.position,ray.normalized,ray.magnitude,
-                    ~0,QueryTriggerInteraction.Ignore);
-                foreach (RaycastHit hit in hits)
-                {
-                    if (hit.collider.GetComponent<ChaseOccluder>() == null) continue;
-                    Renderer renderer = hit.collider.GetComponent<Renderer>();
-                    if (renderer != null) currentOccluders.Add(renderer);
-                }
-            }
+            FindOccluders(match.Human);
+            FindOccluders(match.Opponent);
             foreach (Renderer r in currentOccluders)
             {
                 if (faded.ContainsKey(r)) continue;
@@ -120,6 +108,22 @@ namespace Chase
             foreach (Renderer r in faded.Keys)
                 if (!currentOccluders.Contains(r)) toRestore.Add(r);
             foreach (Renderer r in toRestore) Restore(r);
+        }
+
+        void FindOccluders(ChaseMotor actor)
+        {
+            if (actor == null) return;
+            Vector3 target=actor.Body.position + Vector3.up*.20f;
+            Vector3 delta=target-transform.position;
+            int count=Physics.RaycastNonAlloc(transform.position,delta.normalized,
+                occlusionHits,delta.magnitude,~0,QueryTriggerInteraction.Ignore);
+            for(int i=0;i<count;i++)
+            {
+                Collider collider=occlusionHits[i].collider;
+                if(collider == null || collider.GetComponent<ChaseOccluder>()==null) continue;
+                Renderer renderer=collider.GetComponent<Renderer>();
+                if(renderer!=null) currentOccluders.Add(renderer);
+            }
         }
 
         void Restore(Renderer r)
