@@ -1226,7 +1226,6 @@ MonoBehaviour:
     diveBodyHeight: 0.95
     diveBodyCenterY: -0.26
     diveBodyCenterForward: 0.22
-    diveShapeDelay: 0.14
     proneCrawlSpeed: 1.5
     slideDuration: 0.45
     slideDeceleration: 8

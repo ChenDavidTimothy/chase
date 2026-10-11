@@ -94,7 +94,7 @@ namespace Chase.Tests
         [UnityTest] public IEnumerator LeapCannotBeSteeredOrRepropelledAgainstWall()
         {
             Floor();
-            Cube("blocking wall",new Vector3(0,1.2f,1.45f),new Vector3(3,2.4f,.20f));
+            Cube("blocking wall",new Vector3(0,1.2f,2.40f),new Vector3(3,2.4f,.20f));
             var m=Actor();
             Step(m,Vector2.zero,false,true);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
@@ -106,21 +106,24 @@ namespace Chase.Tests
                 largestZ=Mathf.Max(largestZ,m.Body.position.z);
                 if(i>9)postHitMax=Mathf.Max(postHitMax,m.Velocity.z);
             }
-            Assert.That(largestZ,Is.LessThan(1.13f),"Dynamic capsule must stop at wall");
+            Assert.That(largestZ,Is.LessThan(1.13f),"Long solid projectile body must stop at wall");
             Assert.That(postHitMax,Is.LessThan(initial*.7f),"No impulse replenishment");
             Assert.IsFalse(m.Body.isKinematic);
             Assert.IsFalse(m.Capsule.isTrigger);
             yield return null;
         }
-        [UnityTest] public IEnumerator LeapUsesPriorHeadingRatherThanReversingOnKeyPress()
+        [UnityTest] public IEnumerator LeapAimsAtCurrentKeyPressThenLocksDirection()
         {
             Floor();var m=Actor();
             for(int i=0;i<28;i++)Step(m,Vector2.right);
             Assert.That(m.FacingDirection.x,Is.GreaterThan(.97f));
             Step(m,Vector2.left,false,true);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
-            Assert.That(m.HorizontalVelocity.x,Is.GreaterThan(8.5f));
-            Assert.That(m.HorizontalVelocity.z,Is.LessThan(.5f));
+            Assert.That(m.HorizontalVelocity.x,Is.LessThan(-8.5f));
+            Assert.That(Mathf.Abs(m.HorizontalVelocity.z),Is.LessThan(.5f));
+            Step(m,Vector2.right,false,false);
+            Assert.That(m.HorizontalVelocity.x,Is.LessThan(-8.5f),
+                "Once launched, right input must not reverse the projectile");
             yield return null;
         }
 

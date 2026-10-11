@@ -149,9 +149,9 @@ namespace Chase.Tests
                 foreach(var pair in new[]{
                     (ChaseMovementState.Crouching,"Crouch"),
                     (ChaseMovementState.Sliding,"Slide"),
-                    (ChaseMovementState.Leaping,"Jump"),
+                    (ChaseMovementState.Leaping,"Leap"),
                     (ChaseMovementState.DiveProne,"DiveProne"),
-                    (ChaseMovementState.LeapRecovery,"JumpLanding"),
+                    (ChaseMovementState.LeapRecovery,"LeapRecovery"),
                     (ChaseMovementState.SlideRecovery,"SlideRecovery"),
                     (ChaseMovementState.Airborne,"Jump"),
                     (ChaseMovementState.Standing,"Idle")
@@ -405,6 +405,34 @@ namespace Chase.Tests
                 UnityEngine.Object.DestroyImmediate(actor);
                 UnityEngine.Object.DestroyImmediate(floor);
             }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SupermanClipReallyTiltsHeadAndTorsoHorizontally()
+        {
+            var visual=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"));
+            try
+            {
+                var animator=visual.GetComponentInChildren<Animator>();
+                var all=visual.GetComponentsInChildren<Transform>(true);
+                var head=all.Single(x=>x.name=="head");
+                var pelvis=all.Single(x=>x.name=="pelvis");
+                animator.Play("Leap",0,0f);animator.Update(.02f);
+                var initially=(head.position-pelvis.position).normalized;
+                Assert.Greater(Vector3.Dot(initially,Vector3.up),.95f);
+                foreach(float progress in new[]{.2f,.3f,.45f,.65f,.85f})
+                {
+                    animator.Play("Leap",0,progress);animator.Update(.02f);
+                    Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Leap"));
+                    var axis=(head.position-pelvis.position).normalized;
+                    Assert.Greater(Vector3.Dot(axis,Vector3.forward),.93f,
+                        "Superman dive cannot render as a vertical ordinary jump");
+                    Assert.Less(Mathf.Abs(Vector3.Dot(axis,Vector3.up)),.36f,
+                        "Head-to-pelvis axis must actually be near horizontal");
+                }
+            }
+            finally{UnityEngine.Object.DestroyImmediate(visual);}
             yield return null;
         }
 

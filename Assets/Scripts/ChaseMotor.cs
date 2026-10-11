@@ -29,6 +29,9 @@ namespace Chase
         public float RecoveryRemaining => Recovering ? recoveryLeft : 0f;
         public float CommittedRemaining => State == ChaseMovementState.Sliding ? slideLeft : 0f;
         public bool DiveColliderActive => DiveBox != null && DiveBox.enabled;
+        // A readable signal for a launch that could not fit its full body.
+        // This is feedback, never a physics override or a queued ability.
+        public float DiveBlockedTimeLeft { get; private set; }
         public Vector3 FacingDirection => new Vector3(Mathf.Sin(visualYaw * Mathf.Deg2Rad), 0f,
             Mathf.Cos(visualYaw * Mathf.Deg2Rad));
         bool IsUpright => Capsule != null && Capsule.enabled && Capsule.direction == 1 && Capsule.height >= Settings.standingHeight - .01f &&
@@ -96,7 +99,7 @@ namespace Chase
             Body.rotation = Quaternion.identity;
             Body.linearVelocity = Vector3.zero;
             Body.angularVelocity = Vector3.zero;
-            slideLeft = recoveryLeft = 0f;
+            slideLeft = recoveryLeft = DiveBlockedTimeLeft = 0f;
             lastGrounded = lastTakeoff = jumpQueuedUntil = -100f;
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
@@ -123,6 +126,7 @@ namespace Chase
         {
             if (Settings == null || dt <= 0f) return;
             action.Move = Vector2.ClampMagnitude(action.Move, 1f);
+            DiveBlockedTimeLeft = Mathf.Max(0f,DiveBlockedTimeLeft-dt);
             Vector3 direction = new Vector3(action.Move.x, 0f, action.Move.y);
             Vector3 velocity = Body.linearVelocity;
             Vector3 planar = new Vector3(velocity.x, 0f, velocity.z);
@@ -137,22 +141,18 @@ namespace Chase
             previousLeap = action.Leap;
             previousSlide = action.Slide;
             if (jumpPressed && !action.Crouch && !Recovering &&
+                State != ChaseMovementState.Leaping &&
                 State != ChaseMovementState.Crouching && State != ChaseMovementState.Sliding)
                 jumpQueuedUntil = clock + Settings.jumpBuffer;
 
             if (State == ChaseMovementState.Leaping)
             {
-                // The takeoff begins upright. Change to the long horizontal
-                // collider only after launch and ONLY if the full solid swept
-                // body can occupy that space. Never disable collisions or tunnel.
-                float timeSinceTakeoff = clock - lastTakeoff;
-                // Only the early takeoff window may switch body shape. After
-                // that, a missed/obstructed dive stays upright and pays for
-                // the failure. A late flip mid-descent would be an exploit.
-                if (!diveShapeCommitted &&
-                    timeSinceTakeoff >= Settings.diveShapeDelay &&
-                    timeSinceTakeoff <= Settings.diveShapeDelay + .12f)
-                    TryEnterDiveShape();
+                // One projectile after takeoff: no delayed collider change,
+                // no steering, no additional horizontal impulse and no
+                // contextual morph. The full-body solid box was installed
+                // atomically on the SAME physics step as the initial launch.
+                // Retain actual Rigidbody horizontal velocity, including all
+                // collision losses. W/A/S/D/Jump/Slide cannot change it.
                 // Never reapply the initial boost, even after a wall impact.
                 if (Grounded && clock - lastTakeoff > .12f)
                 {
@@ -177,9 +177,13 @@ namespace Chase
                 // cancel this recovery. Existing momentum brakes rather than
                 // being replaced by a new horizontal impulse.
                 recoveryLeft = Mathf.Max(0f, recoveryLeft - dt);
+                // Once impact is over, W permits a slow crawl toward the
+                // shelf exit. Sideways or reverse input cannot steer the
+                // headfirst body; no input means no automatic ground glide.
+                bool crawlForward = Vector3.Dot(direction,committedDirection) > .5f;
                 planar = Vector3.MoveTowards(planar, committedDirection *
-                    (recoveryLeft > 0f || diveGettingUp ? 0f : Settings.proneCrawlSpeed),
-                    Settings.groundBraking * dt);
+                    (recoveryLeft > 0f || diveGettingUp || !crawlForward ? 0f :
+                        Settings.proneCrawlSpeed),Settings.groundBraking * dt);
                 if (recoveryLeft <= 0f)
                 {
                     // A horizontal body contacts the floor with the actor
@@ -236,7 +240,10 @@ namespace Chase
                 recoveryLeft = Mathf.Max(0f, recoveryLeft - dt);
                 // Braking must respect acceleration, not snap velocity to 2 m/s.
                 float top = Settings.recoverySpeed;
-                Vector3 target = direction * top;
+                // A dive get-up is still a commitment. Holding W/A/S/D
+                // cannot move the full-body collider until the athlete stands.
+                Vector3 target = State == ChaseMovementState.LeapRecovery ?
+                    Vector3.zero : direction * top;
                 float rate = planar.magnitude > top + .01f ? Settings.groundBraking :
                     Settings.groundAcceleration * .5f;
                 planar = Vector3.MoveTowards(planar, target, rate * dt);
@@ -285,13 +292,28 @@ namespace Chase
                 else if (doLeap)
                 {
                     jumpQueuedUntil = -100f;
-                    committedDirection = FacingDirection;
-                    planar = committedDirection * Settings.leapHorizontalSpeed;
-                    velocity.y = Settings.leapVerticalSpeed;
-                    State = ChaseMovementState.Leaping;
-                    diveShapeCommitted = diveGettingUp = false;
-                    lastTakeoff = clock;
-                    Grounded = false;
+                    // Input sets aim at takeoff, even when W and Up are
+                    // pressed on the exact same frame from an idle start.
+                    // Without WASD, dive in the character's facing direction.
+                    // After this moment, WASD cannot steer a single degree.
+                    committedDirection = direction.sqrMagnitude > .001f ?
+                        direction.normalized : FacingDirection;
+                    // Preview the complete forward-facing body volume before
+                    // touching velocity. If a wall blocks takeoff, the action
+                    // is simply rejected: NEVER launch vertically as a
+                    // disguised jump and NEVER morph later in the trajectory.
+                    // No speed/rotation change can happen on a failed launch.
+                    if (TryEnterDiveShape())
+                    {
+                        DiveBlockedTimeLeft = 0f;
+                        planar = committedDirection * Settings.leapHorizontalSpeed;
+                        velocity.y = Settings.leapVerticalSpeed;
+                        State = ChaseMovementState.Leaping;
+                        diveGettingUp = false;
+                        lastTakeoff = clock;
+                        Grounded = false;
+                    }
+                    else DiveBlockedTimeLeft = .70f;
                 }
                 else if (doSlide)
                 {
@@ -392,9 +414,9 @@ namespace Chase
             return true;
         }
 
-        void TryEnterDiveShape()
+        bool TryEnterDiveShape()
         {
-            if (!CanFitDiveShape(Body.position)) return;
+            if (!CanFitDiveShape(Body.position)) return false;
             Body.rotation = Quaternion.LookRotation(committedDirection, Vector3.up);
             // Enable the alternate full-body Collider BEFORE disabling the
             // upright one. There is never a collision-free physics step.
@@ -402,6 +424,7 @@ namespace Chase
             Capsule.enabled = false;
             if (visual != null) visual.localRotation = Quaternion.identity;
             diveShapeCommitted = true;
+            return true;
         }
 
         void BeginGetupColliderUnion(float lowHeight)

@@ -72,7 +72,7 @@ namespace Chase.Tests
             var m=Actor(new Vector3(0,.9f,0));
             for(int i=0;i<25;i++)Step(m,Vector2.right);
             Assert.That(m.FacingDirection.x,Is.GreaterThan(.97f));
-            Step(m,Vector2.left,false,true);
+            Step(m,Vector2.right,false,true);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
             Assert.That(m.HorizontalVelocity.x,Is.EqualTo(9f).Within(.15f));
             bool sawBox=false,sawImpact=false,sawGetup=false;
@@ -131,6 +131,85 @@ namespace Chase.Tests
             yield return null;
         }
         [UnityTest]
+        public IEnumerator SimultaneousDirectionAndUpFromIdleUsesThatDirection()
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            Assert.That(m.FacingDirection.z,Is.GreaterThan(.99f),
+                "Initial idle faces +Z, not the player's requested right input");
+            Step(m,Vector2.right,false,true);
+            Assert.AreEqual(ChaseMovementState.Leaping,m.State);
+            Assert.IsTrue(m.DiveColliderActive,
+                "There must be no upright jump frame even for same-frame input");
+            Assert.That(m.HorizontalVelocity.x,Is.EqualTo(9f).Within(.02f));
+            Assert.That(Mathf.Abs(m.HorizontalVelocity.z),Is.LessThan(.01f));
+            Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.right),
+                Is.GreaterThan(.999f),
+                "Launch body must align with simultaneous WASD intent");
+            // Opposite intent midair has no authority over the projectile.
+            for(int i=0;i<12;i++)
+            {
+                Step(m,Vector2.left,false,false,true);
+                Assert.That(m.HorizontalVelocity.x,Is.EqualTo(9f).Within(.001f));
+                Assert.That(Mathf.Abs(m.HorizontalVelocity.z),Is.LessThan(.001f));
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator HoldingWAndUpInstantlyLaunchesHeadfirstWithNoJumpPhase()
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            for(int i=0;i<16;i++)Step(m,Vector2.up);
+            Step(m,Vector2.up,false,true);
+            Assert.AreEqual(ChaseMovementState.Leaping,m.State);
+            Assert.IsTrue(m.DiveColliderActive,
+                "The full-body solid collider must already be active on the launch frame");
+            Assert.IsFalse(m.Capsule.enabled);
+            Assert.That(m.Velocity.z,Is.EqualTo(9f).Within(.01f));
+            Assert.That(m.Velocity.y,Is.GreaterThan(4.4f));
+            Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.forward),
+                Is.GreaterThan(.999f));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator WASDJumpSlideSpamCannotSteerOrRepowerAirborneProjectile()
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            Step(m,Vector2.up,false,true);
+            Assert.AreEqual(ChaseMovementState.Leaping,m.State);
+            Assert.IsTrue(m.DiveColliderActive);
+            Vector3 launch=m.HorizontalVelocity;
+            float previousHeight=m.Body.position.y;
+            float maxHeight=previousHeight;
+            int airFrames=0;
+            for(int i=0;i<17;i++)
+            {
+                Vector2 adversarial = i%4==0?Vector2.right:
+                    i%4==1?Vector2.left:i%4==2?Vector2.down:Vector2.up;
+                Step(m,adversarial,i%2==0,i%3==0,i%4==0,i%2==1);
+                Assert.AreEqual(ChaseMovementState.Leaping,m.State,
+                    "Projectile must remain committed before physical contact");
+                Assert.That(m.HorizontalVelocity.x,Is.EqualTo(launch.x).Within(.0005f));
+                Assert.That(m.HorizontalVelocity.z,Is.EqualTo(launch.z).Within(.0005f));
+                Assert.IsTrue(m.DiveColliderActive);
+                Assert.IsFalse(m.Capsule.enabled);
+                Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.forward),
+                    Is.GreaterThan(.999f));
+                Assert.That(m.Velocity.y,Is.LessThan(5.2f-i*.15f));
+                maxHeight=Mathf.Max(maxHeight,m.Body.position.y);
+                airFrames++;
+            }
+            Assert.Greater(airFrames,15);
+            Assert.Greater(maxHeight,previousHeight+.15f,
+                "The committed arc must rise from physically integrated gravity");
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator OrdinaryJumpAndPowerSlideCannotExploitTheSameShelfSlot()
         {
             Floor();Shelf();
@@ -167,7 +246,7 @@ namespace Chase.Tests
             yield return null;
         }
         [UnityTest]
-        public IEnumerator BlockedEarlyDiveNeverMorphsLateIntoHorizontalCollision()
+        public IEnumerator BlockedTakeoffIsRejectedBeforeAnyProjectileVelocity()
         {
             Floor();
             // Between 0.35m capsule and 0.60m box half-width: body must
@@ -175,7 +254,15 @@ namespace Chase.Tests
             Cube("long lateral guard blocking full-body shape",
                 new Vector3(.82f,1.15f,1.5f),new Vector3(.52f,2.3f,8f));
             var m=Actor(new Vector3(0,.9f,0));
+            float originalY = m.Body.position.y;
             Step(m,Vector2.zero,false,true);
+            Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,
+                "No upright jump fallback when full-size launch is blocked");
+            Assert.IsFalse(m.DiveColliderActive);
+            Assert.Less(Mathf.Abs(m.Velocity.y),.5f,
+                "A rejected dive must not create any vertical takeoff");
+            Assert.Greater(m.DiveBlockedTimeLeft,.5f,
+                "Physically blocked takeoffs need immediate, explicit feedback");
             bool remainedUpright=true;
             for(int i=0;i<110;i++)
             {
@@ -184,7 +271,7 @@ namespace Chase.Tests
                 Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
             }
             Assert.IsTrue(remainedUpright,
-                "A blocked early dive cannot surprise-morph into a long box late");
+                "A blocked takeoff cannot morph later or launch vertically");
             Assert.AreEqual(ChaseMovementState.Standing,m.State,
                 "A physically blocked maneuver must still finish recovery");
             yield return null;

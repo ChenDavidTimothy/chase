@@ -17,7 +17,7 @@ namespace Chase
         public float diveBodyLength = 2.30f, diveBodyWidth = 1.20f;
         public float diveBodyHeight = .95f, diveBodyCenterY = -.26f;
         public float diveBodyCenterForward = .22f;
-        public float diveShapeDelay = .14f, proneCrawlSpeed = 1.5f;
+        public float proneCrawlSpeed = 1.5f;
         public float slideDuration = .45f, slideDeceleration = 8f, slideRecovery = .20f;
         [Header("Match")]
         public float countdown = 3f, roundDuration = 20f;

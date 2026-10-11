@@ -69,16 +69,11 @@ namespace Chase
             string name;
             switch (state)
             {
-                // When an obstacle blocks the transition to a long solid
-                // dive collider, retain an upright airborne animation. Never
-                // show a Superman body passing through an upright capsule.
-                case ChaseMovementState.Leaping:
-                    name = motor.DiveColliderActive ? "Leap" : "Jump";
-                    break;
+                // A real successful dive already has its solid horizontal
+                // body and launch velocity. Never start this action as Jump.
+                case ChaseMovementState.Leaping: name = "Leap"; break;
                 case ChaseMovementState.DiveProne: name = "DiveProne"; break;
-                case ChaseMovementState.LeapRecovery:
-                    name = motor.DiveColliderActive ? "LeapRecovery" : "JumpLanding";
-                    break;
+                case ChaseMovementState.LeapRecovery: name = "LeapRecovery"; break;
                 case ChaseMovementState.Sliding: name = "Slide"; break;
                 case ChaseMovementState.SlideRecovery: name = "SlideRecovery"; break;
                 case ChaseMovementState.Jumping:
@@ -110,12 +105,12 @@ namespace Chase
             // never retain Slide after the physical motor has exited Sliding.
             if (desired != requestedHash || (current != desired && next != desired))
             {
-                // At the physical switch from upright to long body, enter the
-                // source clip after its takeoff pitch has already started.
-                // It avoids rendering an upright actor inside the horizontal
-                // box during the first interpolation frames.
+                // The launch starts immediately in the committed Superman
+                // posture, rather than Jump for 0.14s then snapping to Dive.
+                // Four hundredths of a second blend keeps the change snappy
+                // while advancing into the actual headfirst takeoff frames.
                 if (name == "Leap" && current != desired)
-                    animator.CrossFadeInFixedTime(desired, .05f, 0, .20f);
+                    animator.CrossFadeInFixedTime(desired, .04f, 0, .20f);
                 else
                     animator.CrossFadeInFixedTime(desired, .06f, 0);
                 requestedHash = desired;

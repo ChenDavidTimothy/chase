@@ -2,7 +2,7 @@
 
 Single-player, keyboard-only, physics-based 3D chase-tag game, Unity **6000.3.26f1** (Unity 6.3 LTS), browser-first and also buildable for Linux. The fixed-angle camera shows a 12 x 12 m arena with two differently colored chibi competitors. Blue evades for 20 seconds; Red wins by ordinary Rigidbody/collider contact. A three-second countdown precedes each round.
 
-**Authoritative current movement:** [v0.5 Superman-dive specification and verification](docs/chase-v0.5/README.md). Superseded baseline: [v0.4 movement](docs/MOVEMENT_CONTRACT.md) and [character coordinate/source](docs/CHARACTER_COORDINATE_CONTRACT.md). Historical [v0.4 physics calibration](docs/chase-v0.4/movement-calibration.md) and [v0.4 mesh audit](docs/chase-v0.4/rig-clearance.md) predate the Superman replacement. Tuning remains preliminary until the owner playtests it.
+**Authoritative current movement:** [v0.5.1 reliable ballistic Superman dive](docs/chase-v0.5.1/README.md). Superseded: [v0.5 initial dive](docs/chase-v0.5/README.md). Superseded baseline: [v0.4 movement](docs/MOVEMENT_CONTRACT.md) and [character coordinate/source](docs/CHARACTER_COORDINATE_CONTRACT.md). Historical [v0.4 physics calibration](docs/chase-v0.4/movement-calibration.md) and [v0.4 mesh audit](docs/chase-v0.4/rig-clearance.md) predate the Superman replacement. Tuning remains preliminary until the owner playtests it.
 
 ## Play and controls
 
@@ -20,13 +20,13 @@ Open `Assets/Scenes/SampleScene.unity` in Unity and press Play, or launch a serv
 | Tab | Switch human role between rounds |
 | Escape | Pause/resume |
 
-There is no contextual vault, automatic climb, speed-triggered action conversion, mouse aiming, or RL agent. In Chrome the focused game canvas prevents the movement keys from scrolling the page. To regain focus, click the canvas. The Up Arrow has fully replaced the old upright forward leap. The dive is a committed ballistic maneuver, with a chest-first impact, mandatory prone and get-up phases, and no steering or repeated impulse. It is slower than sustained running when spammed in the measured 10-second fixture.
+There is no contextual vault, automatic climb, speed-triggered action conversion, mouse aiming, or RL agent. In Chrome the focused game canvas prevents the movement keys from scrolling the page. To regain focus, click the canvas. The Up Arrow has fully replaced the old upright forward leap. The dive is a committed ballistic maneuver: solid horizontal collision and 9 m/s launch happen on the **same takeoff physics frame**, with no upright jump fallback or delayed morph. W/A/S/D cannot steer it in the air; the chest-first impact and get-up remain mandatory. It is slower than sustained running when spammed in the measured 10-second fixture.
 
 ## Arena and calibration gym
 
 Production: `Assets/Scenes/SampleScene.unity`, an enclosed 12 x 12 m arena with tall solid barriers, pillars, genuinely low 0.35 m hurdles and one supported **1.64 m-clearance** underpass and one **1.30 m-high airborne Superman-dive shelf slot** over a solid 0.55 m sill. Running, jumping, headfirst diving, crouching and sliding are independent moves; geometry cannot switch one into another. Both roles use the same physical capabilities. The northeast roof is crouchable; the southwest shelving has an elevated opening that requires a correctly aligned headfirst dive. The simple scripted NPC uses standard `ChaseAction` and avoids solid obstacles, with no special collision exemptions.
 
-Testing only: `Assets/Scenes/MovementGym.unity` (excluded from build scenes). `Chase > Create Separate Movement Gym` regenerates it on explicit request. It has distance markers, jumpable hurdle, blocking wall, open dive lane, short slide roof, longer crouch passage and dedicated elevated dive shelf. Press **G** in this gym to stage a repeatable 3 m aligned shelf approach, then Up Arrow to execute the real move. An on-screen readout in Editor and WebGL displays state, speed, grounding, recovery, active physical collider and action travel. `Chase > Rebuild Arena` **overwrites** the production scene and materials only after a confirmation dialog; back up authored content first.
+Testing only: `Assets/Scenes/MovementGym.unity` (excluded from build scenes). `Chase > Create Separate Movement Gym` regenerates it on explicit request. It has distance markers, jumpable hurdle, blocking wall, open dive lane, short slide roof, longer crouch passage and dedicated elevated dive shelf. Press **V** there to toggle a low side-on inspection view without changing the production camera. Press **G** in this gym to stage a repeatable 3 m aligned shelf approach, then Up Arrow to execute the real move. An on-screen readout in Editor and WebGL displays state, speed, grounding, recovery, active physical collider and action travel. `Chase > Rebuild Arena` **overwrites** the production scene and materials only after a confirmation dialog; back up authored content first.
 
 ## Shared motor and observations
 

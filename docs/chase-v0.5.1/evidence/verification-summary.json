@@ -1,0 +1,50 @@
+{
+  "playmode": {
+    "total": 55,
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "editmode": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "WebGLGym": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "status": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseAnimationGymWebGL"
+  },
+  "WebGLProduction": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "status": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseWebGL"
+  },
+  "LinuxProduction": {
+    "target": "StandaloneLinux64",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "status": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseLinux/Chase.x86_64"
+  },
+  "gym_browser": {
+    "passed": true,
+    "console_errors": 0,
+    "url": "http://127.0.0.1:8766/?build=v051-final-aim-sameframe-gym-20261011"
+  },
+  "production_browser": {
+    "passed": true,
+    "console_errors": 0,
+    "url": "http://127.0.0.1:8765/?build=v051-final-aim-sameframe-production-20261011"
+  }
+}
