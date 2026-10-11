@@ -246,34 +246,124 @@ namespace Chase.Tests
             yield return null;
         }
         [UnityTest]
-        public IEnumerator BlockedTakeoffIsRejectedBeforeAnyProjectileVelocity()
+        public IEnumerator NearWallStillLaunchesAndPaysFullRecoveryWithoutIntersectingWall()
         {
             Floor();
-            // Between 0.35m capsule and 0.60m box half-width: body must
-            // remain upright rather than clipping through a broad side panel.
-            Cube("long lateral guard blocking full-body shape",
+            // Only 0.13m of clearance ahead of the standing capsule; a
+            // 2.30m horizontal body certainly cannot be spawned here.
+            var wall=Cube("solid wall immediately ahead",
+                new Vector3(0,1.2f,.58f),new Vector3(5,2.4f,.2f));
+            var m=Actor(new Vector3(0,.9f,0));
+            Step(m,Vector2.zero,false,true);
+            Assert.AreEqual(ChaseMovementState.Leaping,m.State,
+                "Up always attempts the committed move even by a wall");
+            Assert.IsTrue(m.DiveCompactContact,
+                "When full body will not fit, preserve the existing solid capsule");
+            Assert.IsTrue(m.Capsule.enabled);
+            Assert.IsFalse(m.DiveColliderActive);
+            Assert.That(m.Velocity.z,Is.GreaterThan(8.5f));
+            Assert.That(m.Velocity.y,Is.GreaterThan(4f),
+                "Blocked forward motion must not suppress the attempted launch");
+            float maxForward=m.Body.position.z;
+            bool sawContact=false,sawRecovery=false;
+            for(int i=0;i<140;i++)
+            {
+                // Attempt adversarial steering only while actually airborne;
+                // release inputs once recovery begins so a *new* legal slide
+                // after standing does not confound the wall-impact test.
+                if (m.State==ChaseMovementState.Leaping)
+                    Step(m,Vector2.left,false,i%5==0,i%4==0,true);
+                else Step(m);
+                maxForward=Mathf.Max(maxForward,m.Body.position.z);
+                Assert.IsTrue(m.Capsule.enabled || m.DiveBox.enabled);
+                Assert.IsFalse(m.Capsule.isTrigger);
+                Assert.IsFalse(m.DiveBox.isTrigger);
+                Assert.IsFalse(m.DiveColliderActive,
+                    "Do not expand the horizontal box through nearby wall");
+                if(i==4)
+                {
+                    sawContact=m.Velocity.z<.7f;
+                    Assert.LessOrEqual(m.Velocity.y,0f,
+                        "Contact must end the rising portion of wall impact");
+                }
+                sawRecovery |= m.State==ChaseMovementState.LeapRecovery;
+            }
+            // 0.48 is the front face of wall; capsule extends 0.35m.
+            Assert.Less(maxForward,.21f,
+                "PhysX must prevent the actual solid capsule intersecting the wall");
+            Assert.IsTrue(sawContact,"Forward launch must physically strike the wall");
+            Assert.IsTrue(sawRecovery,"Impact must incur a real committed recovery");
+            Assert.AreEqual(ChaseMovementState.Standing,m.State,
+                "Recovered wall impact eventually returns full movement control");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator LateralObstaclePreventsBoxButDoesNotCancelTheAttempt()
+        {
+            Floor();
+            Cube("side guard that blocks extended shoulders",
                 new Vector3(.82f,1.15f,1.5f),new Vector3(.52f,2.3f,8f));
             var m=Actor(new Vector3(0,.9f,0));
-            float originalY = m.Body.position.y;
             Step(m,Vector2.zero,false,true);
-            Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,
-                "No upright jump fallback when full-size launch is blocked");
-            Assert.IsFalse(m.DiveColliderActive);
-            Assert.Less(Mathf.Abs(m.Velocity.y),.5f,
-                "A rejected dive must not create any vertical takeoff");
-            Assert.Greater(m.DiveBlockedTimeLeft,.5f,
-                "Physically blocked takeoffs need immediate, explicit feedback");
-            bool remainedUpright=true;
-            for(int i=0;i<110;i++)
+            Assert.AreEqual(ChaseMovementState.Leaping,m.State);
+            Assert.IsTrue(m.DiveCompactContact);
+            Assert.That(m.Velocity.y,Is.GreaterThan(4f));
+            bool recovered=false;
+            for(int i=0;i<140;i++)
             {
                 Step(m);
-                remainedUpright &= !m.DiveColliderActive;
-                Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
+                Assert.IsTrue(m.Capsule.enabled && !m.DiveColliderActive);
+                recovered|=m.State==ChaseMovementState.LeapRecovery;
             }
-            Assert.IsTrue(remainedUpright,
-                "A blocked takeoff cannot morph later or launch vertically");
-            Assert.AreEqual(ChaseMovementState.Standing,m.State,
-                "A physically blocked maneuver must still finish recovery");
+            Assert.IsTrue(recovered);
+            Assert.AreEqual(ChaseMovementState.Standing,m.State);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CloseAthleteAllowsCommittedDiveAndNormalPhysicsContact()
+        {
+            Floor();
+            var diver=Actor(new Vector3(0,.9f,-.95f));
+            var target=Actor(new Vector3(0,.9f,0));
+            // Other athlete is outside 0.7m combined standing capsules but
+            // occupies the forward extent of the 2.3m Superman collider.
+            Step(diver,Vector2.up,false,true);
+            Assert.AreEqual(ChaseMovementState.Leaping,diver.State);
+            Assert.IsTrue(diver.DiveCompactContact,
+                "Never spawn long overlapping body into another athlete");
+            Assert.IsTrue(diver.Capsule.enabled);
+            bool impact=false;
+            for(int i=0;i<30;i++)
+            {
+                Step(diver,Vector2.left,false,false,true);
+                if(diver.Velocity.z<1f)impact=true;
+            }
+            Assert.IsTrue(impact,"Solid moving bodies must contact");
+            Assert.Less(diver.Body.position.z,target.Body.position.z,
+                "Diver cannot phase through opponent collider");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator UnderLowRoofCannotPerformAnUprightDiveTakeoff()
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            // A 1.64m underside forces crouching for a 1.8m athlete.
+            Cube("real overhead shelf underside 1.64m",
+                new Vector3(0,1.84f,0),new Vector3(3,.4f,3));
+            // Crouch collider safely before placing the roof nearby.
+            Step(m,Vector2.zero,false,false,false,true);
+            Physics.SyncTransforms();
+            Assert.AreEqual(ChaseMovementState.Crouching,m.State);
+            Step(m,Vector2.up,false,true,false,true);
+            Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,
+                "Cannot launch a dive through an overhead roof while crouched");
+            Assert.IsFalse(m.DiveColliderActive);
+            Assert.Less(m.Velocity.y,1f,
+                "Up under the ceiling must not inject upward launch velocity");
             yield return null;
         }
 

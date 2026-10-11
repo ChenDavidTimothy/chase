@@ -1,0 +1,50 @@
+{
+  "PlayMode": {
+    "total": 60,
+    "passed": 60,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "EditMode": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "WebGLGym": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseAnimationGymWebGL"
+  },
+  "WebGLProduction": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseWebGL"
+  },
+  "LinuxProduction": {
+    "target": "StandaloneLinux64",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseLinux/Chase.x86_64"
+  },
+  "gym_browser": {
+    "result": "passed",
+    "browser_errors": 0,
+    "uri": "http://127.0.0.1:8766/?build=v052-wall-contact-final-audit"
+  },
+  "production_browser": {
+    "result": "passed",
+    "browser_errors": 0,
+    "uri": "http://127.0.0.1:8765/?build=chase-v052-wall-contact-production"
+  }
+}

@@ -656,6 +656,55 @@ namespace Chase.Tests
             yield return null;
         }
 
+        [UnityTest] public IEnumerator NearOpponentDiveCausesOrdinaryChaserTag()
+        {
+            ChaseMatch match=MatchFixture();
+            SetMatchActive(match);
+            match.Chaser.ResetMotor(new Vector3(0,.9f,-.95f));
+            match.Evader.ResetMotor(new Vector3(0,.9f,0));
+            Physics.SyncTransforms();
+            match.Chaser.Simulate(
+                new ChaseAction(Vector2.up,false,true,false,false),.02f,10f);
+            Assert.AreEqual(ChaseMovementState.Leaping,match.Chaser.State);
+            Assert.IsTrue(match.Chaser.DiveCompactContact,
+                "Full horizontal body must not spawn intersecting the Evader");
+            bool collided=false;
+            for(int i=0;i<18;i++)
+            {
+                Physics.Simulate(.02f);
+                if(match.Winner.HasValue){collided=true;break;}
+                match.Chaser.Simulate(new ChaseAction(Vector2.up,false,false,false,false),
+                    .02f,10.02f+i*.02f);
+            }
+            Assert.IsTrue(collided,"Close dive should cause legitimate physical contact");
+            Assert.AreEqual(ChaseRole.Chaser,match.Winner,
+                "Chaser contact tags the Evader during a compact-body attempted dive");
+            yield return null;
+        }
+
+        [UnityTest] public IEnumerator EvaderDivingIntoNearbyChaserIsAlsoTagged()
+        {
+            ChaseMatch match=MatchFixture();
+            SetMatchActive(match);
+            match.Chaser.ResetMotor(new Vector3(0,.9f,0));
+            match.Evader.ResetMotor(new Vector3(0,.9f,-.95f));
+            Physics.SyncTransforms();
+            match.Evader.Simulate(
+                new ChaseAction(Vector2.up,false,true,false,false),.02f,10f);
+            Assert.AreEqual(ChaseMovementState.Leaping,match.Evader.State);
+            Assert.IsTrue(match.Evader.DiveCompactContact);
+            for(int i=0;i<18;i++)
+            {
+                Physics.Simulate(.02f);
+                if(match.Winner.HasValue)break;
+                match.Evader.Simulate(new ChaseAction(Vector2.up,false,false,false,false),
+                    .02f,10.02f+i*.02f);
+            }
+            Assert.AreEqual(ChaseRole.Chaser,match.Winner,
+                "Evader's compact physical dive cannot confer tag immunity");
+            yield return null;
+        }
+
         [UnityTest] public IEnumerator PhysicalTagRemainsValidDuringSlide()
         {
             ChaseMatch match=MatchFixture();

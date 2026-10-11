@@ -73,7 +73,12 @@ namespace Chase
                 // body and launch velocity. Never start this action as Jump.
                 case ChaseMovementState.Leaping: name = "Leap"; break;
                 case ChaseMovementState.DiveProne: name = "DiveProne"; break;
-                case ChaseMovementState.LeapRecovery: name = "LeapRecovery"; break;
+                case ChaseMovementState.LeapRecovery:
+                    // When the dive body could not unfold beside a wall or
+                    // athlete, stand back up from a compact braced impact,
+                    // not a horizontal get-up that visually clips the wall.
+                    name = motor.DiveCompactRecovery ? "JumpLanding" : "LeapRecovery";
+                    break;
                 case ChaseMovementState.Sliding: name = "Slide"; break;
                 case ChaseMovementState.SlideRecovery: name = "SlideRecovery"; break;
                 case ChaseMovementState.Jumping:
@@ -95,7 +100,9 @@ namespace Chase
             }
             animator.speed = name == "Run" ?
                 Mathf.Clamp(motor.HorizontalVelocity.magnitude / 5f, .65f, 1.25f) :
-                name == "CrouchWalk" ? .9f : 1f;
+                name == "CrouchWalk" ? .9f :
+                name == "Leap" && motor.DiveCompactContact ?
+                    (motor.DiveImpactBraced ? 0f : .30f) : 1f;
 
             bool inTransition = animator.IsInTransition(0);
             int current = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
@@ -110,7 +117,8 @@ namespace Chase
                 // Four hundredths of a second blend keeps the change snappy
                 // while advancing into the actual headfirst takeoff frames.
                 if (name == "Leap" && current != desired)
-                    animator.CrossFadeInFixedTime(desired, .04f, 0, .20f);
+                    animator.CrossFadeInFixedTime(desired, .04f, 0,
+                        motor.DiveCompactContact ? 0f : .20f);
                 else
                     animator.CrossFadeInFixedTime(desired, .06f, 0);
                 requestedHash = desired;

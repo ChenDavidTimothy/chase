@@ -52,13 +52,6 @@ namespace Chase
                 "DOWN SLIDE    SHIFT CROUCH    R RESTART",small);
             GUI.Label(new Rect(24,172,controlWidth-15f,20),
                 "ENTER NEXT ROUND    TAB ROLE    ESC PAUSE",small);
-            if (match.Human != null && match.Human.DiveBlockedTimeLeft > 0f &&
-                match.Phase == ChasePhase.Active)
-            {
-                Block(new Rect(14,202,controlWidth,32),new Color(.30f,.075f,.06f,.87f));
-                GUI.Label(new Rect(24,206,controlWidth-15f,25),
-                    "DIVE BLOCKED — CLEAR SPACE FOR YOUR BODY",small);
-            }
             if (match.Phase == ChasePhase.Active) return;
             float panelWidth=Mathf.Min(500,w-30);
             Rect rect=new Rect((w-panelWidth)/2f,h*.23f,panelWidth,137);

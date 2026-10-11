@@ -84,6 +84,15 @@ namespace Chase
                 keyboard.ResetSource();
                 return;
             }
+            // Gym-only deterministic wall approach. The production match
+            // never teleports or stages players. H exposes a true close-
+            // contact attempt, not a special wall-bypass controller.
+            if(k!=null && k.hKey.wasPressedThisFrame)
+            {
+                ResetActorAt(new Vector3(0f,tuning.standingHeight*.5f,8.25f));
+                keyboard.ResetSource();
+                return;
+            }
             if(fixedCamera!=null)keyboard.Poll(inputFrame);
         }
         void FixedUpdate()
@@ -117,9 +126,9 @@ namespace Chase
         void OnGUI()
         {
             if(motor==null)return;
-            GUI.Box(new Rect(12,12,350,264),"CHASE v0.5.1 / BALLISTIC DIVE TEST");
+            GUI.Box(new Rect(12,12,350,264),"CHASE / PHYSICAL SUPERMAN CONTACT TEST");
             GUI.Label(new Rect(24,39,340,25),"WASD MOVE   SPACE JUMP   UP SUPERMAN");
-            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  SHIFT CROUCH  R RESET  G SHELF  V VIEW");
+            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  SHIFT CROUCH  G SHELF  H WALL  V VIEW");
             GUI.Label(new Rect(24,86,330,25),"STATE: "+motor.State);
             GUI.Label(new Rect(24,108,330,25),"SPEED: "+
                 motor.HorizontalVelocity.magnitude.ToString("F2")+" m/s   VY: "+
@@ -136,8 +145,8 @@ namespace Chase
                 GUI.Label(new Rect(24,197,330,25),"VISUAL: "+driver.CurrentVisualState+
                     "  CLIP LEAP: "+info.IsName("Leap"));
             }
-            if(motor.DiveBlockedTimeLeft>0f)
-                GUI.Label(new Rect(24,239,330,25),"DIVE BLOCKED: CLEAR YOUR BODY");
+            if(motor.DiveCompactContact)
+                GUI.Label(new Rect(24,239,330,25),"DIVE CONTACT / SOLID COMPACT BODY");
             if(headBone!=null && pelvisBone!=null)
             {
                 Vector3 axis=(headBone.position-pelvisBone.position).normalized;

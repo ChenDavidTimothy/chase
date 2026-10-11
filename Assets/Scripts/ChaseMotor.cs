@@ -29,9 +29,14 @@ namespace Chase
         public float RecoveryRemaining => Recovering ? recoveryLeft : 0f;
         public float CommittedRemaining => State == ChaseMovementState.Sliding ? slideLeft : 0f;
         public bool DiveColliderActive => DiveBox != null && DiveBox.enabled;
-        // A readable signal for a launch that could not fit its full body.
-        // This is feedback, never a physics override or a queued ability.
-        public float DiveBlockedTimeLeft { get; private set; }
+        // The same committed move always starts. Where the long body cannot
+        // safely fit, it starts with the already-solid compact contact shape.
+        // No takeoff is refused for a nearby wall or another athlete.
+        public bool DiveCompactContact => State == ChaseMovementState.Leaping &&
+            compactDive;
+        public bool DiveImpactBraced => DiveCompactContact && forwardContact;
+        public bool DiveCompactRecovery => State == ChaseMovementState.LeapRecovery &&
+            compactDive;
         public Vector3 FacingDirection => new Vector3(Mathf.Sin(visualYaw * Mathf.Deg2Rad), 0f,
             Mathf.Cos(visualYaw * Mathf.Deg2Rad));
         bool IsUpright => Capsule != null && Capsule.enabled && Capsule.direction == 1 && Capsule.height >= Settings.standingHeight - .01f &&
@@ -40,7 +45,7 @@ namespace Chase
 
         float lastGrounded = -100f, lastTakeoff = -100f, jumpQueuedUntil = -100f;
         float slideLeft, recoveryLeft;
-        bool diveShapeCommitted, diveGettingUp;
+        bool diveShapeCommitted, diveGettingUp, compactDive, forwardContact;
         Vector3 committedDirection;
         bool previousJump, previousLeap, previousSlide;
         static PhysicsMaterial sharedCapsuleMaterial;
@@ -99,11 +104,11 @@ namespace Chase
             Body.rotation = Quaternion.identity;
             Body.linearVelocity = Vector3.zero;
             Body.angularVelocity = Vector3.zero;
-            slideLeft = recoveryLeft = DiveBlockedTimeLeft = 0f;
+            slideLeft = recoveryLeft = 0f;
             lastGrounded = lastTakeoff = jumpQueuedUntil = -100f;
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
-            diveShapeCommitted = diveGettingUp = false;
+            diveShapeCommitted = diveGettingUp = compactDive = forwardContact = false;
             Body.rotation = Quaternion.identity;
             Capsule.enabled = true;
             DiveBox.enabled = false;
@@ -126,7 +131,6 @@ namespace Chase
         {
             if (Settings == null || dt <= 0f) return;
             action.Move = Vector2.ClampMagnitude(action.Move, 1f);
-            DiveBlockedTimeLeft = Mathf.Max(0f,DiveBlockedTimeLeft-dt);
             Vector3 direction = new Vector3(action.Move.x, 0f, action.Move.y);
             Vector3 velocity = Body.linearVelocity;
             Vector3 planar = new Vector3(velocity.x, 0f, velocity.z);
@@ -147,13 +151,21 @@ namespace Chase
 
             if (State == ChaseMovementState.Leaping)
             {
-                // One projectile after takeoff: no delayed collider change,
-                // no steering, no additional horizontal impulse and no
-                // contextual morph. The full-body solid box was installed
-                // atomically on the SAME physics step as the initial launch.
-                // Retain actual Rigidbody horizontal velocity, including all
-                // collision losses. W/A/S/D/Jump/Slide cannot change it.
-                // Never reapply the initial boost, even after a wall impact.
+                // Every Up press is a genuine committed attempt. Full open
+                // space uses the horizontal solid box immediately. Near a
+                // wall/competitor, retain the solid compact capsule so the
+                // actor can physically launch INTO contact, never overlap
+                // the obstacle with the bigger box. No midair morphing,
+                // player steering, late repulsion or velocity top-up.
+                // The wall contact cancels the rising component, preventing
+                // a ballistic attempt from becoming wall-climbing.
+                if (compactDive && forwardContact)
+                {
+                    // A horizontal wall/opponent collision terminates upward
+                    // motion. The body still falls under gravity, stays
+                    // committed, and must finish its ordinary recovery.
+                    velocity.y = Mathf.Min(velocity.y, 0f);
+                }
                 if (Grounded && clock - lastTakeoff > .12f)
                 {
                     jumpQueuedUntil = -100f;
@@ -164,11 +176,13 @@ namespace Chase
                     }
                     else
                     {
-                        // Failed/blocked takeoff retains an upright collider.
-                        // It still pays for the committed mistake.
                         State = ChaseMovementState.LeapRecovery;
                         recoveryLeft = Settings.leapRecovery + Settings.diveImpactRecovery;
                     }
+                    // Preserve the abort type into the recovery animation.
+                    // It must not suddenly switch to a horizontal pose at
+                    // ground contact when the dive shape never fit.
+                    forwardContact = false;
                 }
             }
             else if (State == ChaseMovementState.DiveProne)
@@ -255,6 +269,7 @@ namespace Chase
                     // or body can pass through a shelf during interpolation.
                     if (State == ChaseMovementState.LeapRecovery && DiveColliderActive)
                         FinishDiveShape();
+                    compactDive = false;
                     if (action.Crouch || !HasStandingClearance())
                     {
                         SetHeight(Settings.crouchingHeight);
@@ -298,22 +313,28 @@ namespace Chase
                     // After this moment, WASD cannot steer a single degree.
                     committedDirection = direction.sqrMagnitude > .001f ?
                         direction.normalized : FacingDirection;
-                    // Preview the complete forward-facing body volume before
-                    // touching velocity. If a wall blocks takeoff, the action
-                    // is simply rejected: NEVER launch vertically as a
-                    // disguised jump and NEVER morph later in the trajectory.
-                    // No speed/rotation change can happen on a failed launch.
-                    if (TryEnterDiveShape())
+                    // Decide the safe COLLISION shape, not whether the
+                    // player's move is accepted. Nearby walls or other
+                    // competitors can block the long box but cannot cancel
+                    // the headfirst attempt. The compact rigidbody still
+                    // hits those obstacles and causes legitimate contact.
+                    compactDive = !TryEnterDiveShape();
+                    forwardContact = false;
+                    if (compactDive && visual != null)
                     {
-                        DiveBlockedTimeLeft = 0f;
-                        planar = committedDirection * Settings.leapHorizontalSpeed;
-                        velocity.y = Settings.leapVerticalSpeed;
-                        State = ChaseMovementState.Leaping;
-                        diveGettingUp = false;
-                        lastTakeoff = clock;
-                        Grounded = false;
+                        // An immediate W+Up/A+Up also turns the *compact*
+                        // attempt in the requested heading on the launch
+                        // frame, just like the full horizontal box.
+                        visualYaw = Mathf.Atan2(committedDirection.x,
+                            committedDirection.z) * Mathf.Rad2Deg;
+                        visual.localRotation = Quaternion.Euler(0f,visualYaw,0f);
                     }
-                    else DiveBlockedTimeLeft = .70f;
+                    planar = committedDirection * Settings.leapHorizontalSpeed;
+                    velocity.y = Settings.leapVerticalSpeed;
+                    State = ChaseMovementState.Leaping;
+                    diveGettingUp = false;
+                    lastTakeoff = clock;
+                    Grounded = false;
                 }
                 else if (doSlide)
                 {
@@ -350,6 +371,27 @@ namespace Chase
                 State != ChaseMovementState.DiveProne &&
                 !(State == ChaseMovementState.LeapRecovery && DiveColliderActive))
                 OrientVisual(planar, dt);
+        }
+
+        void OnCollisionEnter(Collision collision) => RegisterDiveContact(collision);
+        void OnCollisionStay(Collision collision) => RegisterDiveContact(collision);
+
+        void RegisterDiveContact(Collision collision)
+        {
+            if (State != ChaseMovementState.Leaping || !compactDive) return;
+            for (int i = 0; i < collision.contactCount; i++)
+            {
+                var contact = collision.GetContact(i);
+                // A real wall or opponent in the committed heading, not a
+                // floor or distant side brush. OnCollision includes physical
+                // contact from both capsule and tagged athlete bodies.
+                if (Mathf.Abs(contact.normal.y) < .58f &&
+                    Vector3.Dot(contact.normal, committedDirection) < -.20f)
+                {
+                    forwardContact = true;
+                    return;
+                }
+            }
         }
 
         // Test the real horizontal Box volume BEFORE enabling it. Queries must
