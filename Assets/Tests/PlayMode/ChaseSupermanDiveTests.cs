@@ -131,6 +131,72 @@ namespace Chase.Tests
             yield return null;
         }
         [UnityTest]
+        public IEnumerator GymShelfEdgeHitCannotLeaveDiverInLeapingForever()
+        {
+            // Recreate the user's actual gym: stand at z=1, sail towards
+            // lower shelf at z=4 with a .55m sill / 1.85m overhead.
+            // The long body can rest on a shelf's leading edge while its
+            // center-point-only ground ray reports no floor beneath it.
+            Floor();
+            Shelf(4f,.55f,1.85f,.6f);
+            var m=Actor(new Vector3(0,.9f,1f));
+            Step(m,Vector2.zero,false,true);
+            bool sawImpact=false,sawRecovery=false;
+            for(int i=0;i<350;i++)
+            {
+                Step(m);
+                sawImpact|=m.State==ChaseMovementState.DiveProne;
+                sawRecovery|=m.State==ChaseMovementState.LeapRecovery;
+            }
+            Assert.IsTrue(sawImpact && sawRecovery,
+                "Stalled gym shelf dive never recovered. State="+m.State+
+                " position="+m.Body.position+" velocity="+m.Velocity+
+                " grounded="+m.Grounded+" forwardImpact="+m.DiveFlightEnded+
+                " box="+m.DiveColliderActive);
+            Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,
+                "A zero-velocity dive must not persist indefinitely");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator VariedShelfApproachesAlwaysExitProneWithoutPlayerIntervention()
+        {
+            // Regression for the observed Movement Gym freeze: sometimes
+            // the horizontal box is edge-supported near the shelf's lip,
+            // giving zero velocity with the ground probe under empty air.
+            // All cases must return control automatically even with no keys.
+            foreach(float startZ in new[]{.7f,1f,1.3f,1.6f,1.9f,2.2f,2.4f})
+            {
+                Floor();
+                Shelf(4f,.55f,1.85f,.6f);
+                var m=Actor(new Vector3(0,.9f,startZ));
+                Step(m,Vector2.zero,false,true);
+                bool everProne=false,everRecovered=false;
+                for(int i=0;i<360;i++)
+                {
+                    Step(m);
+                    everProne|=m.State==ChaseMovementState.DiveProne;
+                    everRecovered|=m.State==ChaseMovementState.LeapRecovery;
+                }
+                Assert.IsTrue(everProne&&everRecovered,
+                    "One shelf approach never completed impact. startZ="+startZ+
+                    " state="+m.State+" pos="+m.Body.position+
+                    " velocity="+m.Velocity+" grounded="+m.Grounded);
+                Assert.IsTrue(m.State==ChaseMovementState.Standing ||
+                    m.State==ChaseMovementState.Airborne,
+                    "Player must not remain in committed dive after 7.2s, " +
+                    "even without pressing W or restarting. startZ="+startZ+
+                    " state="+m.State+" pos="+m.Body.position);
+                Assert.IsTrue(m.Capsule.enabled && !m.DiveColliderActive,
+                    "Return to ordinary solid capsule after every impact");
+                foreach(var obj in spawned)
+                    if(obj!=null)UnityEngine.Object.DestroyImmediate(obj);
+                spawned.Clear();
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator SimultaneousDirectionAndUpFromIdleUsesThatDirection()
         {
             Floor();

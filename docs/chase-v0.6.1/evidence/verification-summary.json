@@ -1,0 +1,49 @@
+{
+  "revision": "v0.6.1",
+  "PlayMode": {
+    "passed": 69,
+    "failed": 0,
+    "skipped": 0
+  },
+  "EditMode": {
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0
+  },
+  "Builds": {
+    "MovementGymWebGL": {
+      "status": "Succeeded",
+      "reported_errors": 0,
+      "reported_warnings": 1
+    },
+    "ProductionWebGL": {
+      "status": "Succeeded",
+      "reported_errors": 0,
+      "reported_warnings": 1
+    },
+    "LinuxStandalone": {
+      "status": "Succeeded",
+      "reported_errors": 0,
+      "reported_warnings": 1
+    }
+  },
+  "Browser": {
+    "shelf_repeats": 2,
+    "wall_repeats": 2,
+    "unassisted_recovery_wait_seconds": 7,
+    "error_entries": 0,
+    "production_smoke": "PASS"
+  },
+  "NativeLinux": {
+    "launched": true,
+    "runtime_exceptions_reported": 0
+  },
+  "Blender": {
+    "strict_validator": "PASS",
+    "actions": 12,
+    "meshes": 17,
+    "source_changed": false,
+    "sha256": "56ce28893777fdf0f0bac20229c5352d03316bd9ec50ac96fd4027a0f99fcb97"
+  },
+  "evidence_screenshots": 21
+}

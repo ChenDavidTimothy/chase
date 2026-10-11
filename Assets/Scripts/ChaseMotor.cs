@@ -57,6 +57,8 @@ namespace Chase
         float slideLeft, recoveryLeft;
         bool diveShapeCommitted, diveGettingUp, compactDive, forwardContact;
         bool slideCompact, slideRising;
+        bool solidSupportContact;
+        Vector3 supportActorPosition;
         Vector3 committedDirection;
         bool previousJump, previousLeap, previousSlide;
         static PhysicsMaterial sharedCapsuleMaterial;
@@ -128,7 +130,7 @@ namespace Chase
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
             diveShapeCommitted = diveGettingUp = compactDive = forwardContact = false;
-            slideCompact = slideRising = false;
+            slideCompact = slideRising = solidSupportContact = false;
             Body.rotation = Quaternion.identity;
             Capsule.enabled = true;
             DiveBox.enabled = false;
@@ -155,7 +157,16 @@ namespace Chase
             Vector3 direction = new Vector3(action.Move.x, 0f, action.Move.y);
             Vector3 velocity = Body.linearVelocity;
             Vector3 planar = new Vector3(velocity.x, 0f, velocity.z);
-            Grounded = DetectGround() && (clock - lastTakeoff > .10f || velocity.y <= 0f);
+            // The long horizontal body can be supported at its head or feet
+            // while its center hangs over a shelf edge. A single center ray
+            // misses that contact and previously left Leaping forever.
+            // A Rigidbody may be moved/reset between physics ticks. Never
+            // reuse a stale floor contact from the previous position.
+            bool supported = solidSupportContact &&
+                (Body.position-supportActorPosition).sqrMagnitude < .01f;
+            solidSupportContact = false;
+            Grounded = (supported || DetectGround()) &&
+                (clock - lastTakeoff > .10f || velocity.y <= 0f);
             if (Grounded) lastGrounded = clock;
 
             // Latch *button states* even when actions are ineligible.
@@ -181,7 +192,16 @@ namespace Chase
                     planar = Vector3.zero;
                     velocity.y = Mathf.Min(velocity.y,0f);
                 }
-                if (Grounded && clock - lastTakeoff > .12f)
+                // A wall can also wedge the long body at its front without
+                // generating a support normal directly under the actor.
+                // Treat a genuine, motionless impact as a landing attempt
+                // rather than maintaining an eternal zero-speed Leaping pose.
+                bool wedgedAfterImpact = forwardContact &&
+                    clock-lastTakeoff > .18f &&
+                    planar.sqrMagnitude < .015f &&
+                    Mathf.Abs(velocity.y) < .20f;
+                if ((Grounded || wedgedAfterImpact) &&
+                    clock - lastTakeoff > .12f)
                 {
                     jumpQueuedUntil = -100f;
                     State = ChaseMovementState.DiveProne;
@@ -221,25 +241,50 @@ namespace Chase
                     Vector3 target = new Vector3(Body.position.x,
                         Settings.standingHeight * .5f, Body.position.z);
                     bool spaceToRise = CanFitVerticalShape(
-                        Settings.crouchingHeight, target) && CanFitDiveShape(target);
-                    if (!spaceToRise)
+                        Settings.crouchingHeight,target) && CanFitDiveShape(target);
+                    if (!spaceToRise || !Grounded)
                     {
                         diveGettingUp = false;
+                        // Impacted a shelf lip or wall and cannot unfold to
+                        // standing here. Physically recoil along the existing
+                        // prone collider instead of waiting for clearance at
+                        // the SAME blocked point forever. A deliberate held
+                        // forward key can still crawl through a passage.
+                        // No teleport, collision disable, or sideways input.
+                        Vector3 retreat = crawlForward ? committedDirection :
+                            -committedDirection;
+                        planar = Vector3.MoveTowards(planar,
+                            retreat*Settings.proneCrawlSpeed,
+                            Settings.groundAcceleration*dt);
                     }
                     else
                     {
-                        diveGettingUp = true;
-                        planar = Vector3.MoveTowards(planar, Vector3.zero,
-                            Settings.groundBraking * dt);
-                        if (Body.position.y < target.y - .045f)
-                            velocity.y = Mathf.Max(velocity.y, 2.8f);
-                        else if (CanFitVerticalShape(Settings.crouchingHeight,
-                                     Body.position))
+                        // Rise is a short transition, not an endless upward
+                        // force against a long body that PhysX keeps pinned
+                        // under a ledge. Check the swept intermediate volume
+                        // FIRST, then lift the existing SOLID box together
+                        // with the new crouch capsule. Never cross a wall,
+                        // roof or competitor while changing collider shapes.
+                        bool clearSweep=true;
+                        for(int step=1;step<4;step++)
                         {
+                            Vector3 at=Vector3.Lerp(Body.position,target,step*.25f);
+                            if (!CanFitDiveShape(at))
+                            {
+                                clearSweep=false;
+                                break;
+                            }
+                        }
+                        if (clearSweep)
+                        {
+                            Body.position=target;
                             BeginGetupColliderUnion(Settings.crouchingHeight);
-                            State = ChaseMovementState.LeapRecovery;
-                            recoveryLeft = Settings.leapRecovery;
-                            diveGettingUp = false;
+                            planar=Vector3.zero;
+                            velocity.y=0f;
+                            Grounded=true;
+                            State=ChaseMovementState.LeapRecovery;
+                            recoveryLeft=Settings.leapRecovery;
+                            diveGettingUp=false;
                         }
                     }
                 }
@@ -457,10 +502,19 @@ namespace Chase
 
         void RegisterDiveContact(Collision collision)
         {
-            if (State != ChaseMovementState.Leaping || forwardContact) return;
-            for (int i = 0; i < collision.contactCount; i++)
+            bool otherActor=collision.collider!=null &&
+                collision.collider.GetComponentInParent<ChaseMotor>()!=null;
+            // Every real solid supporting contact counts, including feet or
+            // head of a long box resting on an elevated shelf edge.
+            for (int i=0;i<collision.contactCount;i++)
             {
-                var contact = collision.GetContact(i);
+                var contact=collision.GetContact(i);
+                if (!otherActor && contact.normal.y >= .65f)
+                {
+                    solidSupportContact=true;
+                    supportActorPosition=Body.position;
+                }
+                if (State != ChaseMovementState.Leaping || forwardContact)continue;
                 // Real forward wall/opponent contact, regardless of which
                 // solid body shape is in use. Ordinary floor contact does
                 // not prematurely stop a dive, but a ceiling hit does.
@@ -703,17 +757,31 @@ namespace Chase
             if (SlideColliderActive)
                 bottom = Mathf.Min(bottom,Body.position.y+
                     SlideBox.center.y-SlideBox.size.y*.5f);
-            Vector3 start = new Vector3(Body.position.x,
-                bottom + Settings.radius + .11f, Body.position.z);
-            int count = Physics.SphereCastNonAlloc(start, Settings.radius * .86f,
-                Vector3.down, groundHits, .21f, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
+            // Sample center AND the two longitudinal ends of an extended
+            // physical body. The support under an edge-contacting shoulder
+            // would be invisible to the old center-only probe.
+            int probes=(DiveColliderActive || SlideColliderActive)?3:1;
+            float reach=DiveColliderActive ? DiveBox.size.z*.35f :
+                SlideColliderActive ? SlideBox.size.z*.35f : 0f;
+            for(int probe=0;probe<probes;probe++)
             {
-                RaycastHit hit = groundHits[i];
-                if (hit.distance <= .0001f || hit.distance > .177f || hit.collider == null || (hit.collider == Capsule || hit.collider == DiveBox || hit.collider == SlideBox) ||
-                    hit.collider.transform.IsChildOf(transform) ||
-                    hit.collider.GetComponentInParent<ChaseMotor>() != null) continue;
-                if (Vector3.Dot(hit.normal, Vector3.up) >= .65f) return true;
+                Vector3 offset=probe==0?Vector3.zero:
+                    Body.rotation*Vector3.forward*(probe==1?reach:-reach);
+                Vector3 start=Body.position+offset;
+                start.y=bottom+Settings.radius+.11f;
+                int count=Physics.SphereCastNonAlloc(start,Settings.radius*.86f,
+                    Vector3.down,groundHits,.21f,~0,QueryTriggerInteraction.Ignore);
+                for (int i=0;i<count;i++)
+                {
+                    RaycastHit hit=groundHits[i];
+                    if (hit.distance<=.0001f || hit.distance>.177f ||
+                        hit.collider==null || hit.collider==Capsule ||
+                        hit.collider==DiveBox || hit.collider==SlideBox ||
+                        hit.collider.transform.IsChildOf(transform) ||
+                        hit.collider.GetComponentInParent<ChaseMotor>()!=null)
+                        continue;
+                    if (Vector3.Dot(hit.normal,Vector3.up)>=.65f)return true;
+                }
             }
             return false;
         }
