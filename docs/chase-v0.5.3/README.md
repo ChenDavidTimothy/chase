@@ -1,0 +1,39 @@
+# CHASE v0.5.3 — one committed dive, impact ends the projectile
+
+**Current movement contract.** Supersedes the split wall-impact mechanics in [v0.5.2](../chase-v0.5.2/README.md). The purpose is simple: **Up → committed forward/upward launch → physical forward obstacle/opponent contact ends flight → fall under gravity → impact and get-up → move again.** There is no blocked-dive button refusal, midair steering, automatic vault, extra forward propulsion, or arbitrary impact timer that keeps pushing into a wall.
+
+## The exact behavior
+
+1. **Launch:** Pressing Up while standing launches immediately at **9.0 m/s forward, 5.2 m/s upward**, with **22 m/s² gravity**, using the current WASD aim when present (otherwise the existing facing). The direction is frozen at that moment. The animator begins the Superman `Leap` action immediately.
+2. **One collision-resolved ballistic flight:** The flight is locked. W/A/S/D, repeated Up, Jump, crouch or slide **cannot redirect the Rigidbody while diving**. Gravity makes the arc. A real forward wall or opponent contact, detected from the PhysX contact normals, **immediately ends the projectile**, clearing remaining horizontal velocity and preventing further ascent. The body then falls. The engine's physical contact remains authoritative and can still produce the match's standard tag result. Actual ordinary floor contact is not mistaken for a forward wall impact; hitting the ceiling also ends rising flight.
+3. **One shared impact/recovery timeline:** On grounding, **both near-wall and open-space dives enter `DiveProne` for 0.40 seconds, followed by `LeapRecovery` for 0.35 seconds**, before input control returns. There is no shorter, silently substituted wall recovery. The compact actor keeps its solid standing CapsuleCollider while its braced pose transitions through the landing/get-up visuals. The full-length body remains solid during chest contact and changes to its protected capsule + box collider union only when there is enough space to rise.
+4. **Collision envelope safety, not two separate moves:** In open space and at a correctly timed shelf slot, the solid **2.30 × 1.20 × 0.95 m** headfirst BoxCollider is used for the whole projectile. If that box would be *born intersecting* a nearby wall or competitor, the **existing solid upright capsule** is retained from takeoff. Both share the *same* initial ballistic speeds, real contact-to-fall rule, grounded impact timer, and get-up timer. The compact launch uses a brief braced pose so the 2.30 m stretched mesh does not visually phase into a wall. No collision is turned off to move through geometry, and there is no midair collider enlargement.
+5. **Low overhead:** A player already crouched beneath a too-low shelf cannot launch upright through the roof. Up does not transform into a different action. The existing crouch and slide remain available.
+
+This is an animation-driven chibi character with rigid-body physics, **not a multi-jointed ragdoll**. Individual arms and head do not receive their own independent collision response. The oversized chibi mesh can extend beyond its simplified capsule in contact poses; that limitation is not concealed. The important invariants are no collider tunneling, no fake uninterruptible travel after physical impact, and no input to cancel the committed recovery.
+
+## How to reproduce
+
+- **Production:** `Assets/Scenes/SampleScene.unity`, local WebGL `http://127.0.0.1:8765/`.
+- **Isolated Movement Gym:** `Assets/Scenes/MovementGym.unity`, local WebGL `http://127.0.0.1:8766/`. Press **H** to stage a point-blank wall collision, **G** for the headfirst shelf passage, **V** for the inspection camera. Press Up or W+Up to launch. Both stages use the same `ChaseMotor` as the actual match.
+- **Real-time input tests:** `Assets/Tests/PlayMode/ChaseSupermanDiveTests.cs` includes a two-case regression, **point-blank wall** (compact capsule) and **wall after takeoff** (long full-body box). It requires that physical forward impact end the projectile with no remaining horizontal speed or rising velocity, followed by the **same `DiveProne` → `LeapRecovery` states** and successful return to standing. Tag collision is separately exercised for both roles in `ChasePhysicsTests.cs`.
+- **Animation mapping:** `ChibiVisualDriver` uses the same Leap/impact/recovery motor states for both collision envelopes. The wall-braced compact dive uses an upright impact clip rather than showing horizontal geometry inside a wall. The original 12 Blender actions and all character geometry remain unchanged.
+
+Use the repo's `ChaseReleaseBuild.WebGLGym`, `ChaseReleaseBuild.WebGLProduction`, and `ChaseReleaseBuild.LinuxProduction` batchmode entry points to produce fresh players. Serve with `Tools/serve_webgl.py` (correct gzip MIME and no-cache) and reload Chrome after each build. The source commit, regression report, and real runtime screenshot evidence are the release criteria—not any prior version's cached browser state.
+
+## Final release verification (October 11, 2026)
+
+[Machine-readable verification summary](evidence/verification-summary.json): **61/61 Unity PlayMode tests**, **15/15 EditMode tests**, successful production WebGL, gym WebGL and Linux builds with **zero BuildReport errors**, one existing Unity Pipeline warning per build. Strict Blender source validation passed; `Chibi/Chibi_Rigged.blend` was not edited.
+
+The additional regression `ForwardWallImpactTerminatesProjectileForBothColliderShapes` deliberately compares two walls: one **0.58 m** in front of the athlete (compact solid capsule), another **2.40 m** ahead (full horizontal box). In either case, it proves that forward physical contact ends upward and forward flight, then enters **`DiveProne` → `LeapRecovery` → `Standing`**. The test specifically caught a real get-up defect: a full-length box touching a wall was treated as an overlapping obstacle and could remain prone forever. The projection now uses an exact penetration-depth check **only for a box that is already physically active**; newly spawning a dive box remains strictly blocked if any solid obstacle overlaps its initial volume. This allows the character to rise while touching, not intersecting, a wall.
+
+The near-opponent regression was tightened to verify that contact ends **both** the horizontal and upward trajectory, not merely horizontal movement. Existing Chaser/Evader tag tests remain green. The separate low-roof jump restriction remains enforced.
+
+### Actual browser and native player evidence
+
+- [Actual Chrome wall impact: eight-stage sequence](evidence/sideview/wall-to-recovery.png) and [console/input/canvas report](evidence/sideview/browser-superman-verification.json)
+- [Actual Chrome open-space shelf dive and return to standing](evidence/openspace/shelf-flight-recovery.png) and [browser report](evidence/openspace/sideview/browser-superman-verification.json)
+- [Production Chrome report](evidence/production/browser-production-verification.json) and captured arena/movement screenshots in `evidence/production/`
+- Reproducible scripts: [`verify_impact_browser.py`](verify_impact_browser.py), [`verify_shelf_browser.py`](verify_shelf_browser.py), [`verify_production_browser.py`](verify_production_browser.py). They focus Unity's real browser canvas, send keyboard input, wait beyond the Unity splash, and check for reported console errors and page scrolling.
+
+The new standalone Linux player was launched in an X11 window, with no matching runtime exception or missing-asset log entries. **Subjective motion quality still requires human playtesting**: a body pitched into a wall uses stylized posing, not a physically simulated multi-joint ragdoll. The physics collision and recovery tests establish mechanical correctness; screenshot differences alone do not establish an exact wall-clearance silhouette.

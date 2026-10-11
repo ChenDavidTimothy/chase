@@ -1,0 +1,77 @@
+{
+  "PlayMode": {
+    "total": 61,
+    "passed": 61,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "EditMode": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "GymWebGL": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseAnimationGymWebGL"
+  },
+  "ProductionWebGL": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseWebGL"
+  },
+  "Linux": {
+    "target": "StandaloneLinux64",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "output": "Builds/ChaseLinux/Chase.x86_64"
+  },
+  "GymWall": {
+    "result": "Passed",
+    "consoleErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=v053-unified-impact-final-gym",
+    "renderReady": {
+      "attempt": 5,
+      "lower_scene_rgb_stddev": 18.485
+    }
+  },
+  "GymShelf": {
+    "result": "Passed",
+    "consoleErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=v053-shelf-final-audit",
+    "renderReady": {
+      "attempt": 5,
+      "lower_scene_rgb_stddev": 17.875
+    }
+  },
+  "Production": {
+    "result": "Passed",
+    "consoleErrors": 0,
+    "url": "http://127.0.0.1:8765/?build=v053-unified-impact-final-production",
+    "renderReady": {
+      "attempt": 0,
+      "stddev": 44.662
+    }
+  },
+  "Blender": {
+    "validator": "Passed",
+    "sha256": "82b6f4894f95bb40ae96eaf50f2497ee7e8641c0ac86bbef8a345cc36e028117",
+    "sourceEdited": false
+  },
+  "ScreenshotEvidence": {
+    "verifiedPngFiles": 25,
+    "wallSequence": "sideview/wall-to-recovery.png",
+    "openSpaceSequence": "openspace/shelf-flight-recovery.png"
+  }
+}

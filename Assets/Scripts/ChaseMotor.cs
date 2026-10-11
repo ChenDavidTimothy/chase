@@ -34,8 +34,13 @@ namespace Chase
         // No takeoff is refused for a nearby wall or another athlete.
         public bool DiveCompactContact => State == ChaseMovementState.Leaping &&
             compactDive;
+        // Any forward wall/competitor impact ends the projectile flight, for
+        // BOTH physical body shapes. Grounded recovery is the same move.
+        public bool DiveFlightEnded => State == ChaseMovementState.Leaping && forwardContact;
         public bool DiveImpactBraced => DiveCompactContact && forwardContact;
         public bool DiveCompactRecovery => State == ChaseMovementState.LeapRecovery &&
+            compactDive;
+        public bool DiveCompactProne => State == ChaseMovementState.DiveProne &&
             compactDive;
         public Vector3 FacingDirection => new Vector3(Mathf.Sin(visualYaw * Mathf.Deg2Rad), 0f,
             Mathf.Cos(visualYaw * Mathf.Deg2Rad));
@@ -151,38 +156,22 @@ namespace Chase
 
             if (State == ChaseMovementState.Leaping)
             {
-                // Every Up press is a genuine committed attempt. Full open
-                // space uses the horizontal solid box immediately. Near a
-                // wall/competitor, retain the solid compact capsule so the
-                // actor can physically launch INTO contact, never overlap
-                // the obstacle with the bigger box. No midair morphing,
-                // player steering, late repulsion or velocity top-up.
-                // The wall contact cancels the rising component, preventing
-                // a ballistic attempt from becoming wall-climbing.
-                if (compactDive && forwardContact)
+                // One ballistic flight; collision is its physical endpoint.
+                // The full box in open space and the non-overlapping compact
+                // collider next to a wall have identical impact consequences.
+                // Never reapply launch velocity or accept midair steering.
+                if (forwardContact)
                 {
-                    // A horizontal wall/opponent collision terminates upward
-                    // motion. The body still falls under gravity, stays
-                    // committed, and must finish its ordinary recovery.
-                    velocity.y = Mathf.Min(velocity.y, 0f);
+                    planar = Vector3.zero;
+                    velocity.y = Mathf.Min(velocity.y,0f);
                 }
                 if (Grounded && clock - lastTakeoff > .12f)
                 {
                     jumpQueuedUntil = -100f;
-                    if (diveShapeCommitted)
-                    {
-                        State = ChaseMovementState.DiveProne;
-                        recoveryLeft = Settings.diveImpactRecovery;
-                    }
-                    else
-                    {
-                        State = ChaseMovementState.LeapRecovery;
-                        recoveryLeft = Settings.leapRecovery + Settings.diveImpactRecovery;
-                    }
-                    // Preserve the abort type into the recovery animation.
-                    // It must not suddenly switch to a horizontal pose at
-                    // ground contact when the dive shape never fit.
-                    forwardContact = false;
+                    State = ChaseMovementState.DiveProne;
+                    recoveryLeft = Settings.diveImpactRecovery;
+                    // Keep the collision body solid all through recovery;
+                    // a compact contact never expands through an obstacle.
                 }
             }
             else if (State == ChaseMovementState.DiveProne)
@@ -198,7 +187,16 @@ namespace Chase
                 planar = Vector3.MoveTowards(planar, committedDirection *
                     (recoveryLeft > 0f || diveGettingUp || !crawlForward ? 0f :
                         Settings.proneCrawlSpeed),Settings.groundBraking * dt);
-                if (recoveryLeft <= 0f)
+                if (recoveryLeft <= 0f && compactDive)
+                {
+                    // The compact collision body stayed upright on impact.
+                    // It does not need the horizontal body's push-up phase.
+                    // Nevertheless it has paid the SAME prone-impact timer,
+                    // followed by the SAME .35s committed get-up timer.
+                    State = ChaseMovementState.LeapRecovery;
+                    recoveryLeft = Settings.leapRecovery;
+                }
+                else if (recoveryLeft <= 0f)
                 {
                     // A horizontal body contacts the floor with the actor
                     // origin at ~0.57 m, while the standing reference is 0.9 m.
@@ -270,6 +268,7 @@ namespace Chase
                     if (State == ChaseMovementState.LeapRecovery && DiveColliderActive)
                         FinishDiveShape();
                     compactDive = false;
+                    forwardContact = false;
                     if (action.Crouch || !HasStandingClearance())
                     {
                         SetHeight(Settings.crouchingHeight);
@@ -378,17 +377,25 @@ namespace Chase
 
         void RegisterDiveContact(Collision collision)
         {
-            if (State != ChaseMovementState.Leaping || !compactDive) return;
+            if (State != ChaseMovementState.Leaping || forwardContact) return;
             for (int i = 0; i < collision.contactCount; i++)
             {
                 var contact = collision.GetContact(i);
-                // A real wall or opponent in the committed heading, not a
-                // floor or distant side brush. OnCollision includes physical
-                // contact from both capsule and tagged athlete bodies.
-                if (Mathf.Abs(contact.normal.y) < .58f &&
-                    Vector3.Dot(contact.normal, committedDirection) < -.20f)
+                // Real forward wall/opponent contact, regardless of which
+                // solid body shape is in use. Ordinary floor contact does
+                // not prematurely stop a dive, but a ceiling hit does.
+                if ((Mathf.Abs(contact.normal.y) < .58f &&
+                    Vector3.Dot(contact.normal, committedDirection) < -.20f) ||
+                    contact.normal.y < -.70f)
                 {
                     forwardContact = true;
+                    // The impact is the END of the projectile, not a flag
+                    // delaying its stop until the next motor tick. Reconcile
+                    // actual Rigidbody velocity directly in the PhysX contact
+                    // callback. Gravity then handles the fall. No thrust
+                    // can be regenerated in subsequent frames.
+                    Vector3 v = Body.linearVelocity;
+                    Body.linearVelocity = new Vector3(0f,Mathf.Min(0f,v.y),0f);
                     return;
                 }
             }
@@ -413,10 +420,18 @@ namespace Chase
                 Collider hit = clearanceHits[i];
                 if (hit == null || hit == Capsule || hit == DiveBox ||
                     hit.transform.IsChildOf(transform)) continue;
-                // OverlapBox accurately represents an oriented full-body
-                // collision envelope even while DiveBox itself is disabled.
-                // Reject any real solid shelf/support/opponent intersection.
-                return false;
+                // At takeoff the Box is disabled: be conservative, never
+                // create a newly active Collider intersecting an obstacle.
+                if (!DiveBox.enabled) return false;
+                // While getting up the Box is ALREADY an active collider.
+                // A wall touching its front face can be returned by the broad-
+                // phase OverlapBox even when it is not truly penetrating.
+                // Exact enabled-box penetration separates a valid tangential
+                // contact from a real wall overlap at the projected rise.
+                if (Physics.ComputePenetration(DiveBox, actorPosition, orientation,
+                    hit, hit.transform.position, hit.transform.rotation,
+                    out Vector3 normal, out float depth) && depth > .025f)
+                    return false;
             }
             return true;
         }

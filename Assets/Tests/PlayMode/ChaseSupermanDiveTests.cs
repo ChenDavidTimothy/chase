@@ -299,6 +299,67 @@ namespace Chase.Tests
         }
 
         [UnityTest]
+        public IEnumerator ForwardWallImpactTerminatesProjectileForBothColliderShapes()
+        {
+            // Direct wall uses compact capsule; farther wall permits the
+            // horizontal box at takeoff. BOTH stop the flight on contact,
+            // fall under gravity, and pay the two recovery phases.
+            foreach(float wallZ in new[]{.58f,2.40f})
+            {
+                Floor();
+                Cube("solid contact wall",new Vector3(0,1.2f,wallZ),
+                    new Vector3(5,2.4f,.2f));
+                var m=Actor(new Vector3(0,.9f,0));
+                Step(m,Vector2.up,false,true);
+                bool compact=m.DiveCompactContact;
+                Assert.AreEqual(wallZ<1f,compact,
+                    "Near vs distant wall differs only in collision shape");
+                bool hit=false,prone=false,getup=false;
+                float maxForward=m.Body.position.z;
+                for(int i=0;i<135;i++)
+                {
+                    // Airborne controls must be ignored; after recovery,
+                    // release keys so a subsequent legitimate new jump does
+                    // not count as a failure of the completed dive.
+                    if(m.State==ChaseMovementState.Leaping)
+                        Step(m,i%2==0?Vector2.left:Vector2.right,
+                            i%4==0,false,i%5==0);
+                    else Step(m);
+                    maxForward=Mathf.Max(maxForward,m.Body.position.z);
+                    if(m.DiveFlightEnded)
+                    {
+                        hit=true;
+                        Assert.LessOrEqual(m.Velocity.y,.001f,
+                            "Wall impact must terminate upward projectile flight");
+                        Assert.Less(m.HorizontalVelocity.magnitude,.01f,
+                            "No forward thrust after physical impact");
+                    }
+                    prone |= m.State==ChaseMovementState.DiveProne;
+                    getup |= m.State==ChaseMovementState.LeapRecovery;
+                    Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
+                }
+                Assert.IsTrue(hit,"Wall contact should end both collider flights");
+                Assert.IsTrue(prone && getup,
+                    "wallZ="+wallZ+" compact="+compact+
+                    " hit="+hit+" prone="+prone+" getup="+getup+
+                    " state="+m.State+" pos="+m.Body.position+
+                    " vel="+m.Velocity+" box="+m.DiveBox.enabled);
+                Assert.AreEqual(ChaseMovementState.Standing,m.State,
+                    "wallZ="+wallZ+" position="+m.Body.position+
+                    " grounded="+m.Grounded+" velocity="+m.Velocity+
+                    " box="+m.DiveBox.enabled+" capsule="+m.Capsule.enabled);
+                Assert.Less(maxForward,wallZ,
+                    "Never cross the solid wall on either approach");
+                // Clean only the objects made by this sub-case before making
+                // another floor. The fixture's TearDown also handles cleanup.
+                foreach(var obj in spawned)
+                    if(obj!=null)UnityEngine.Object.DestroyImmediate(obj);
+                spawned.Clear();
+            }
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator LateralObstaclePreventsBoxButDoesNotCancelTheAttempt()
         {
             Floor();
@@ -334,13 +395,21 @@ namespace Chase.Tests
             Assert.IsTrue(diver.DiveCompactContact,
                 "Never spawn long overlapping body into another athlete");
             Assert.IsTrue(diver.Capsule.enabled);
-            bool impact=false;
+            bool impact=false,stoppedProjectile=false;
             for(int i=0;i<30;i++)
             {
                 Step(diver,Vector2.left,false,false,true);
                 if(diver.Velocity.z<1f)impact=true;
+                if(diver.DiveFlightEnded)
+                {
+                    stoppedProjectile=true;
+                    Assert.LessOrEqual(diver.Velocity.y,.001f,
+                        "Opponent contact ends upward projectile flight too");
+                    Assert.Less(diver.HorizontalVelocity.magnitude,.01f);
+                }
             }
-            Assert.IsTrue(impact,"Solid moving bodies must contact");
+            Assert.IsTrue(impact && stoppedProjectile,
+                "Opponent collision must end projectile, not only block translation");
             Assert.Less(diver.Body.position.z,target.Body.position.z,
                 "Diver cannot phase through opponent collider");
             yield return null;
@@ -383,8 +452,9 @@ namespace Chase.Tests
                 if(i>15)postHitMax=Mathf.Max(postHitMax,m.Velocity.z);
                 Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
             }
-            Assert.Less(furthest,2.0f,
-                "A non-trigger 2.3m long dive body must stop before wall");
+            Assert.Less(furthest,2.04f,
+                "No solid body can pass a wall: after get-up the normal " +
+                "0.35m-radius capsule may approach its front face at z=2.0");
             Assert.Less(postHitMax,8f,"Collision must remove speed, no new impulse");
             yield return null;
         }

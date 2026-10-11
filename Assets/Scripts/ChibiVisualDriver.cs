@@ -72,7 +72,9 @@ namespace Chase
                 // A real successful dive already has its solid horizontal
                 // body and launch velocity. Never start this action as Jump.
                 case ChaseMovementState.Leaping: name = "Leap"; break;
-                case ChaseMovementState.DiveProne: name = "DiveProne"; break;
+                case ChaseMovementState.DiveProne:
+                    name = motor.DiveCompactProne ? "JumpLanding" : "DiveProne";
+                    break;
                 case ChaseMovementState.LeapRecovery:
                     // When the dive body could not unfold beside a wall or
                     // athlete, stand back up from a compact braced impact,
@@ -101,8 +103,8 @@ namespace Chase
             animator.speed = name == "Run" ?
                 Mathf.Clamp(motor.HorizontalVelocity.magnitude / 5f, .65f, 1.25f) :
                 name == "CrouchWalk" ? .9f :
-                name == "Leap" && motor.DiveCompactContact ?
-                    (motor.DiveImpactBraced ? 0f : .30f) : 1f;
+                name == "Leap" && motor.DiveFlightEnded ? 0f :
+                name == "Leap" && motor.DiveCompactContact ? .30f : 1f;
 
             bool inTransition = animator.IsInTransition(0);
             int current = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;

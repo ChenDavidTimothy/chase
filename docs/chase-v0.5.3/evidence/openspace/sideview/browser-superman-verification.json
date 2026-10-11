@@ -1,0 +1,155 @@
+{
+  "browser": "http://127.0.0.1:8766/?build=v053-shelf-final-audit",
+  "loaded": {
+    "ready": "complete",
+    "loading": "none",
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 961,
+      "top": 0,
+      "right": 1920,
+      "bottom": 961,
+      "left": 0
+    }
+  },
+  "render_ready": {
+    "attempt": 5,
+    "lower_scene_rgb_stddev": 17.875
+  },
+  "final": {
+    "focus": "unity-canvas",
+    "scrollX": 0,
+    "scrollY": 0,
+    "inputs": [
+      {
+        "key": "w",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "a",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "d",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "s",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      }
+    ],
+    "loading": "none",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 961,
+      "top": 0,
+      "right": 1920,
+      "bottom": 961,
+      "left": 0
+    }
+  },
+  "browser_errors": [],
+  "pixel_differences": {
+    "01-takeoff": {
+      "changed_pixels_gt_32": 167998,
+      "mean_absolute_rgb": 43.606,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "02-superman-flight": {
+      "changed_pixels_gt_32": 203271,
+      "mean_absolute_rgb": 53.244,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "03-shelf-crossing": {
+      "changed_pixels_gt_32": 195961,
+      "mean_absolute_rgb": 52.859,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "04-chest-contact": {
+      "changed_pixels_gt_32": 183974,
+      "mean_absolute_rgb": 51.01,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "05-prone-impact": {
+      "changed_pixels_gt_32": 167103,
+      "mean_absolute_rgb": 48.87,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "06-getup": {
+      "changed_pixels_gt_32": 174318,
+      "mean_absolute_rgb": 51.016,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "07-recovery": {
+      "changed_pixels_gt_32": 165128,
+      "mean_absolute_rgb": 48.566,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    },
+    "08-standing-idle": {
+      "changed_pixels_gt_32": 181089,
+      "mean_absolute_rgb": 56.235,
+      "crop": [
+        537,
+        288,
+        1420,
+        788
+      ]
+    }
+  },
+  "capture_origin": "actual Chrome W held + Up shelf launch; A,D,S adversarial input midflight",
+  "side_camera": true,
+  "notes": "Screenshot differences document rendered activity; PlayMode verified real state and full-body geometry."
+}
