@@ -15,7 +15,7 @@ namespace Chase.Editor
         public const string ModelPath = "Assets/Art/Characters/Chibi/Models/Chibi_Rigged.fbx";
         public const string ControllerPath = "Assets/Art/Characters/Chibi/Animations/Chibi_Validation.controller";
         public static readonly string[] States = { "Idle", "Run", "Jump", "JumpLanding", "Leap", "LeapRecovery",
-            "Crouch", "CrouchWalk", "Slide", "SlideRecovery", "Turn" };
+            "Crouch", "CrouchWalk", "DiveProne", "Slide", "SlideRecovery", "Turn" };
         public int callbackOrder => -100;
 
         public static void ValidateOrThrow()
@@ -29,7 +29,7 @@ namespace Chase.Editor
             var expectedTakes = importer.defaultClipAnimations;
             var configured = importer.clipAnimations;
             if (expectedTakes.Length != States.Length || configured.Length != States.Length)
-                throw new InvalidOperationException("CHASE: require precisely 11 FBX clip overrides");
+                throw new InvalidOperationException("CHASE: require precisely 12 FBX clip overrides");
             foreach (var original in expectedTakes)
             {
                 var actual = configured.SingleOrDefault(c => c.name == original.name);
@@ -37,13 +37,13 @@ namespace Chase.Editor
                     Mathf.Abs(actual.lastFrame - original.lastFrame) > .01f)
                     throw new InvalidOperationException("CHASE: stale imported animation frame range: " + original.name);
                 var simple = original.name.Split(new[]{"CHASE_"}, StringSplitOptions.None).Last();
-                bool shouldLoop = simple == "Idle" || simple == "Run" || simple == "CrouchWalk";
+                bool shouldLoop = simple == "Idle" || simple == "Run" || simple == "CrouchWalk" || simple == "DiveProne";
                 if (actual.loopTime != shouldLoop)
                     throw new InvalidOperationException("CHASE: incorrect looping on " + original.name);
             }
             var states = controller.layers[0].stateMachine.states.Select(x => x.state).ToArray();
             if (states.Length != States.Length)
-                throw new InvalidOperationException("CHASE: Animator must contain exactly 11 states");
+                throw new InvalidOperationException("CHASE: Animator must contain exactly 12 states");
             foreach (string name in States)
             {
                 var state = states.SingleOrDefault(x => x.name == name);
@@ -74,11 +74,11 @@ namespace Chase.Editor
             // frame overrides caused production builds to use outdated timing.
             var sourceTakes = importer.defaultClipAnimations;
             if (sourceTakes.Length != States.Length)
-                throw new InvalidOperationException("CHASE: expected exactly 11 FBX animation takes");
+                throw new InvalidOperationException("CHASE: expected exactly 12 FBX animation takes");
             foreach (var clip in sourceTakes)
             {
                 var shortName = clip.name.Split(new[]{"CHASE_"}, StringSplitOptions.None).Last();
-                clip.loopTime = shortName == "Idle" || shortName == "Run" || shortName == "CrouchWalk";
+                clip.loopTime = shortName == "Idle" || shortName == "Run" || shortName == "CrouchWalk" || shortName == "DiveProne";
                 clip.loopPose = clip.loopTime;
             }
             importer.clipAnimations = sourceTakes;
@@ -90,17 +90,22 @@ namespace Chase.Editor
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
             if (controller == null || realClips.Length != States.Length)
                 throw new InvalidOperationException("CHASE: missing clips or controller after reimport");
-            foreach (var child in controller.layers[0].stateMachine.states)
+            var stateMachine = controller.layers[0].stateMachine;
+            // A newly authored animation also needs a real Controller state.
+            // Never assume the previous Controller has the same action count.
+            foreach (string name in States)
             {
-                var clip = realClips.Single(c => c.name == "Chibi_Armature|CHASE_" + child.state.name);
-                child.state.motion = clip;
-                child.state.writeDefaultValues = false;
-                EditorUtility.SetDirty(child.state);
+                var state = stateMachine.states.Select(x => x.state)
+                    .FirstOrDefault(x => x.name == name) ?? stateMachine.AddState(name);
+                var clip = realClips.Single(c => c.name == "Chibi_Armature|CHASE_" + name);
+                state.motion = clip;
+                state.writeDefaultValues = false;
+                EditorUtility.SetDirty(state);
             }
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
             ValidateOrThrow();
-            Debug.Log("CHASE_ANIMATION_IMPORT_REPAIRED: 11 real FBX clips, current frame ranges, no previews");
+            Debug.Log("CHASE_ANIMATION_IMPORT_REPAIRED: 12 real FBX clips, current frame ranges, no previews");
         }
 
         public void OnPreprocessBuild(BuildReport report)
@@ -113,7 +118,7 @@ namespace Chase.Editor
         static void VerifyFromMenu()
         {
             ValidateOrThrow();
-            Debug.Log("CHASE_ANIMATION_IMPORT_CONTRACT_PASS: 11 correct production clips and stable frame ranges");
+            Debug.Log("CHASE_ANIMATION_IMPORT_CONTRACT_PASS: 12 correct production clips and stable frame ranges");
         }
     }
 }

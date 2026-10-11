@@ -50,6 +50,27 @@ namespace Chase.Tests
             m.Simulate(new ChaseAction(direction,jump,leap,slide,crouch),Dt,clock);
             Physics.Simulate(Dt);clock+=Dt;
         }
+        [UnityTest] public IEnumerator DivePhysicsTraceAndLanding()
+        {
+            Floor();var m=Actor();
+            var log=new List<string>{"step,y,z,vy,vz,state,ground,direction,centerY,height,radius"};
+            for(int i=0;i<130;i++)
+            {
+                Step(m,Vector2.zero,false,i==0);
+                if(i%2==0 || m.State!=ChaseMovementState.Leaping)
+                    log.Add(string.Join(",",i,m.Body.position.y.ToString("F3"),
+                        m.Body.position.z.ToString("F3"),m.Velocity.y.ToString("F3"),
+                        m.Velocity.z.ToString("F3"),m.State,m.Grounded,m.Capsule.direction,
+                        m.Capsule.center.y.ToString("F3"),m.Capsule.height.ToString("F3"),
+                        m.Capsule.radius.ToString("F3")));
+            }
+            System.IO.File.WriteAllLines("/tmp/chase-v05-dive-physics-trace.csv",log);
+            Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,"Diver must land on solid floor");
+            Assert.AreEqual(ChaseMovementState.Standing,m.State,
+                "Dive must fully recover and restore the upright collider");
+            yield return null;
+        }
+
         [UnityTest] public IEnumerator ExplicitInputsHavePriorityAndNeverBecomeVaults()
         {
             Floor();var m=Actor();
@@ -328,7 +349,8 @@ namespace Chase.Tests
             foreach(var line in lines)Debug.Log("CHASE_V04_CALIBRATION "+line);
             Assert.That(top,Is.EqualTo(6f).Within(.02f));
             Assert.That(apex,Is.InRange(.72f,.95f));
-            Assert.That(lapex,Is.InRange(.25f,.43f));
+            Assert.That(lapex,Is.InRange(.51f,.61f),
+                "Superman dive is a higher, committed head-first launch");
             Assert.That(leap.HorizontalVelocity.magnitude,Is.LessThanOrEqualTo(9.01f));
             yield return null;
         }

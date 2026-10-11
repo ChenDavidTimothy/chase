@@ -37,7 +37,7 @@ namespace Chase.Tests
                         Assert.Less(weight.weight1,.01f);
                     }
                 }
-                var states=new[]{"Idle","Run","Jump","Crouch","Slide","Leap","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"};
+                var states=new[]{"Idle","Run","Jump","Crouch","Slide","Leap","DiveProne","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"};
                 foreach(string state in states)
                 {
                     Assert.IsTrue(animator.HasState(0,Animator.StringToHash(state)),state+" not playable");
@@ -149,8 +149,9 @@ namespace Chase.Tests
                 foreach(var pair in new[]{
                     (ChaseMovementState.Crouching,"Crouch"),
                     (ChaseMovementState.Sliding,"Slide"),
-                    (ChaseMovementState.Leaping,"Leap"),
-                    (ChaseMovementState.LeapRecovery,"LeapRecovery"),
+                    (ChaseMovementState.Leaping,"Jump"),
+                    (ChaseMovementState.DiveProne,"DiveProne"),
+                    (ChaseMovementState.LeapRecovery,"JumpLanding"),
                     (ChaseMovementState.SlideRecovery,"SlideRecovery"),
                     (ChaseMovementState.Airborne,"Jump"),
                     (ChaseMovementState.Standing,"Idle")
@@ -166,6 +167,18 @@ namespace Chase.Tests
                     Assert.IsFalse(animator.applyRootMotion);
                     Assert.IsFalse(motor.Capsule.isTrigger);
                 }
+                // The same state selects Superman animation only when the
+                // long full-body Collider is physically enabled.
+                motor.DiveBox.enabled=true;
+                motor.Capsule.enabled=false;
+                stateField.SetValue(motor,ChaseMovementState.Leaping);
+                update.Invoke(driver,null);animator.Update(.20f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Leap"));
+                stateField.SetValue(motor,ChaseMovementState.LeapRecovery);
+                update.Invoke(driver,null);animator.Update(.20f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("LeapRecovery"));
+                motor.Capsule.enabled=true;
+                motor.DiveBox.enabled=false;
             }
             finally{UnityEngine.Object.DestroyImmediate(actor);}
             yield return null;
@@ -396,6 +409,63 @@ namespace Chase.Tests
         }
 
         [UnityTest]
+        public IEnumerator SupermanFlightVisualFitsActualSolidDiveBox()
+        {
+            var actor=new GameObject("Superman visible mesh envelope test");
+            var temp=new Mesh();
+            try
+            {
+                actor.transform.position=new Vector3(0,.9f,0);
+                actor.AddComponent<Rigidbody>();actor.AddComponent<CapsuleCollider>();
+                var art=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"),
+                    actor.transform,false);
+                art.transform.localPosition=Vector3.down*.9f;
+                var motor=actor.AddComponent<ChaseMotor>();
+                motor.Initialize(new ChaseTuning(),art.transform);
+                art.GetComponent<ChibiVisualDriver>().BindMotor(motor);
+                var animator=art.GetComponentInChildren<Animator>();
+                var box=motor.DiveBox;
+                foreach(float progress in new[]{.19f,.20f,.35f,.55f,.80f,.99f})
+                {
+                    animator.Play("Leap",0,progress);
+                    animator.Update(.02f);
+                    Bounds actual=new Bounds(Vector3.zero,Vector3.zero);
+                    bool initialized=false;
+                    foreach(var skin in art.GetComponentsInChildren<SkinnedMeshRenderer>())
+                    {
+                        skin.BakeMesh(temp,true);
+                        foreach(var v in temp.vertices)
+                        {
+                            Vector3 local=actor.transform.InverseTransformPoint(
+                                skin.transform.TransformPoint(v));
+                            if(!initialized){actual=new Bounds(local,Vector3.zero);initialized=true;}
+                            else actual.Encapsulate(local);
+                        }
+                    }
+                    Assert.IsTrue(initialized);
+                    Vector3 minimum=box.center-box.size*.5f;
+                    Vector3 maximum=box.center+box.size*.5f;
+                    // The skeletal actor has a fixed -0.9m art anchor.
+                    // Horizontal width is strict; a small rim tolerance permits
+                    // imported interpolation and the rounded chibi head shell.
+                    Assert.That(actual.min.x,Is.GreaterThan(minimum.x-.08f));
+                    Assert.That(actual.max.x,Is.LessThan(maximum.x+.08f));
+                    if(progress>=.19f)
+                    {
+                        Assert.That(actual.max.y,Is.LessThan(maximum.y+.10f),
+                            "Dive head cannot stick significantly above the solid Box");
+                        Assert.That(actual.min.y,Is.GreaterThan(minimum.y-.10f));
+                        Assert.That(actual.min.z,Is.GreaterThan(minimum.z-.12f));
+                        Assert.That(actual.max.z,Is.LessThan(maximum.z+.12f));
+                    }
+                }
+            }
+            finally
+            {UnityEngine.Object.DestroyImmediate(temp);UnityEngine.Object.DestroyImmediate(actor);}
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator EveryProductionAnimationBendsBothElbowsTowardCharacterFront()
         {
             GameObject root=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"));
@@ -404,7 +474,7 @@ namespace Chase.Tests
                 var animator=root.GetComponentInChildren<Animator>(true);
                 var transforms=animator.GetComponentsInChildren<Transform>(true);
                 foreach(string state in new[]{"Idle","Run","Jump","JumpLanding","Leap",
-                    "LeapRecovery","Crouch","CrouchWalk","Slide","SlideRecovery","Turn"})
+                    "LeapRecovery","DiveProne","Crouch","CrouchWalk","Slide","SlideRecovery","DiveProne","Turn"})
                 {
                     foreach(float progress in new[]{0f,.25f,.5f,.75f,.99f})
                     {

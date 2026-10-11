@@ -35,6 +35,28 @@ public static class ChaseMovementGymBuilder
             support.AddComponent<ChaseBlocker>();
         }
     }
+    static void DiveShelf(Transform root)
+    {
+        var group=new GameObject("SUPERMAN DIVE / 1.30m aerial shelf slot");
+        group.transform.SetParent(root,false);
+        group.transform.position=new Vector3(0,0,4f);
+        var sill=Box("Solid shelf sill height .55m",group.transform,
+            new Vector3(0,.275f,0),new Vector3(2.2f,.55f,.6f),
+            GetMaterial("Hurdle"));
+        sill.AddComponent<ChaseBlocker>();
+        var roof=Box("Upper shelf underside 1.85m",group.transform,
+            new Vector3(0,2.025f,0),new Vector3(2.2f,.35f,.6f),
+            GetMaterial("Shelf"));
+        roof.AddComponent<ChaseOverheadPassage>();
+        roof.AddComponent<ChaseOccluder>();
+        foreach(float offset in new[]{-1.01f,1.01f})
+        {
+            var support=Box("Full-height side support",group.transform,
+                new Vector3(offset,1.1f,0),new Vector3(.18f,2.2f,.6f),
+                GetMaterial("Pillar"));
+            support.AddComponent<ChaseBlocker>();
+        }
+    }
     [MenuItem("Chase/Create Separate Movement Gym")]
     public static void CreateGym()
     {
@@ -65,7 +87,8 @@ public static class ChaseMovementGymBuilder
         wall.AddComponent<ChaseBlocker>();
         Passage(root.transform,"SLIDE / 0.7m deep passage, 1.64m clearance",5,.7f);
         Passage(root.transform,"CROUCH / 2.2m deep passage, 1.64m clearance",9,2.2f);
-        Box("LEAP / clean 9m testing corridor",root.transform,
+        DiveShelf(root.transform);
+        Box("SUPERMAN / clear 9m approach lane",root.transform,
             new Vector3(0,.001f,-2f),new Vector3(.05f,.003f,16f),GetMaterial("Accent"),false);
         var camObj=new GameObject("Main Camera");camObj.tag="MainCamera";
         var cam=camObj.AddComponent<Camera>();cam.fieldOfView=55f;
@@ -90,6 +113,6 @@ public static class ChaseMovementGymBuilder
         if(!string.IsNullOrEmpty(current) && current!=Path)
             EditorSceneManager.OpenScene(current,OpenSceneMode.Single);
         AssetDatabase.SaveAssets();
-        Debug.Log("CHASE_V04_MOVEMENT_GYM_CREATED: "+Path);
+        Debug.Log("CHASE_V05_MOVEMENT_GYM_CREATED: "+Path);
     }
 }

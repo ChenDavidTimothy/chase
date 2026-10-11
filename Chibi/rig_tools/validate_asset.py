@@ -2,7 +2,7 @@
 import bpy,math,json
 from mathutils import Vector,Matrix
 arm=bpy.data.objects["Chibi_Armature"]
-expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
+expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_DiveProne","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
 assert {a.name for a in bpy.data.actions if a.name.startswith("CHASE_")}==expected
 assert all(bpy.data.actions[name].use_fake_user for name in expected)
 assert "Blender -Y forward" in str(arm.get("basis",""))
@@ -78,6 +78,10 @@ for frame in (1,7,13,19,25):
 for frame in (1,4,8,11,14):
     bottom,top=pose_bounds("CHASE_Slide",frame)
     assert top<=1.64,("slide roof clearance",frame,top)
+# A settled chest-first dive must fit the physically grounded low Box.
+for frame in (1,5,10,15,19):
+    bottom,top=pose_bounds("CHASE_DiveProne",frame)
+    assert .20<=bottom<=.32 and top<=1.05,("prone mesh clearance",frame,bottom,top)
 assert pose_bounds("CHASE_Idle",1)[0]>=-.015
 # Forearms hinge forward in character coordinates (-Y), rather than folding
 # behind the elbows. Check every integer frame, not just exported end points.
@@ -92,6 +96,21 @@ for action_name in sorted(expected):
             elbow=arm.matrix_world@forearm.head
             wrist=arm.matrix_world@forearm.tail
             assert elbow.y-wrist.y>.045,("backwards elbow",action_name,frame,side,elbow.y-wrist.y)
+# Superman launch and get-up articulate through intermediate 1/8-frame keys;
+# detect an elbow flipping briefly between authored whole-frame poses.
+for action_name in ("CHASE_Leap","CHASE_DiveProne","CHASE_LeapRecovery"):
+    action=bpy.data.actions[action_name]
+    arm.animation_data.action=action
+    for step in range(round(action.frame_range[0]*16),
+                      round(action.frame_range[1]*16)+1):
+        frame=step/16
+        bpy.context.scene.frame_set(int(frame),subframe=frame%1)
+        bpy.context.view_layer.update()
+        for side in ("left","right"):
+            forearm=arm.pose.bones["lower_arm_"+side]
+            e=arm.matrix_world@forearm.head
+            w=arm.matrix_world@forearm.tail
+            assert e.y-w.y>.040,("fractional backward elbow",action_name,frame,side,e.y-w.y)
 arm.animation_data.action=bpy.data.actions["CHASE_Idle"]
 bpy.context.scene.frame_set(1)
 print("CHASE_ASSET_CONTRACT_PASS",json.dumps({"actions":len(expected),"meshes":len(meshes),"face_dot":round(dot,6),"feet_z":round(zlo,6),"height":round(zhi,6),"run_swings":run}))

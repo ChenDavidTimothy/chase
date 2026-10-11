@@ -47,7 +47,7 @@ namespace Chase
             Block(new Rect(14,125,controlWidth,71),
                 new Color(.035f,.065f,.12f,.80f));
             GUI.Label(new Rect(24,132,controlWidth-15f,20),
-                "WASD MOVE    SPACE JUMP    UP LEAP",small);
+                "WASD MOVE    SPACE JUMP    UP SUPERMAN DIVE",small);
             GUI.Label(new Rect(24,152,controlWidth-15f,20),
                 "DOWN SLIDE    SHIFT CROUCH    R RESTART",small);
             GUI.Label(new Rect(24,172,controlWidth-15f,20),

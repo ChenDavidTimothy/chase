@@ -20,8 +20,8 @@ namespace Chase.Tests
             Assert.NotNull(importer);
             var defaults=importer.defaultClipAnimations;
             var configured=importer.clipAnimations;
-            Assert.AreEqual(11,defaults.Length);
-            Assert.AreEqual(11,configured.Length);
+            Assert.AreEqual(12,defaults.Length);
+            Assert.AreEqual(12,configured.Length);
             foreach(var expected in defaults)
             {
                 var actual=configured.SingleOrDefault(c=>c.name==expected.name);
@@ -34,7 +34,7 @@ namespace Chase.Tests
                 "Assets/Art/Characters/Chibi/Animations/Chibi_Validation.controller");
             Assert.NotNull(controller);
             var states=controller.layers[0].stateMachine.states.Select(x=>x.state).ToArray();
-            Assert.AreEqual(11,states.Length);
+            Assert.AreEqual(12,states.Length);
             foreach(var state in states)
             {
                 var clip=state.motion as AnimationClip;
@@ -106,10 +106,10 @@ namespace Chase.Tests
             var clips=AssetDatabase.LoadAllAssetsAtPath(ModelPath).OfType<AnimationClip>()
                 .Where(x=>!x.name.StartsWith("__preview__")).ToArray();
             foreach(string name in new[]{"Idle","Run","Jump","Crouch",
-                       "Slide","Leap","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"})
+                       "Slide","Leap","DiveProne","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"})
                 Assert.IsTrue(clips.Any(c=>c.name.EndsWith("|CHASE_"+name)),
                     "Source Blender Action must persist in saved file and FBX: "+name);
-            Assert.AreEqual(11,clips.Length);
+            Assert.AreEqual(12,clips.Length);
         }
     }
 }

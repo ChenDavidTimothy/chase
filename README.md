@@ -2,7 +2,7 @@
 
 Single-player, keyboard-only, physics-based 3D chase-tag game, Unity **6000.3.26f1** (Unity 6.3 LTS), browser-first and also buildable for Linux. The fixed-angle camera shows a 12 x 12 m arena with two differently colored chibi competitors. Blue evades for 20 seconds; Red wins by ordinary Rigidbody/collider contact. A three-second countdown precedes each round.
 
-**Authoritative contracts:** [v0.4 movement](docs/MOVEMENT_CONTRACT.md) and [character coordinate/source](docs/CHARACTER_COORDINATE_CONTRACT.md). Detailed [physics calibration](docs/chase-v0.4/movement-calibration.md) and [evaluated mesh clearance audit](docs/chase-v0.4/rig-clearance.md). Tuning remains preliminary until the owner playtests it.
+**Authoritative current movement:** [v0.5 Superman-dive specification and verification](docs/chase-v0.5/README.md). Superseded baseline: [v0.4 movement](docs/MOVEMENT_CONTRACT.md) and [character coordinate/source](docs/CHARACTER_COORDINATE_CONTRACT.md). Historical [v0.4 physics calibration](docs/chase-v0.4/movement-calibration.md) and [v0.4 mesh audit](docs/chase-v0.4/rig-clearance.md) predate the Superman replacement. Tuning remains preliminary until the owner playtests it.
 
 ## Play and controls
 
@@ -13,30 +13,30 @@ Open `Assets/Scenes/SampleScene.unity` in Unity and press Play, or launch a serv
 | W, A, S, D | Camera-relative movement, accel/braking determine speed |
 | Left Shift (hold) | Low crouched movement, 2 m/s top speed |
 | Space | Normal vertical jump, buffered rising edge |
-| Up Arrow | Committed, low **forward leap**, 9 m/s launch |
+| Up Arrow | **Headfirst Superman dive**, 9 m/s launch, long horizontal solid collider, chest impact and committed get-up |
 | Down Arrow | Momentum-based **power slide**, even from rest |
 | R | Restart the round |
 | Enter | Start the next round after a result |
 | Tab | Switch human role between rounds |
 | Escape | Pause/resume |
 
-There is no contextual vault, automatic climb, speed-triggered action conversion, mouse aiming, or RL agent. In Chrome the focused game canvas prevents the movement keys from scrolling the page. To regain focus, click the canvas. A leap's 0.50-second grounded recovery deliberately prevents repeated leap spam from exceeding sustained running over 10 seconds in the measured fixture.
+There is no contextual vault, automatic climb, speed-triggered action conversion, mouse aiming, or RL agent. In Chrome the focused game canvas prevents the movement keys from scrolling the page. To regain focus, click the canvas. The Up Arrow has fully replaced the old upright forward leap. The dive is a committed ballistic maneuver, with a chest-first impact, mandatory prone and get-up phases, and no steering or repeated impulse. It is slower than sustained running when spammed in the measured 10-second fixture.
 
 ## Arena and calibration gym
 
-Production: `Assets/Scenes/SampleScene.unity`, an enclosed 12 x 12 m arena with tall solid barriers, pillars, genuinely low 0.35 m hurdles and two supported **1.64 m-clearance** underpasses. Running, jumping, leaping, crouching and sliding are independent moves; geometry cannot switch one into another. Both roles use the same physical capabilities. The two low passages are not jumpable shelves. The simple scripted NPC uses standard `ChaseAction` and avoids solid obstacles, with no special collision exemptions.
+Production: `Assets/Scenes/SampleScene.unity`, an enclosed 12 x 12 m arena with tall solid barriers, pillars, genuinely low 0.35 m hurdles and one supported **1.64 m-clearance** underpass and one **1.30 m-high airborne Superman-dive shelf slot** over a solid 0.55 m sill. Running, jumping, headfirst diving, crouching and sliding are independent moves; geometry cannot switch one into another. Both roles use the same physical capabilities. The northeast roof is crouchable; the southwest shelving has an elevated opening that requires a correctly aligned headfirst dive. The simple scripted NPC uses standard `ChaseAction` and avoids solid obstacles, with no special collision exemptions.
 
-Testing only: `Assets/Scenes/MovementGym.unity` (excluded from build scenes). `Chase > Create Separate Movement Gym` regenerates it on explicit request. It has distance markers, jumpable hurdle, blocking wall, open leap lane, short slide roof and longer crouch passage. An Editor-only on-screen readout displays state, speed, grounding, recovery, capsule and action travel. `Chase > Rebuild Arena` **overwrites** the production scene and materials only after a confirmation dialog; back up authored content first.
+Testing only: `Assets/Scenes/MovementGym.unity` (excluded from build scenes). `Chase > Create Separate Movement Gym` regenerates it on explicit request. It has distance markers, jumpable hurdle, blocking wall, open dive lane, short slide roof, longer crouch passage and dedicated elevated dive shelf. Press **G** in this gym to stage a repeatable 3 m aligned shelf approach, then Up Arrow to execute the real move. An on-screen readout in Editor and WebGL displays state, speed, grounding, recovery, active physical collider and action travel. `Chase > Rebuild Arena` **overwrites** the production scene and materials only after a confirmation dialog; back up authored content first.
 
 ## Shared motor and observations
 
 `IChaseActionSource -> ChaseAction { Move, Jump, Leap, Slide, Crouch } -> ChaseMotor` is used for player, bot and future policy controllers alike. Real movement is always authoritative in the dynamic `Rigidbody`; `ChibiVisualDriver` only selects Animator actions and does not apply root motion. `ChaseMatch` binds animation to the motor explicitly after actor construction. The normalized policy vector is now **66 bounded floats** (schema in the movement contract); RL training is intentionally deferred.
 
-Physics baseline: standing 1.80 m capsule, 0.35 m radius, crouch/slide 1.55 m collider based on real chibi shell measurements, run 6 m/s, jump 6.3 m/s upward, leap 9 m/s horizontal and 3.9 m/s upward, gravity 22 m/s², slide deceleration 8 m/s². Tests recorded jump apex 0.84 m, leap distance 3.24 m and 6 m/s slide distance 1.88 m. See measured target-versus-outcome table for all calibration details and remaining visual limitations.
+Physics baseline: standing 1.80 m capsule, 0.35 m radius, crouch/slide 1.55 m collider based on real chibi shell measurements, run 6 m/s, jump 6.3 m/s upward, Superman dive 9 m/s horizontal and 5.2 m/s upward, gravity 22 m/s², slide deceleration 8 m/s². Tests recorded jump apex 0.84 m, unobstructed dive travel roughly 6.3 m before get-up and 6 m/s slide distance 1.88 m. See measured target-versus-outcome table for all calibration details and remaining visual limitations.
 
 ## Character source and build workflow
 
-**One authoritative Blender asset:** `Chibi/Chibi_Rigged.blend` (Blender -Y forward/+Z up, 1.80 m tall, feet at origin). The working 20-bone Generic rig uses 17 rigid skinned shells with **11 persistent animation actions**; approved raw meshes remain unchanged. Unity FBX/prefab face +Z, scale one and identity rotation. The actor centers its capsule at 0.9 m and places the visual child at -0.9 m. The oversized head/limb shell is wider than the capsule and some transition poses still clip floor/roof; these limitations are quantified, not concealed.
+**One authoritative Blender asset:** `Chibi/Chibi_Rigged.blend` (Blender -Y forward/+Z up, 1.80 m tall, feet at origin). The working 20-bone Generic rig uses 17 rigid skinned shells with **12 persistent animation actions**; approved raw meshes remain unchanged. Unity FBX/prefab face +Z, scale one and identity rotation. The actor centers its capsule at 0.9 m and places the visual child at -0.9 m. The oversized head/limb shell is wider than the capsule and some transition poses still clip floor/roof; these limitations are quantified, not concealed.
 
 Validate before export:
 
@@ -51,7 +51,7 @@ Production export and other rig guidance: [Chibi rig tools README](Chibi/rig_too
 
 ## Animation consistency across Editor and WebGL
 
-The v0.4 production Animator must reference **real FBX motion clips**, never Unity's transient `__preview__` clips. Eleven current clip frame ranges are validated before every Player build, with looping enabled only on Idle, Run and CrouchWalk. After each intentional Blender animation re-export, use **Chase > Repair Production Character Animation Imports**, then **Chase > Validate Production Character Animation** and run both Unity test suites. `ChibiVisualDriver` reconciles the Animator's actual state with the physics motor every frame, so moving after an earlier Slide cannot leave the visual stuck in a low pose. Both forearm hinges bend in the character's forward direction (-Y in Blender, +Z in Unity); the Blender validator checks every integer animation frame.
+The current production Animator must reference **real FBX motion clips**, never Unity's transient `__preview__` clips. Twelve current clip frame ranges are validated before every Player build, with looping enabled only on Idle, Run, CrouchWalk and the prone-impact hold (DiveProne). After each intentional Blender animation re-export, use **Chase > Repair Production Character Animation Imports**, then **Chase > Validate Production Character Animation** and run both Unity test suites. `ChibiVisualDriver` reconciles the Animator's actual state with the physics motor every frame, so moving after an earlier Slide cannot leave the visual stuck in a low pose. Both forearm hinges bend in the character's forward direction (-Y in Blender, +Z in Unity); the Blender validator checks whole and fractional frames throughout the new dive. The FBX exporter bakes the new clips at 1/8-frame intervals to avoid brief interpolated elbow reversals.
 
 See the fresh build/root-cause evidence in [`docs/chase-v0.4/animation-repair-report.md`](docs/chase-v0.4/animation-repair-report.md). A separately built, locally served WebGL Movement Gym permits close-up browser/Editor animation comparison without chase-tag interruptions.
 

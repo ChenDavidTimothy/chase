@@ -36,13 +36,17 @@ namespace Chase
         }
         void ResetActor()
         {
+            ResetActorAt(spawn!=null?spawn.position:new Vector3(-9,.9f,-8f));
+        }
+        void ResetActorAt(Vector3 start)
+        {
             clock=0f;
-            motor.ResetMotor(spawn!=null?spawn.position:new Vector3(-9,.9f,-8f));
+            motor.ResetMotor(start);
             motionStart=motor.Body.position;
             previousState=ChaseMovementState.Standing;
             if(fixedCamera!=null)
                 fixedCamera.transform.position=motor.Body.position+Vector3.up*.40f-
-                    fixedCamera.transform.forward*11.5f;
+                    fixedCamera.transform.forward*6.8f;
             Physics.SyncTransforms();
         }
         void Update()
@@ -51,6 +55,14 @@ namespace Chase
             if(k!=null && k.rKey.wasPressedThisFrame)
             {
                 ResetActor();
+                keyboard.ResetSource();
+                return;
+            }
+            // Gym-only shortcut: stage a precisely aligned 3m shelf approach.
+            // Up launches the real shared motor. This is NOT in a match.
+            if(k!=null && k.gKey.wasPressedThisFrame)
+            {
+                ResetActorAt(new Vector3(0f,tuning.standingHeight*.5f,1f));
                 keyboard.ResetSource();
                 return;
             }
@@ -63,6 +75,7 @@ namespace Chase
             if(motor.State!=previousState)
             {
                 if(motor.State==ChaseMovementState.Leaping ||
+                    motor.State==ChaseMovementState.DiveProne ||
                     motor.State==ChaseMovementState.Sliding ||
                     motor.State==ChaseMovementState.Jumping)
                     motionStart=motor.Body.position;
@@ -75,28 +88,26 @@ namespace Chase
         {
             if(fixedCamera==null||motor==null)return;
             Vector3 target=motor.Body.position+Vector3.up*.40f-
-                fixedCamera.transform.forward*11.5f;
+                fixedCamera.transform.forward*6.8f;
             fixedCamera.transform.position=Vector3.Lerp(fixedCamera.transform.position,
                 target,1f-Mathf.Exp(-8f*Time.deltaTime));
         }
-#if UNITY_EDITOR
         void OnGUI()
         {
             if(motor==null)return;
-            GUI.Box(new Rect(12,12,350,212),"CHASE v0.4 / MOVEMENT GYM");
-            GUI.Label(new Rect(24,39,340,25),"WASD MOVE   SPACE JUMP   UP LEAP");
-            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE   SHIFT CROUCH   R RESET");
+            GUI.Box(new Rect(12,12,350,212),"CHASE v0.5 / HEADFIRST DIVE GYM");
+            GUI.Label(new Rect(24,39,340,25),"WASD MOVE   SPACE JUMP   UP SUPERMAN");
+            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE   SHIFT CROUCH   R RESET   G SHELF");
             GUI.Label(new Rect(24,86,330,25),"STATE: "+motor.State);
             GUI.Label(new Rect(24,108,330,25),"SPEED: "+
                 motor.HorizontalVelocity.magnitude.ToString("F2")+" m/s   VY: "+
                 motor.Velocity.y.ToString("F2"));
             GUI.Label(new Rect(24,130,330,25),"GROUNDED: "+motor.Grounded+
-                "    CAP: "+motor.Capsule.height.ToString("F2")+" m");
+                "    BODY: "+(motor.DiveColliderActive ? "PRONE BOX" : "UPRIGHT CAPSULE"));
             GUI.Label(new Rect(24,152,330,25),"RECOVERY: "+
                 motor.RecoveryRemaining.ToString("F2")+" s");
             var d=motor.Body.position-motionStart;d.y=0f;
             GUI.Label(new Rect(24,174,330,25),"ACTION DISTANCE: "+d.magnitude.ToString("F2")+" m");
         }
-#endif
     }
 }

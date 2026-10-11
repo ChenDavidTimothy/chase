@@ -14,7 +14,7 @@ namespace Chase
     }
     public enum ChaseMovementState
     {
-        Standing, Crouching, Airborne, Jumping, Leaping, Sliding, LeapRecovery, SlideRecovery
+        Standing, Crouching, Airborne, Jumping, Leaping, Sliding, LeapRecovery, SlideRecovery, DiveProne
     }
     public enum ChaseRole { Chaser, Evader }
     public enum ChasePhase { Countdown, Active, Ended, Paused }

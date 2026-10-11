@@ -29,7 +29,7 @@ namespace Chase
         static readonly float[] scratch=new float[LocalSize];
         // 0..11: own xyz, velocity xyz, opponent relative xyz, relative velocity xyz.
         // 12 grounded, 13 jump, 14 leap, 15 slide, 16 stand, 17 role, 18 time,
-        // 19 state/7, 20/21 facing XZ, 22 recovery/.50, 23 committed,
+        // 19 state/8, 20/21 facing XZ, 22 recovery/.75, 23 committed,
         // 24 collision height/1.8, 25 planar speed/9.
         // 26..65: five 8-ray channels (waist, low, overhead, hurdle, solid wall).
         public static void FillPolicyVector(ChaseMotor self,ChaseMotor opponent,
@@ -58,10 +58,10 @@ namespace Chase
             output[16]=self.CanStand?1:0;
             output[17]=role==ChaseRole.Chaser?1:-1;
             output[18]=Mathf.Clamp01(remaining/20f);
-            output[19]=(float)self.State/7f;
+            output[19]=(float)self.State/8f;
             output[20]=self.FacingDirection.x;
             output[21]=self.FacingDirection.z;
-            output[22]=Mathf.Clamp01(self.RecoveryRemaining/.50f);
+            output[22]=Mathf.Clamp01(self.RecoveryRemaining/.75f);
             output[23]=self.IsCommitted?1:0;
             output[24]=Mathf.Clamp01(self.Capsule.height/self.Settings.standingHeight);
             output[25]=Mathf.Clamp01(self.HorizontalVelocity.magnitude/9f);

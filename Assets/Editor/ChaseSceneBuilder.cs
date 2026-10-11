@@ -63,7 +63,7 @@ public static class ChaseSceneBuilder
             new Vector3(1.9f,.35f,.2f),Hurdle,false,true,false,false);
         MakeCube("Hurdle B",arena.transform,new Vector3(.3f,.175f,3.5f),
             new Vector3(1.9f,.35f,.2f),Hurdle,false,true,false,false);
-        MakeLowPassage(arena.transform,"Southwest low passage",new Vector3(-3.05f,0,-3.55f));
+        MakeDiveShelf(arena.transform,"Southwest Superman shelf slot",new Vector3(-3.05f,0,-3.55f));
         MakeLowPassage(arena.transform,"Northeast low passage",new Vector3(2.8f,0,3.55f));
         foreach (var p in new []{ new Vector3(-4.6f,0,-1.4f),
             new Vector3(4.6f,0,1.4f),new Vector3(-1.2f,0,4.6f),
@@ -133,6 +133,30 @@ public static class ChaseSceneBuilder
         }
         return obj;
     }
+    // Genuine two-level shelving with a midair 1.30m vertical opening.
+    // Bottom sill is 0.55m tall, upper shelf underside is 1.85m:
+    // upright jump collides with upper shelf, slide collides with the sill;
+    // only a correctly timed, fully solid headfirst horizontal dive fits.
+    static void MakeDiveShelf(Transform parent,string name,Vector3 p)
+    {
+        GameObject root=new GameObject(name);
+        root.transform.SetParent(parent,false);
+        root.transform.localPosition=p;
+        MakeCube("Solid lower shelf / sill 0.55m",root.transform,
+            new Vector3(0,.275f,0),new Vector3(2.2f,.55f,.60f),
+            Hurdle,true,false,false,false);
+        MakeCube("Solid upper shelf / underside 1.85m",root.transform,
+            new Vector3(0,2.025f,0),new Vector3(2.2f,.35f,.60f),
+            Shelf,false,false,true,false);
+        foreach(float x in new[]{-1.01f,1.01f})
+            MakeCube("Solid full-height shelf support",root.transform,
+                new Vector3(x,1.10f,0),new Vector3(.18f,2.20f,.60f),
+                Pillar,true,false,false,false);
+        MakeCube("Dive slot cyan rim",root.transform,
+            new Vector3(0,1.845f,-.31f),new Vector3(2.02f,.025f,.035f),
+            Accent,false,false,false,true);
+    }
+
     static void MakeLowPassage(Transform parent,string name,Vector3 p)
     {
         GameObject shelf=new GameObject(name);

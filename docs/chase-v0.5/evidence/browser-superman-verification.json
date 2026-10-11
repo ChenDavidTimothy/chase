@@ -1,0 +1,130 @@
+{
+  "browser": "http://127.0.0.1:8766/?build=superman-v05-final-review",
+  "loaded": {
+    "ready": "complete",
+    "loading": "none",
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "width": 901,
+      "height": 897,
+      "top": 0,
+      "right": 901,
+      "bottom": 897,
+      "left": 0
+    }
+  },
+  "render_ready": {
+    "attempt": 5,
+    "lower_scene_rgb_stddev": 17.698
+  },
+  "final": {
+    "focus": "unity-canvas",
+    "scrollX": 0,
+    "scrollY": 0,
+    "inputs": [
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scroll": 0
+      }
+    ],
+    "loading": "none",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 901,
+      "height": 897,
+      "top": 0,
+      "right": 901,
+      "bottom": 897,
+      "left": 0
+    }
+  },
+  "browser_errors": [],
+  "pixel_differences": {
+    "01-takeoff": {
+      "changed_pixels_gt_32": 45310,
+      "mean_absolute_rgb": 35.313,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "02-superman-flight": {
+      "changed_pixels_gt_32": 58344,
+      "mean_absolute_rgb": 40.885,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "03-shelf-crossing": {
+      "changed_pixels_gt_32": 67542,
+      "mean_absolute_rgb": 47.924,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "04-chest-contact": {
+      "changed_pixels_gt_32": 64503,
+      "mean_absolute_rgb": 43.983,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "05-prone-impact": {
+      "changed_pixels_gt_32": 52525,
+      "mean_absolute_rgb": 34.86,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "06-getup": {
+      "changed_pixels_gt_32": 41044,
+      "mean_absolute_rgb": 25.577,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "07-recovery": {
+      "changed_pixels_gt_32": 33071,
+      "mean_absolute_rgb": 19.495,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    },
+    "08-standing-idle": {
+      "changed_pixels_gt_32": 33242,
+      "mean_absolute_rgb": 19.713,
+      "crop": [
+        252,
+        269,
+        666,
+        735
+      ]
+    }
+  },
+  "capture_origin": "actual fresh Chrome WebGL runtime, G stage then Up trusted key events",
+  "notes": "Screenshot differences document rendered activity; PlayMode verified real state and full-body geometry."
+}

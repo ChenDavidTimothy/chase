@@ -1,5 +1,7 @@
 # CHASE v0.4 production movement contract
 
+> **Historical contract.** v0.5 completely replaces the upright leap with a headfirst Superman dive, including a solid full-body collider and prone/get-up states. Current authority is [v0.5 Superman-dive specification](chase-v0.5/README.md). The v0.4 measurements below are retained strictly for reference.
+
 Status: implemented baseline for owner playtesting, **not** final feel/balance approval. This contract supersedes the active movement semantics in historical v0.1/v0.2 documents. [Character coordinates](CHARACTER_COORDINATE_CONTRACT.md) remain authoritative and unchanged.
 
 ## Explicit controls

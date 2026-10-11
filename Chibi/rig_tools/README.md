@@ -9,7 +9,7 @@ Use that file for every subsequent Blender rig, mesh, material, and animation ed
 - Blender: **-Y forward**, +Z up, feet at world (0, 0, 0), 1 unit = 1 meter.
 - Unity: **+Z forward**, +Y up, imported model and prefab use local position zero, rotation identity, scale one.
 - Standing character height: 1.8 m. The one intentional `-standingHeight/2` offset belongs to `ChaseMatch`'s visual child under the physics actor, not the FBX or model prefab.
-- Generic Unity rig, 17 visual skinned meshes, eleven saved animation actions with Fake User enabled. Animator root motion stays disabled.
+- Generic Unity rig, 17 visual skinned meshes, twelve saved animation actions with Fake User enabled. Animator root motion stays disabled.
 
 Read [`docs/CHARACTER_COORDINATE_CONTRACT.md`](../../docs/CHARACTER_COORDINATE_CONTRACT.md) before altering the rig or exporter.
 
@@ -25,7 +25,7 @@ Read [`docs/CHARACTER_COORDINATE_CONTRACT.md`](../../docs/CHARACTER_COORDINATE_C
    ```sh
    CHASE_ALLOW_REGENERATE=1 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/export_unity_fbx.py
    ```
-4. Import into Unity using the existing Generic importer configuration. **After any fresh FBX re-export, run Chase > Repair Production Character Animation Imports, then Chase > Validate Production Character Animation.** The former updates all 11 clip frame boundaries and Animator state references from real FBX takes, and the latter (also run before each Player build) fails if any state uses a `__preview__` motion. Do not edit FBX clips by hand. **Do not add any prefab correction rotation, height offset, or non-unit scale.** Run `ChibiAssetConventionTests`, `ChibiRigPlayTests`, and the full gameplay test suite; verify both roles and applicable builds.
+4. Import into Unity using the existing Generic importer configuration. **After any fresh FBX re-export, run Chase > Repair Production Character Animation Imports, then Chase > Validate Production Character Animation.** The former updates all 12 clip frame boundaries and Animator state references from real FBX takes, and the latter (also run before each Player build) fails if any state uses a `__preview__` motion. Do not edit FBX clips by hand. **Do not add any prefab correction rotation, height offset, or non-unit scale.** Run `ChibiAssetConventionTests`, `ChibiRigPlayTests`, and the full gameplay test suite; verify both roles and applicable builds.
 
 The Blender exporter **refuses to overwrite** the FBX without explicit `CHASE_ALLOW_REGENERATE=1`, and refuses incorrectly oriented or incomplete rigs. Blender's `--python-exit-code 1` is important: without it, a Python traceback might otherwise return a successful shell exit status.
 

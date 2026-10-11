@@ -77,11 +77,11 @@ namespace Chase.Tests
             yield return null;
         }
 
-        [UnityTest] public IEnumerator BothShelvesCanBeCrouchedUnderFromEitherSide()
+        [UnityTest] public IEnumerator NortheastLowPassageCanBeCrouchedUnderFromEitherSide()
         {
             Box("floor",new Vector3(0,-.13f,0),new Vector3(12,.26f,12));
-            foreach(float centerX in new[]{-3.05f,2.8f})
-                foreach(float centerZ in new[]{-3.55f,3.55f})
+            foreach(float centerX in new[]{2.8f})
+                foreach(float centerZ in new[]{3.55f})
                     foreach(int sign in new[]{-1,1})
                     {
                         var roof=Box("shelf",new Vector3(centerX,1.715f,centerZ),
@@ -274,15 +274,20 @@ namespace Chase.Tests
                 new Vector3(1.9f,.35f,.2f)).AddComponent<ChaseHurdle>();
             Box("Hurdle B",new Vector3(.3f,.175f,3.5f),
                 new Vector3(1.9f,.35f,.2f)).AddComponent<ChaseHurdle>();
-            foreach(Vector3 pos in new[]{new Vector3(-3.05f,0,-3.55f),
-                new Vector3(2.8f,0,3.55f)})
-            {
-                Box("shelf",pos+new Vector3(0,1.715f,0),
-                    new Vector3(2.2f,.15f,.55f)).AddComponent<ChaseOverheadPassage>();
-                foreach(float x in new[]{-1.01f,1.01f})
-                    Box("shelf post",pos+new Vector3(x,.855f,0),
-                        new Vector3(.18f,1.71f,.55f)).AddComponent<ChaseBlocker>();
-            }
+            Vector3 low=new Vector3(2.8f,0,3.55f);
+            Box("crouch roof",low+new Vector3(0,1.715f,0),
+                new Vector3(2.2f,.15f,.55f)).AddComponent<ChaseOverheadPassage>();
+            foreach(float x in new[]{-1.01f,1.01f})
+                Box("crouch post",low+new Vector3(x,.855f,0),
+                    new Vector3(.18f,1.71f,.55f)).AddComponent<ChaseBlocker>();
+            Vector3 dive=new Vector3(-3.05f,0,-3.55f);
+            Box("headfirst lower shelf",dive+new Vector3(0,.275f,0),
+                new Vector3(2.2f,.55f,.6f)).AddComponent<ChaseBlocker>();
+            Box("headfirst upper shelf",dive+new Vector3(0,2.025f,0),
+                new Vector3(2.2f,.35f,.6f)).AddComponent<ChaseOverheadPassage>();
+            foreach(float x in new[]{-1.01f,1.01f})
+                Box("headfirst shelf support",dive+new Vector3(x,1.1f,0),
+                    new Vector3(.18f,2.2f,.6f)).AddComponent<ChaseBlocker>();
         }
 
         [UnityTest] public IEnumerator OneHundredDeterministicMatchesCompleteWithoutInvalidStates()
@@ -627,6 +632,30 @@ namespace Chase.Tests
             Assert.AreEqual(.5f,red[18]);
             yield return null;
         }
+        [UnityTest] public IEnumerator PhysicalTagRemainsValidDuringHeadfirstSupermanDive()
+        {
+            ChaseMatch match=MatchFixture();
+            SetMatchActive(match);
+            match.Chaser.ResetMotor(new Vector3(0,.9f,-3f));
+            match.Evader.ResetMotor(new Vector3(0,.9f,0));
+            Physics.SyncTransforms();
+            bool actuallyDove=false;
+            for(int i=0;i<45;i++)
+            {
+                match.Chaser.Simulate(
+                    new ChaseAction(Vector2.up,false,i==0,false,false),
+                    .02f,10f+i*.02f);
+                actuallyDove |= match.Chaser.DiveColliderActive;
+                Physics.Simulate(.02f);
+                if(match.Winner.HasValue)break;
+            }
+            Assert.IsTrue(actuallyDove,
+                "Tag must occur with the actual long solid dive collider");
+            Assert.AreEqual(ChaseRole.Chaser,match.Winner,
+                "Head-first body collision must still count as an ordinary tag");
+            yield return null;
+        }
+
         [UnityTest] public IEnumerator PhysicalTagRemainsValidDuringSlide()
         {
             ChaseMatch match=MatchFixture();
@@ -650,11 +679,10 @@ namespace Chase.Tests
 
 
 
-        [UnityTest] public IEnumerator BothShelfSlidesTraverseInBothDirections()
+        [UnityTest] public IEnumerator NortheastLowPassageSlidesTraverseInBothDirections()
         {
             Box("floor",new Vector3(0,-.13f,0),new Vector3(12,.26f,12));
-            foreach(Vector3 center in new[]{new Vector3(-3.05f,0,-3.55f),
-                new Vector3(2.8f,0,3.55f)})
+            foreach(Vector3 center in new[]{new Vector3(2.8f,0,3.55f)})
                 foreach(int sign in new[]{-1,1})
                 {
                     var roof=Box("roof",center+new Vector3(0,1.715f,0),

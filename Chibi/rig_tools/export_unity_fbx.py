@@ -11,7 +11,7 @@ assert max(abs(float(v)) for v in arm.location)<.00001
 assert max(abs(float(v)) for v in arm.rotation_euler)<.00001
 assert max(abs(float(v)-1.) for v in arm.scale)<.00001
 assert arm.data.bones['Root'].head_local.length < .00001
-expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
+expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_DiveProne","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
 assert {a.name for a in bpy.data.actions if a.name.startswith('CHASE_')}==expected
 assert all(bpy.data.actions[name].use_fake_user for name in expected), (
     "Every action must survive a fresh Blender file reopen")
@@ -43,6 +43,7 @@ bpy.ops.export_scene.fbx(filepath=str(outfile),use_selection=True,
     object_types={'ARMATURE','MESH'},axis_forward='-Z',axis_up='Y',
     global_scale=1,apply_unit_scale=True,add_leaf_bones=False,
     use_armature_deform_only=True,bake_anim=True,bake_anim_use_all_actions=True,
-    bake_anim_use_nla_strips=False,bake_anim_simplify_factor=0,
+    bake_anim_use_nla_strips=False,bake_anim_step=.125,
+    bake_anim_simplify_factor=0,
     use_mesh_modifiers=True,path_mode='AUTO')
 print('Exported normalized -Y asset',outfile,'with',len(parts),'bound meshes')
