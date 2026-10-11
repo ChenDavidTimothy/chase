@@ -1,49 +1,38 @@
-# CHASE character production pipeline (normalized v0.3)
+# CHASE production character workflow
 
-**Authoritative editable animation/rig source:** `Chibi/Chibi_Rigged.blend`.
-**Immutable historic approved-shape reference:** `Chibi/armor.blend`.
+**One authoritative, editable character source:** `Chibi/Chibi_Rigged.blend`.
 
-The reference model faces Blender +X, an old exception. Every new *production*
-Blender rig and animation must face Blender -Y, with +Z up, a ground-level
-origin, 1 unit = 1 meter, and object rotation 0/scale 1.
+Use that file for every subsequent Blender rig, mesh, material, and animation edit. It is already normalized. **Never regenerate it from `armor.blend` or apply another corrective axis rotation.** The obsolete +X source and one-time migration scripts have been removed from the active project, archived outside the repository, and retained in Git history.
 
-The committed normalized chibi is ready to use. Do not regenerate it merely
-to edit animations. The following instructions describe reproduction from
-the historical reference if explicitly required.
+## Permanent coordinate contract
 
-## Safe one-time reproduction from the reference
+- Blender: **-Y forward**, +Z up, feet at world (0, 0, 0), 1 unit = 1 meter.
+- Unity: **+Z forward**, +Y up, imported model and prefab use local position zero, rotation identity, scale one.
+- Standing character height: 1.8 m. The one intentional `-standingHeight/2` offset belongs to `ChaseMatch`'s visual child under the physics actor, not the FBX or model prefab.
+- Generic Unity rig, 17 visual skinned meshes, eight saved animation actions with Fake User enabled. Animator root motion stays disabled.
 
-Back up edited `.blend`, FBX, prefab and Unity `.meta` files before proceeding.
-The tools deliberately refuse accidental overwrite where relevant.
+Read [`docs/CHARACTER_COORDINATE_CONTRACT.md`](../../docs/CHARACTER_COORDINATE_CONTRACT.md) before altering the rig or exporter.
 
-Run from the repository root with Blender 5.2:
+## Normal production workflow
 
-1. `CHASE_ALLOW_REGENERATE=1 blender -b Chibi/armor.blend --python-exit-code 1 --python Chibi/rig_tools/build_rig.py`
-2. `blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/animate_validation.py`
-3. `CHASE_ALLOW_REGENERATE=1 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/normalize_asset.py`
-4. `blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/validate_asset.py`
-5. `CHASE_ALLOW_REGENERATE=1 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/export_unity_fbx.py`
+1. Open **`Chibi/Chibi_Rigged.blend`** in Blender. Edit and save this file only. Keep all production Actions saved with persistent data-block users.
+2. Verify source files and normalized character data from repository root:
+   ```sh
+   python3 Chibi/rig_tools/check_source_layout.py
+   blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/validate_asset.py
+   ```
+3. Back up the existing FBX and its `.meta` before intentionally re-exporting it, then run:
+   ```sh
+   CHASE_ALLOW_REGENERATE=1 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/export_unity_fbx.py
+   ```
+4. Import into Unity using the existing Generic importer configuration. **Do not add any prefab correction rotation, height offset, or non-unit scale.** Run `ChibiAssetConventionTests`, `ChibiRigPlayTests`, and the full gameplay test suite; verify both roles and applicable builds.
 
-**Always use `--python-exit-code 1`.** Without it Blender may exit with code 0 even after an assertion traceback, breaking CI/failure detection.
+The Blender exporter **refuses to overwrite** the FBX without explicit `CHASE_ALLOW_REGENERATE=1`, and refuses incorrectly oriented or incomplete rigs. Blender's `--python-exit-code 1` is important: without it, a Python traceback might otherwise return a successful shell exit status.
 
-**Order matters:** Step 2 authors animation in the original intermediate +X
-basis. Step 3 performs the one-time baked basis conversion, preserving key poses
-and scaling Blender 5.2 pose-location F-curves with the new skeleton. Steps
-2 and 3 explicitly reject a normalized input so no one can rotate it twice.
+## Historical material
 
-All eight validation actions have Fake User enabled; they persist after a
-fresh save/reopen, even when not the active action. New production actions
-must likewise be retained before saving. Step 4 is a read-only Blender test.
+`Chibi/armor.blend` was the +X-facing original and is **not** an active source. Historical `.blend1` files and the one-time `build_rig.py`, `animate_validation.py`, and `normalize_asset.py` scripts are archived outside the repository. Their previously committed versions remain recoverable through Git history; none belongs in the normal export process.
 
-FBX exporter uses `axis_forward='-Z'`, `axis_up='Y'`, a **normalized -Y model**,
-and no Unity corrective yaw. The exporter fails fast if orientation, root,
-or clip persistence is wrong. Unity's prefab/model child must remain
-position (0,0,0), rotation (0,0,0), scale (1,1,1).
+The committed `Chibi/chibi_objs/` files are **historical mesh snapshots**, not a second rig or authoritative editing input. Unity's FBX and `Assets/Resources/ChibiVisual.prefab` are generated downstream assets. **Do not independently remodel or animate them.**
 
-Unity's *gameplay* actor transform is intentionally centered at the 1.8 m
-capsule midpoint, 0.9 m above the floor. ChaseMatch places the normalized
-foot-pivot visual **-standingHeight/2** below that origin. This is an
-explicit physics/visual hierarchy relationship, not an axis conversion.
-
-See `docs/CHARACTER_COORDINATE_CONTRACT.md` and automated
-`ChibiAssetConventionTests`/PlayMode tests before exporting changes.
+Blender may create a new ignored `.blend1` when saving. Move such working backups outside the active project before a production handoff; they are never an alternative source of truth.

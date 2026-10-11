@@ -2,8 +2,12 @@
 offset/scale and rotation details below describe the *old* character build.
 **They were superseded by the v0.3 normalization.** For the current
 production facts, see [CHARACTER_COORDINATE_CONTRACT.md](../CHARACTER_COORDINATE_CONTRACT.md).
-The original armor.blend remains the +X-facing historical reference; the
-current Chibi_Rigged.blend, FBX and prefab use normalized authoring.
+This is a **historical report**, not an active workflow. The +X-facing
+original `armor.blend` was subsequently moved to an external archive and
+removed from the active repository; it remains recoverable through Git
+history. The production `Chibi_Rigged.blend` is the only editable Blender
+source. All paths to the original in the report below describe that earlier
+historical state, not files that are available in today's checkout.
 
 # CHASE v0.2: Chibi rig validation report
 

@@ -9,9 +9,9 @@ Replace implicit imported-model yaw, scale, and vertical offsets with:
 - one explicit visual-to-physics-origin relationship in gameplay code.
 
 No modification to character geometry proportions, original armor.blend,
-collision tuning, match rules, action interfaces, or camera. Original
-Blender reference remains on the historical +X axis and should not be used
-directly as a new production asset.
+collision tuning, match rules, action interfaces, or camera. The original +X-facing Blender reference was preserved during this historical
+migration. It has since been moved to an archive **outside the active repository**
+and remains recoverable from Git history. It is not an active production input.
 
 ## Backups and integrity
 
@@ -78,16 +78,18 @@ for human, NPC and future action sources.
 
 ## Regression prevention
 
-1. `Chibi/rig_tools/normalize_asset.py` refuses already-normalized input,
-   rescales all animated pelvis location keyframes, verifies transformed poses,
-   and writes versioned metadata.
-2. `Chibi/rig_tools/validate_asset.py` checks ground pivot, dimensions,
+1. The original one-time `normalize_asset.py`, `animate_validation.py`,
+   and `build_rig.py` performed the historical +X conversion. **These are
+   archived outside the active project and removed from the production
+   pipeline.** Their original code remains in Git history for audit.
+2. Active `Chibi/rig_tools/check_source_layout.py` enforces exactly one
+   `.blend` source in the project and no retired scripts or Blender backups.
+3. Active `Chibi/rig_tools/validate_asset.py` checks ground pivot, dimensions,
    actual face direction, 17 rigidly bound meshes, 8 persisted actions,
    run stride direction and grounded idle in a fresh Blender process.
-3. `Chibi/rig_tools/export_unity_fbx.py` refuses unnormalized assets,
-   absent clips, nonzero transform compensation, and incorrect facial direction.
-4. `Chibi/rig_tools/animate_validation.py` refuses production-normalized
-   input so the legacy +X action generator cannot silently corrupt it.
+4. Active `Chibi/rig_tools/export_unity_fbx.py` rejects unnormalized assets,
+   absent clips, nonzero transform compensation, incorrect facial direction,
+   and overwrites without explicit opt-in.
 5. **Use `--python-exit-code 1`** in background Blender commands so a
    Python failure results in a failing shell exit code.
 6. Unity EditMode `ChibiAssetConventionTests` asserts actual FBX import,
@@ -140,3 +142,13 @@ tuning, animation action semantics and project packages were not changed.
 The original source file `Chibi/armor.blend` is unchanged by SHA-256.
 No ML infrastructure was introduced. Normalization is not a substitute for
 future collision/silhouette playtesting of the oversized crouching head.
+
+## Production source consolidation (after normalization)
+
+Only `Chibi/Chibi_Rigged.blend` remains as an active editable Blender
+character. The legacy `armor.blend`, both `.blend1` backups, and all three
+one-time migration scripts were copied with SHA-256 verification to an
+external archive and removed from the active checkout. The authoritative
+rigged file was not edited by this cleanup. The Git history retains the
+original tracked source for provenance; historical OBJ mesh snapshots remain
+non-authoritative references. Export only from the normalized rig.

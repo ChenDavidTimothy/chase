@@ -5,7 +5,8 @@ assert Path(bpy.data.filepath).resolve()==rig, 'Open Chibi_Rigged.blend before e
 arm=bpy.data.objects['Chibi_Armature']
 assert "Blender -Y forward" in str(arm.get('basis', '')), (
     "Export requires a normalized Blender -Y production character. "
-    "Run normalize_asset.py first, or restore a verified backup.")
+    "Correct the only production source Chibi_Rigged.blend directly in Blender. "
+    "Do not reintroduce the retired +X normalization scripts or Unity yaw compensation.")
 assert max(abs(float(v)) for v in arm.location)<.00001
 assert max(abs(float(v)) for v in arm.rotation_euler)<.00001
 assert max(abs(float(v)-1.) for v in arm.scale)<.00001

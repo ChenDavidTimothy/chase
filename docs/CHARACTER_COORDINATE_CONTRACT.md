@@ -9,9 +9,10 @@
 | CHASE gameplay motor | +X | +Y | **+Z** | physics actor at capsule *center* |
 | FBX export convention | `axis_forward='-Z'` | `axis_up='Y'` | verified in Unity | no per-prefab yaw |
 
-The Blender reference file `Chibi/armor.blend` originally faced +X. It is a
-**historical, unchanged shape reference**, not a template for new animation.
-The production file `Chibi/Chibi_Rigged.blend` is normalized. The approved
+**The only active, authoritative Blender source is `Chibi/Chibi_Rigged.blend`.**
+The historical +X-facing `armor.blend` was archived **outside the active
+checkout** and is recoverable through Git history; it is not a production
+source or a template for new animation. The production file is normalized. The approved
 geometry was preserved exactly under a rigid 90-degree axis rotation,
 **uniform** scale and ground-level translation. No remodeling or mesh
 proportion changes were made.
@@ -55,7 +56,9 @@ From project root:
 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/validate_asset.py
 ```
 
-Then use the exporter described in `Chibi/rig_tools/README.md`.
+Check the one-source layout first with
+`python3 Chibi/rig_tools/check_source_layout.py`. Then use the exporter
+described in `Chibi/rig_tools/README.md`.
 It rejects an incorrectly oriented mesh, nonzero rig object transforms,
 missing persisted clips or an unnormalized production file.
 
@@ -76,7 +79,10 @@ Unity EditMode measured an identity imported model facing +Z with ~1.8m height.
 
 ## What is deliberately *not* normalized
 
-- The untouched historical `armor.blend` remains +X for source audit.
+- The archived historical `armor.blend` remains +X in an external archive and
+  Git history for provenance; it is **not present in the production checkout**.
+  Its one-time transformation scripts are likewise retired. Do not restore them
+  to active production to create another rig.
 - Existing CHASE physics motor center origin remains at the standing capsule
   midpoint, not the feet.
 - The model's large head may visually exceed the crouching 0.85m collider;

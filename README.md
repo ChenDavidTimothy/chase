@@ -86,13 +86,20 @@ modern desktop browser windows. A local WebGL build must be served via HTTP
 with the correct `Content-Encoding: gzip` headers for `.gz` resources; opening
 `index.html` directly from disk is not supported.
 
-## Chibi rig v0.2
+## Chibi character (production v0.3)
 
-The original Chibi/armor.blend is preserved. A separately editable
-Chibi/Chibi_Rigged.blend contains the functional 20-bone rigid-part rig,
+**The single editable Blender source is `Chibi/Chibi_Rigged.blend`.**
+The original +X-facing `armor.blend` and one-time migration scripts are
+archived outside the active repository and recoverable from Git history;
+never use them as production sources. The normalized rig contains a
+functional 20-bone rigid-part skeleton,
 eight test actions and self-contained provisional neutral materials.
 The Unity FBX imports as Generic because Humanoid retargeting removed
 the intended crouch-height translation despite a valid Avatar.
+
+Character editing and export instructions: [`Chibi/rig_tools/README.md`](Chibi/rig_tools/README.md).
+`Chibi/chibi_objs/` contains historical mesh snapshots, not a second rig.
+The FBX and Unity prefab are generated downstream; do not edit them independently.
 
 Two identical, non-colliding visual instances are loaded from
 Assets/Resources/ChibiVisual.prefab and animated by ChibiVisualDriver.
