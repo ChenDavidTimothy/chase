@@ -68,15 +68,15 @@ namespace Chase.Tests
         }
 
         [Test]
-        public void AllEightAnimationsRemainImportableAfterFreshAssetReload()
+        public void ProductionAnimationsRemainImportableAfterFreshAssetReload()
         {
             var clips=AssetDatabase.LoadAllAssetsAtPath(ModelPath).OfType<AnimationClip>()
                 .Where(x=>!x.name.StartsWith("__preview__")).ToArray();
             foreach(string name in new[]{"Idle","Run","Jump","Crouch",
-                       "Slide","Vault","Leap","Turn"})
+                       "Slide","Leap","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"})
                 Assert.IsTrue(clips.Any(c=>c.name.EndsWith("|CHASE_"+name)),
                     "Source Blender Action must persist in saved file and FBX: "+name);
-            Assert.AreEqual(8,clips.Length);
+            Assert.AreEqual(11,clips.Length);
         }
     }
 }

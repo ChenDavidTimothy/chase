@@ -9,7 +9,7 @@ Use that file for every subsequent Blender rig, mesh, material, and animation ed
 - Blender: **-Y forward**, +Z up, feet at world (0, 0, 0), 1 unit = 1 meter.
 - Unity: **+Z forward**, +Y up, imported model and prefab use local position zero, rotation identity, scale one.
 - Standing character height: 1.8 m. The one intentional `-standingHeight/2` offset belongs to `ChaseMatch`'s visual child under the physics actor, not the FBX or model prefab.
-- Generic Unity rig, 17 visual skinned meshes, eight saved animation actions with Fake User enabled. Animator root motion stays disabled.
+- Generic Unity rig, 17 visual skinned meshes, eleven saved animation actions with Fake User enabled. Animator root motion stays disabled.
 
 Read [`docs/CHARACTER_COORDINATE_CONTRACT.md`](../../docs/CHARACTER_COORDINATE_CONTRACT.md) before altering the rig or exporter.
 

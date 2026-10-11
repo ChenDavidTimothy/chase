@@ -35,6 +35,20 @@
     </div>
     <script>
       var canvas = document.querySelector("#unity-canvas");
+      // Keep movement keys in the game rather than letting the document scroll.
+      // Never intercept keyboard events from other focused browser controls.
+      const chaseMovementKeys = new Set(["ArrowUp", "ArrowDown", " ", "Spacebar"]);
+      document.addEventListener("keydown", (event) => {
+        if (document.activeElement === canvas && chaseMovementKeys.has(event.key)) {
+          event.preventDefault();
+        }
+      }, { capture: true });
+      function chaseFocusCanvas() {
+        if (canvas && document.contains(canvas)) canvas.focus({ preventScroll: true });
+      }
+      canvas.addEventListener("pointerdown", chaseFocusCanvas);
+      window.addEventListener("focus", chaseFocusCanvas);
+
 
       // Shows a temporary message banner/ribbon for a few seconds, or
       // a permanent error message on top of the canvas if type=='error'.
@@ -129,9 +143,10 @@
 #endif
 
       } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-        canvas.style.width = "{{{ WIDTH }}}px";
-        canvas.style.height = "{{{ HEIGHT }}}px";
+        // The default fixed 960x600 inline styles override our responsive CSS.
+        // Fill the actual browser viewport and let Unity resize its render target.
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
       }
 
 #if BACKGROUND_FILENAME
@@ -146,6 +161,7 @@
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
               }).then((unityInstance) => {
                 document.querySelector("#unity-loading-bar").style.display = "none";
+                chaseFocusCanvas();
 #if SHOW_DIAGNOSTICS
                 document.getElementById("diagnostics-icon").onclick = () => {
                   unityDiagnostics.openDiagnosticsDiv(unityInstance.GetMetricsInfo);

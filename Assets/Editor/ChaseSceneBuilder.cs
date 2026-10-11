@@ -63,8 +63,8 @@ public static class ChaseSceneBuilder
             new Vector3(1.9f,.35f,.2f),Hurdle,false,true,false,false);
         MakeCube("Hurdle B",arena.transform,new Vector3(.3f,.175f,3.5f),
             new Vector3(1.9f,.35f,.2f),Hurdle,false,true,false,false);
-        MakeShelf(arena.transform,"Southwest shelf",new Vector3(-3.05f,0,-3.55f));
-        MakeShelf(arena.transform,"Northeast shelf",new Vector3(2.8f,0,3.55f));
+        MakeLowPassage(arena.transform,"Southwest low passage",new Vector3(-3.05f,0,-3.55f));
+        MakeLowPassage(arena.transform,"Northeast low passage",new Vector3(2.8f,0,3.55f));
         foreach (var p in new []{ new Vector3(-4.6f,0,-1.4f),
             new Vector3(4.6f,0,1.4f),new Vector3(-1.2f,0,4.6f),
             new Vector3(-1.5f,0,-4.7f) })
@@ -114,7 +114,7 @@ public static class ChaseSceneBuilder
         return m;
     }
     static GameObject MakeCube(string name,Transform parent,Vector3 position,Vector3 size,
-        Material material,bool blocker,bool hurdle,bool vault,bool decorative)
+        Material material,bool blocker,bool hurdle,bool overhead,bool decorative)
     {
         GameObject obj=GameObject.CreatePrimitive(PrimitiveType.Cube);
         obj.name=name;
@@ -128,24 +128,24 @@ public static class ChaseSceneBuilder
         {
             if (blocker) obj.AddComponent<ChaseBlocker>();
             if (hurdle) obj.AddComponent<ChaseHurdle>();
-            if (vault) obj.AddComponent<ChaseVaultSurface>();
-            if (blocker || vault) obj.AddComponent<ChaseOccluder>();
+            if (overhead) obj.AddComponent<ChaseOverheadPassage>();
+            if (blocker || overhead) obj.AddComponent<ChaseOccluder>();
         }
         return obj;
     }
-    static void MakeShelf(Transform parent,string name,Vector3 p)
+    static void MakeLowPassage(Transform parent,string name,Vector3 p)
     {
         GameObject shelf=new GameObject(name);
         shelf.transform.SetParent(parent,false);
         shelf.transform.localPosition=p;
-        MakeCube("Vaultable slab",shelf.transform,new Vector3(0,1.125f,0),
+        MakeCube("Low passage canopy",shelf.transform,new Vector3(0,1.715f,0),
             new Vector3(2.2f,.15f,.55f),Shelf,false,false,true,false);
         foreach (float x in new[]{-1.01f,1.01f})
-            MakeCube("Solid support",shelf.transform,new Vector3(x,.6f,0),
-                new Vector3(.18f,1.2f,.55f),Pillar,true,false,false,false);
-        MakeCube("Shelf edge visibility",shelf.transform,new Vector3(0,1.215f,-.26f),
+            MakeCube("Solid support",shelf.transform,new Vector3(x,.855f,0),
+                new Vector3(.18f,1.71f,.55f),Pillar,true,false,false,false);
+        MakeCube("Passage edge stripe",shelf.transform,new Vector3(0,1.805f,-.26f),
             new Vector3(2.2f,.025f,.035f),Stripe,false,false,false,true);
-        MakeCube("Shelf edge visibility",shelf.transform,new Vector3(0,1.215f,.26f),
+        MakeCube("Passage edge stripe",shelf.transform,new Vector3(0,1.805f,.26f),
             new Vector3(2.2f,.025f,.035f),Stripe,false,false,false,true);
     }
 }

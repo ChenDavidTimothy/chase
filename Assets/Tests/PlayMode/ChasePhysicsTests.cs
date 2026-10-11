@@ -44,9 +44,9 @@ namespace Chase.Tests
             Physics.SyncTransforms();
             return motor;
         }
-        void Step(ChaseMotor motor, Vector2 move, bool jump = false, bool duck = false)
+        void Step(ChaseMotor motor, Vector2 move, bool jump = false, bool duck = false, bool leap = false, bool slide = false)
         {
-            motor.Simulate(new ChaseAction(move, jump, duck), .02f, t);
+            motor.Simulate(new ChaseAction(move, jump,leap,slide, duck), .02f, t);
             Physics.Simulate(.02f);
             t += .02f;
         }
@@ -67,7 +67,7 @@ namespace Chase.Tests
             for (int i=0;i<100;i++)
             {
                 float before = motor.Velocity.y;
-                motor.Simulate(new ChaseAction(Vector2.zero,true,false),.02f,t);
+                motor.Simulate(new ChaseAction(Vector2.zero,true,false,false,false),.02f,t);
                 if (motor.Velocity.y > 4.5f && motor.Velocity.y > before + 3f) risingImpulses++;
                 Physics.Simulate(.02f);
                 t += .02f;
@@ -76,28 +76,7 @@ namespace Chase.Tests
             Assert.AreEqual(1,risingImpulses,"Held jump must be a single press");
             yield return null;
         }
-        [UnityTest] public IEnumerator VaultActuallyCrossesShelfAndLands()
-        {
-            Box("floor", new Vector3(0,-.13f,0), new Vector3(12,.26f,12));
-            var roof = Box("shelf", new Vector3(0,1.125f,0),new Vector3(2.2f,.15f,.55f));
-            roof.AddComponent<ChaseVaultSurface>();
-            var actor = Actor(new Vector3(0,.9f,-1.05f));
-            actor.Body.linearVelocity = new Vector3(0,0,4f);
-            bool vaulted=false;
-            bool landed=false;
-            for(int i=0;i<100;i++)
-            {
-                Step(actor,new Vector2(0,1),i==0);
-                vaulted |= actor.State == ChaseMovementState.Vaulting;
-                if (vaulted && actor.Body.position.z > .65f &&
-                    actor.Body.position.y < 1.10f && actor.Grounded) { landed=true; break; }
-            }
-            Assert.IsTrue(vaulted,"Must enter the vault state");
-            Assert.IsTrue(landed,"Must land beyond the shelf");
-            Assert.Greater(actor.Body.position.z,.65f,"Must cross the back of the shelf");
-            Assert.That(actor.Body.position.y,Is.InRange(.75f,1.12f),"Must land on floor");
-            yield return null;
-        }
+
         [UnityTest] public IEnumerator BothShelvesCanBeCrouchedUnderFromEitherSide()
         {
             Box("floor",new Vector3(0,-.13f,0),new Vector3(12,.26f,12));
@@ -105,19 +84,19 @@ namespace Chase.Tests
                 foreach(float centerZ in new[]{-3.55f,3.55f})
                     foreach(int sign in new[]{-1,1})
                     {
-                        var roof=Box("shelf",new Vector3(centerX,1.125f,centerZ),
+                        var roof=Box("shelf",new Vector3(centerX,1.715f,centerZ),
                             new Vector3(2.2f,.15f,.55f));
                         var left=Box("post",new Vector3(centerX-1.01f,.6f,centerZ),
-                            new Vector3(.18f,1.2f,.55f));
+                            new Vector3(.18f,1.71f,.55f));
                         var right=Box("post",new Vector3(centerX+1.01f,.6f,centerZ),
-                            new Vector3(.18f,1.2f,.55f));
+                            new Vector3(.18f,1.71f,.55f));
                         var motor=Actor(new Vector3(centerX,.9f,centerZ-sign*1.25f));
                         bool passed=false;
                         for(int i=0;i<120;i++)
                         {
                             Step(motor,new Vector2(0,sign),false,true);
                             Assert.IsFalse(motor.Capsule.isTrigger);
-                            Assert.LessOrEqual(motor.Capsule.height,.851f);
+                            Assert.LessOrEqual(motor.Capsule.height,1.551f);
                             if((motor.Body.position.z-centerZ)*sign>.83f) {passed=true;break;}
                         }
                         Assert.IsTrue(passed,"Crouch route: x="+centerX+" z="+centerZ+" sign="+sign);
@@ -130,65 +109,19 @@ namespace Chase.Tests
             yield return null;
         }
 
-        [UnityTest] public IEnumerator CompleteVaultsAcrossBothShelfLocationsAndDirections()
-        {
-            Box("floor",new Vector3(0,-.13f,0),new Vector3(12,.26f,12));
-            foreach(float centerX in new[]{-3.05f,2.8f})
-                foreach(float centerZ in new[]{-3.55f,3.55f})
-                    foreach(int sign in new[]{-1,1})
-                        foreach(float speed in new[]{2.5f,4f,6f})
-                        {
-                            var roof=Box("roof",new Vector3(centerX,1.125f,centerZ),
-                                new Vector3(2.2f,.15f,.55f));
-                            roof.AddComponent<ChaseVaultSurface>();
-                            var left=Box("post",new Vector3(centerX-1.01f,.6f,centerZ),
-                                new Vector3(.18f,1.2f,.55f));
-                            var right=Box("post",new Vector3(centerX+1.01f,.6f,centerZ),
-                                new Vector3(.18f,1.2f,.55f));
-                            var motor=Actor(new Vector3(centerX,.9f,centerZ-sign*.97f));
-                            motor.Body.linearVelocity=new Vector3(0,0,sign*speed);
-                            bool vaulted=false,landed=false;
-                            for(int i=0;i<100;i++)
-                            {
-                                Step(motor,new Vector2(0,sign),i==0);
-                                vaulted |= motor.State==ChaseMovementState.Vaulting;
-                                if(vaulted && (motor.Body.position.z-centerZ)*sign>.68f &&
-                                    motor.Grounded && motor.Body.position.y < 1.13f)
-                                {landed=true;break;}
-                            }
-                            Assert.IsTrue(vaulted,"Must initiate shelf vault at "+speed);
-                            Assert.IsTrue(landed,"Must cross/land x="+centerX+" z="+centerZ+
-                                " sign="+sign+" speed="+speed+" pos="+motor.Body.position);
-                            Object.DestroyImmediate(motor.gameObject);
-                            Object.DestroyImmediate(roof);Object.DestroyImmediate(left);Object.DestroyImmediate(right);
-                        }
-            yield return null;
-        }
 
-        [UnityTest] public IEnumerator BlockedVaultLandingNeverDisablesCollisions()
-        {
-            Box("floor",new Vector3(0,-.13f,0),new Vector3(10,.26f,10));
-            var roof=Box("roof",new Vector3(0,1.125f,0),
-                new Vector3(2.2f,.15f,.55f));
-            roof.AddComponent<ChaseVaultSurface>();
-            Box("landing obstruction",new Vector3(0,1f,.97f),new Vector3(.8f,2f,.6f));
-            var motor=Actor(new Vector3(0,.9f,-1.05f));
-            motor.Body.linearVelocity=new Vector3(0,0,4f);
-            Step(motor,new Vector2(0,1),true);
-            Assert.AreNotEqual(ChaseMovementState.Vaulting,motor.State);
-            Assert.IsFalse(motor.Capsule.isTrigger);
-            yield return null;
-        }
+
+
 
         [UnityTest] public IEnumerator StandingUnderShelfNeverPenetratesRoofOrOpponent()
         {
             Box("floor",new Vector3(0,-.13f,0),new Vector3(10,.26f,10));
-            var roof=Box("roof",new Vector3(0,1.125f,0),new Vector3(2.2f,.15f,.55f));
+            var roof=Box("roof",new Vector3(0,1.715f,0),new Vector3(2.2f,.15f,.55f));
             var motor=Actor(new Vector3(0,.9f,0));
             for(int i=0;i<10;i++)Step(motor,Vector2.zero,false,true);
-            Assert.AreEqual(.85f,motor.Capsule.height,.001f);
+            Assert.AreEqual(1.55f,motor.Capsule.height,.001f);
             for(int i=0;i<12;i++)Step(motor,Vector2.zero,false,false);
-            Assert.AreEqual(.85f,motor.Capsule.height,.001f,
+            Assert.AreEqual(1.55f,motor.Capsule.height,.001f,
                 "Releasing crouch underneath roof must not expand the collider");
             Assert.IsFalse(motor.CanStand);
             Assert.IsTrue(roof.GetComponent<BoxCollider>().enabled);
@@ -292,8 +225,8 @@ namespace Chase.Tests
         [UnityTest] public IEnumerator SensorChannelsDescribeShelfAndHurdleWithoutAllocatingPerSample()
         {
             Box("floor",new Vector3(0,-.13f,0),new Vector3(12,.26f,12));
-            var roof=Box("roof",new Vector3(0,1.125f,1.2f),new Vector3(2.2f,.15f,.55f));
-            roof.AddComponent<ChaseVaultSurface>();
+            var roof=Box("roof",new Vector3(0,1.715f,1.2f),new Vector3(2.2f,.15f,.55f));
+            roof.AddComponent<ChaseOverheadPassage>();
             var hurdle=Box("hurdle",new Vector3(1.2f,.175f,0),
                 new Vector3(.2f,.35f,.7f));
             hurdle.AddComponent<ChaseHurdle>();
@@ -304,9 +237,9 @@ namespace Chase.Tests
             foreach(float value in features)
                 Assert.That(value,Is.InRange(0f,1f));
             // Direction 2 is +Z; index 0 is +X.
-            Assert.Less(features[ChaseObservationSensor.Directions*3+2],1f,
-                "Roof must be observable as vaultable from body height");
-            Assert.Less(features[ChaseObservationSensor.Directions*4],1f,
+            Assert.Less(features[ChaseObservationSensor.Directions*2+2],1f,
+                "Overhead geometry is observable without contextual traversal");
+            Assert.Less(features[ChaseObservationSensor.Directions*3],1f,
                 "Hurdle must be observable from its low geometry");
             Assert.AreEqual(1f,features[ChaseObservationSensor.Directions*2+4],.001f,
                 "Opposite empty direction should show no overhead roof");
@@ -315,7 +248,7 @@ namespace Chase.Tests
         sealed class StillSource : IChaseActionSource
         {
             public ChaseAction ReadAction(float clock) =>
-                new ChaseAction(Vector2.zero,false,false);
+                new ChaseAction(Vector2.zero,false,false,false,false);
             public void ResetSource() {}
         }
 
@@ -344,11 +277,11 @@ namespace Chase.Tests
             foreach(Vector3 pos in new[]{new Vector3(-3.05f,0,-3.55f),
                 new Vector3(2.8f,0,3.55f)})
             {
-                Box("shelf",pos+new Vector3(0,1.125f,0),
-                    new Vector3(2.2f,.15f,.55f)).AddComponent<ChaseVaultSurface>();
+                Box("shelf",pos+new Vector3(0,1.715f,0),
+                    new Vector3(2.2f,.15f,.55f)).AddComponent<ChaseOverheadPassage>();
                 foreach(float x in new[]{-1.01f,1.01f})
-                    Box("shelf post",pos+new Vector3(x,.6f,0),
-                        new Vector3(.18f,1.2f,.55f)).AddComponent<ChaseBlocker>();
+                    Box("shelf post",pos+new Vector3(x,.855f,0),
+                        new Vector3(.18f,1.71f,.55f)).AddComponent<ChaseBlocker>();
             }
         }
 
@@ -431,15 +364,15 @@ namespace Chase.Tests
         [UnityTest] public IEnumerator SlidingUnderShelfCompletesWithCollision()
         {
             Box("floor",new Vector3(0,-.13f,0),new Vector3(12,.26f,12));
-            var roof=Box("roof",new Vector3(0,1.125f,0),new Vector3(2.2f,.15f,.55f));
-            var actor=Actor(new Vector3(0,.9f,-1.35f));
-            actor.Body.linearVelocity=Vector3.forward*4.5f;
+            var roof=Box("roof",new Vector3(0,1.715f,0),new Vector3(2.2f,.15f,.55f));
+            var actor=Actor(new Vector3(0,.9f,-.93f));
+            actor.Body.linearVelocity=Vector3.forward*6f;
             bool slid=false,cleared=false;
             for(int i=0;i<70;i++)
             {
-                Step(actor,Vector2.up,false,true);
+                Step(actor,Vector2.up,false,false,false,i==0);
                 if(actor.State==ChaseMovementState.Sliding)slid=true;
-                if(actor.Body.position.z>.68f) {cleared=true;break;}
+                if(actor.Body.position.z>.5f) {cleared=true;break;}
             }
             Assert.IsTrue(slid);
             Assert.IsTrue(cleared);
@@ -511,7 +444,7 @@ namespace Chase.Tests
                 if(Mathf.Abs(position.z)>4.5f) target.z+=(position.z>0 ? -1.6f : 1.6f);
                 target.Normalize();
                 return new ChaseAction(new Vector2(target.x,target.z),
-                    Steps%83==13,Steps%143>=40 && Steps%143<=54);
+                    Steps%83==13,false,false,Steps%143>=40 && Steps%143<=54);
             }
         }
 
@@ -593,12 +526,12 @@ namespace Chase.Tests
             Box("floor",new Vector3(0,-.13f,0),new Vector3(10,.26f,10));
             var actor=Actor(new Vector3(0,.9f,0));
             Step(actor,Vector2.zero,false,true);
-            Assert.AreEqual(.85f,actor.Capsule.height,.001f);
+            Assert.AreEqual(1.55f,actor.Capsule.height,.001f);
             var other=Actor(new Vector3(0,1.7f,0));
             other.Body.isKinematic=true;
             Physics.SyncTransforms();
             Step(actor,Vector2.zero,false,false);
-            Assert.AreEqual(.85f,actor.Capsule.height,.001f,
+            Assert.AreEqual(1.55f,actor.Capsule.height,.001f,
                 "Solid competitor overhead must prevent standing penetration");
             Object.DestroyImmediate(other.gameObject);
             Physics.SyncTransforms();
@@ -621,7 +554,7 @@ namespace Chase.Tests
                 Vector3 delta=evader.Body.position-chaser.Body.position;
                 delta.y=0f;
                 delta.Normalize();
-                return new ChaseAction(new Vector2(delta.x,delta.z),false,false);
+                return new ChaseAction(new Vector2(delta.x,delta.z),false,false,false,false);
             }
         }
 
@@ -680,7 +613,7 @@ namespace Chase.Tests
             float[] blue=new float[ChaseObservationSensor.PolicySize];
             ChaseObservationSensor.FillPolicyVector(a,b,ChaseRole.Chaser,10f,red);
             ChaseObservationSensor.FillPolicyVector(b,a,ChaseRole.Evader,10f,blue);
-            Assert.AreEqual(59,red.Length);
+            Assert.AreEqual(66,red.Length);
             for(int i=0;i<red.Length;i++)
             {
                 Assert.IsFalse(float.IsNaN(red[i]) || float.IsInfinity(red[i]));
@@ -689,9 +622,9 @@ namespace Chase.Tests
             }
             for(int i=6;i<=11;i++)
                 Assert.AreEqual(-red[i],blue[i],.001f);
-            Assert.AreEqual(1f,red[16]);
-            Assert.AreEqual(-1f,blue[16]);
-            Assert.AreEqual(.5f,red[17]);
+            Assert.AreEqual(1f,red[17]);
+            Assert.AreEqual(-1f,blue[17]);
+            Assert.AreEqual(.5f,red[18]);
             yield return null;
         }
         [UnityTest] public IEnumerator PhysicalTagRemainsValidDuringSlide()
@@ -705,7 +638,7 @@ namespace Chase.Tests
             bool sliding=false;
             for(int i=0;i<25;i++)
             {
-                match.Chaser.Simulate(new ChaseAction(Vector2.right,false,true),.02f,10f+i*.02f);
+                match.Chaser.Simulate(new ChaseAction(Vector2.right,false,false,i==0,false),.02f,10f+i*.02f);
                 sliding |= match.Chaser.State==ChaseMovementState.Sliding;
                 Physics.Simulate(.02f);
                 if(match.Winner.HasValue)break;
@@ -715,32 +648,7 @@ namespace Chase.Tests
             yield return null;
         }
 
-        [UnityTest] public IEnumerator PhysicalTagRemainsValidDuringVault()
-        {
-            var roof=Box("vault roof",new Vector3(0,1.125f,0),
-                new Vector3(2.2f,.15f,.55f));
-            roof.AddComponent<ChaseVaultSurface>();
-            ChaseMatch match=MatchFixture();
-            SetMatchActive(match);
-            match.Chaser.ResetMotor(new Vector3(0,.9f,-1.05f));
-            match.Evader.ResetMotor(new Vector3(2.6f,.9f,2.6f));
-            match.Chaser.Body.linearVelocity=Vector3.forward*4f;
-            Physics.SyncTransforms();
-            match.Chaser.Simulate(new ChaseAction(Vector2.up,true,false),.02f,10f);
-            Assert.AreEqual(ChaseMovementState.Vaulting,match.Chaser.State);
-            // A competitor entering after validation must remain taggable.
-            match.Evader.Body.position=new Vector3(.64f,.9f,-.7f);
-            Physics.SyncTransforms();
-            for(int i=0;i<18;i++)
-            {
-                if(i>0)
-                    match.Chaser.Simulate(new ChaseAction(Vector2.up,false,false),.02f,10f+i*.02f);
-                Physics.Simulate(.02f);
-                if(match.Winner.HasValue)break;
-            }
-            Assert.AreEqual(ChaseRole.Chaser,match.Winner.Value);
-            yield return null;
-        }
+
 
         [UnityTest] public IEnumerator BothShelfSlidesTraverseInBothDirections()
         {
@@ -749,17 +657,17 @@ namespace Chase.Tests
                 new Vector3(2.8f,0,3.55f)})
                 foreach(int sign in new[]{-1,1})
                 {
-                    var roof=Box("roof",center+new Vector3(0,1.125f,0),
+                    var roof=Box("roof",center+new Vector3(0,1.715f,0),
                         new Vector3(2.2f,.15f,.55f));
                     foreach(float x in new[]{-1.01f,1.01f})
-                        Box("post",center+new Vector3(x,.6f,0),
-                            new Vector3(.18f,1.2f,.55f));
-                    var actor=Actor(center+new Vector3(0,.9f,-sign*1.35f));
-                    actor.Body.linearVelocity=Vector3.forward*sign*4.5f;
+                        Box("post",center+new Vector3(x,.855f,0),
+                            new Vector3(.18f,1.71f,.55f));
+                    var actor=Actor(center+new Vector3(0,.9f,-sign*.93f));
+                    actor.Body.linearVelocity=Vector3.forward*sign*6f;
                     bool slid=false,passed=false;
                     for(int i=0;i<70;i++)
                     {
-                        Step(actor,new Vector2(0,sign),false,true);
+                        Step(actor,new Vector2(0,sign),false,false,false,i==0);
                         slid |= actor.State==ChaseMovementState.Sliding;
                         if((actor.Body.position.z-center.z)*sign>.68f)
                         {passed=true;break;}

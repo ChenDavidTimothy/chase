@@ -37,7 +37,7 @@ namespace Chase.Tests
                         Assert.Less(weight.weight1,.01f);
                     }
                 }
-                var states=new[]{"Idle","Run","Jump","Crouch","Slide","Vault","Leap","Turn"};
+                var states=new[]{"Idle","Run","Jump","Crouch","Slide","Leap","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"};
                 foreach(string state in states)
                 {
                     Assert.IsTrue(animator.HasState(0,Animator.StringToHash(state)),state+" not playable");
@@ -77,9 +77,9 @@ namespace Chase.Tests
                     .First(t=>t.name=="head");
                 float headIdle=head.position.y;
                 Physics.SyncTransforms();
-                motor.Simulate(new ChaseAction(Vector2.zero,false,true),.02f,10f);
+                motor.Simulate(new ChaseAction(Vector2.zero,false,false,false,true),.02f,10f);
                 Assert.AreEqual(ChaseMovementState.Crouching,motor.State);
-                Assert.AreEqual(.85f,motor.Capsule.height,.001f);
+                Assert.AreEqual(1.55f,motor.Capsule.height,.001f);
                 Assert.AreEqual(originalScale,visual.transform.localScale);
                 Assert.AreEqual(originalPos,visual.transform.localPosition);
                 animator.Play("Crouch",0,.55f);
@@ -149,7 +149,9 @@ namespace Chase.Tests
                 foreach(var pair in new[]{
                     (ChaseMovementState.Crouching,"Crouch"),
                     (ChaseMovementState.Sliding,"Slide"),
-                    (ChaseMovementState.Vaulting,"Vault"),
+                    (ChaseMovementState.Leaping,"Leap"),
+                    (ChaseMovementState.LeapRecovery,"LeapRecovery"),
+                    (ChaseMovementState.SlideRecovery,"SlideRecovery"),
                     (ChaseMovementState.Airborne,"Jump"),
                     (ChaseMovementState.Standing,"Idle")
                 })

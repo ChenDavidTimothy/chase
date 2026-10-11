@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Chase
 {
     // Simple grid navigator: plans around solid tall obstacles and support posts.
-    // Hurdles and shelf roofs remain traversable by the shared motor.
+    // Low passages are crouched through; low hurdles can be jumped.
     public sealed class ChaseBot : MonoBehaviour, IChaseActionSource
     {
         const int Size = 21;
@@ -173,7 +173,7 @@ namespace Chase
         public ChaseAction ReadAction(float clock) => Decide(clock);
         public ChaseAction Decide(float now)
         {
-            if (!initialized) return new ChaseAction(Vector2.zero, false, false);
+            if (!initialized) return new ChaseAction(Vector2.zero, false, false, false, false);
             if (now >= nextChoice)
             {
                 if (role == ChaseRole.Evader) escapeGoal = ChooseEscapeGoal();
@@ -195,27 +195,27 @@ namespace Chase
             Vector3 delta = target - motor.Body.position;
             delta.y = 0f;
             Vector3 direction = delta.sqrMagnitude > .001f ? delta.normalized : Vector3.zero;
-            bool duck = !motor.CanStand;
+            bool crouch = !motor.CanStand;
             bool jump = false;
             if (direction.sqrMagnitude > .5f)
             {
-                Vector3 origin = motor.Body.position + Vector3.up * 0.21f;
-                if (Physics.Raycast(origin, direction, out RaycastHit shelfHit, 1.12f, ~0, QueryTriggerInteraction.Ignore)
-                    && shelfHit.collider.GetComponent<ChaseVaultSurface>() != null)
-                {
-                    if (motor.HorizontalVelocity.magnitude >= 2.5f &&
-                        shelfHit.distance >= 0.39f && shelfHit.distance <= 1f &&
-                        now - lastJumpTime > 0.9f)
-                    { jump = true; lastJumpTime = now; }
-                    else duck = true;
-                }
-                origin = motor.Body.position + Vector3.down * 0.55f;
-                if (Physics.Raycast(origin, direction, out RaycastHit hurdleHit, 0.85f, ~0, QueryTriggerInteraction.Ignore)
-                    && hurdleHit.collider.GetComponent<ChaseHurdle>() != null &&
-                    now - lastJumpTime > 0.9f)
+                // The bot only requests the same explicit, physical actions as the human.
+                Vector3 low = motor.Body.position + Vector3.down * .55f;
+                if (Physics.Raycast(low, direction, out RaycastHit hurdle, 1f,
+                    ~0, QueryTriggerInteraction.Ignore) &&
+                    hurdle.collider.GetComponent<ChaseHurdle>() != null &&
+                    motor.CanJump && now - lastJumpTime > 1f)
                 { jump = true; lastJumpTime = now; }
+                // A roof at 1.64 m cannot be sensed by a waist-level horizontal ray.
+                Vector3 high = motor.Body.position + Vector3.up * .80f;
+                if (Physics.Raycast(high, direction, out RaycastHit overhead, .9f,
+                    ~0, QueryTriggerInteraction.Ignore) &&
+                    overhead.collider.GetComponent<ChaseOverheadPassage>() != null)
+                    crouch = true;
             }
-            return new ChaseAction(new Vector2(direction.x, direction.z), jump, duck);
+            // No bot-only movement authority and no automatic vaulting.
+            return new ChaseAction(new Vector2(direction.x,direction.z),jump,
+                false,false,crouch);
         }
     }
 }

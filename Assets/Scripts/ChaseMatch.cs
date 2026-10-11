@@ -35,11 +35,13 @@ namespace Chase
         float activePhysicsClock;
         int currentSpawn;
 
+        // Pair positions are separated by solid routes so the 3-second countdown
+        // is followed by genuine reaction time, not an immediate contact tag.
         static readonly Vector3[,] SpawnPairs = {
-            { new Vector3(-4.6f, .9f, -1.4f), new Vector3(-4.6f, .9f, 2.2f) },
-            { new Vector3(4.6f, .9f, 1.4f), new Vector3(4.6f, .9f, -1.9f) },
-            { new Vector3(-1.2f, .9f, 4.6f), new Vector3(1.9f, .9f, 4.6f) },
-            { new Vector3(-1.5f, .9f, -4.7f), new Vector3(1.8f, .9f, -4.7f) }
+            { new Vector3(-4.6f, .9f, -1.4f), new Vector3(4.6f, .9f, 3.9f) },
+            { new Vector3(4.6f, .9f, 1.4f), new Vector3(-4.6f, .9f, -3.8f) },
+            { new Vector3(-1.2f, .9f, 4.6f), new Vector3(3.8f, .9f, -4.4f) },
+            { new Vector3(-1.5f, .9f, -4.7f), new Vector3(3.2f, .9f, 4.4f) }
         };
 
         void Awake()

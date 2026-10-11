@@ -1,117 +1,104 @@
 using UnityEngine;
-
 namespace Chase
 {
-    // Immutable per-call snapshot. Low-level policies may reuse the caller-owned
-    // LocalObstacleBuffer via FillLocal rather than allocate per decision step.
     public readonly struct ChaseObservation
     {
-        public readonly Vector3 Position;
-        public readonly Vector3 HorizontalVelocity;
-        public readonly float VerticalVelocity;
-        public readonly Vector3 RelativeOpponentPosition;
-        public readonly Vector3 RelativeOpponentVelocity;
-        public readonly bool Grounded;
+        public readonly Vector3 Position, HorizontalVelocity, RelativeOpponentPosition, RelativeOpponentVelocity;
+        public readonly float VerticalVelocity, RemainingTime, RecoveryRemaining;
+        public readonly bool Grounded, CanJump, CanLeap, CanSlide, CanStand, IsCommitted;
         public readonly ChaseMovementState MovementState;
-        public readonly bool CanJump;
-        public readonly bool CanVault;
         public readonly ChaseRole Role;
-        public readonly float RemainingTime;
-        public readonly float[] ObstacleDistances;
-        // 5 channels x 8 rays: waist blockers, low objects, overhead,
-        // vaultable slabs, hurdles. All distances normalized [0,1].
+        public readonly Vector3 FacingDirection;
         public readonly float[] LocalObstacles;
-        public readonly bool HasStandingClearance;
-        public ChaseObservation(Vector3 position, Vector3 horizontal, float vertical,
-            Vector3 relativePosition, Vector3 relativeVelocity, bool grounded,
-            ChaseMovementState state, bool canJump, bool canVault, ChaseRole role,
-            float remaining, float[] obstacles, float[] local, bool clearance)
+        public ChaseObservation(ChaseMotor self,ChaseMotor opponent,ChaseRole role,float remaining,float[] local)
         {
-            Position=position; HorizontalVelocity=horizontal; VerticalVelocity=vertical;
-            RelativeOpponentPosition=relativePosition; RelativeOpponentVelocity=relativeVelocity;
-            Grounded=grounded; MovementState=state; CanJump=canJump; CanVault=canVault;
-            Role=role; RemainingTime=remaining; ObstacleDistances=obstacles;
-            LocalObstacles=local; HasStandingClearance=clearance;
+            Position=self.Body.position; HorizontalVelocity=self.HorizontalVelocity;
+            VerticalVelocity=self.Velocity.y; RelativeOpponentPosition=opponent.Body.position-Position;
+            RelativeOpponentVelocity=opponent.Velocity-self.Velocity; Grounded=self.Grounded;
+            CanJump=self.CanJump; CanLeap=self.CanLeap; CanSlide=self.CanSlide; CanStand=self.CanStand;
+            MovementState=self.State; Role=role; RemainingTime=remaining;
+            RecoveryRemaining=self.RecoveryRemaining; IsCommitted=self.IsCommitted;
+            FacingDirection=self.FacingDirection; LocalObstacles=local;
         }
     }
-
     public static class ChaseObservationSensor
     {
-        public const int Directions=8;
-        public const int Channels=5;
-        public const int LocalSize=Directions * Channels;
+        public const int Directions=8, Channels=5, LocalSize=Directions*Channels, PolicySize=26+LocalSize;
         public const float Range=4f;
-        static readonly RaycastHit[] hits = new RaycastHit[48];
-        public const int PolicySize=19+LocalSize;
-        static readonly float[] policyLocalScratch=new float[LocalSize];
-
-        // Fixed-size, symmetric, normalized flat observation for a future policy.
-        // Values 0..18 describe physical state; 19..58 are local geometry.
-        // All slots are bounded to [-1,1], and no per-call objects are created.
+        static readonly RaycastHit[] hits=new RaycastHit[48];
+        static readonly float[] scratch=new float[LocalSize];
+        // 0..11: own xyz, velocity xyz, opponent relative xyz, relative velocity xyz.
+        // 12 grounded, 13 jump, 14 leap, 15 slide, 16 stand, 17 role, 18 time,
+        // 19 state/7, 20/21 facing XZ, 22 recovery/.50, 23 committed,
+        // 24 collision height/1.8, 25 planar speed/9.
+        // 26..65: five 8-ray channels (waist, low, overhead, hurdle, solid wall).
         public static void FillPolicyVector(ChaseMotor self,ChaseMotor opponent,
             ChaseRole role,float remaining,float[] output)
         {
-            if(output==null || output.Length<PolicySize)
-                throw new System.ArgumentException("At least 59 policy floats required");
+            if(output==null||output.Length<PolicySize)throw new System.ArgumentException(
+                "At least 66 policy floats required");
             Vector3 own=self.Body.position,relative=opponent.Body.position-own;
-            Vector3 velocity=self.Velocity,relVelocity=opponent.Velocity-velocity;
-            output[0]=Mathf.Clamp(own.x/6f,-1f,1f);
-            output[1]=Mathf.Clamp(own.y/4f,-1f,1f);
-            output[2]=Mathf.Clamp(own.z/6f,-1f,1f);
-            output[3]=Mathf.Clamp(velocity.x/6f,-1f,1f);
-            output[4]=Mathf.Clamp(velocity.y/10f,-1f,1f);
-            output[5]=Mathf.Clamp(velocity.z/6f,-1f,1f);
-            output[6]=Mathf.Clamp(relative.x/12f,-1f,1f);
-            output[7]=Mathf.Clamp(relative.y/4f,-1f,1f);
-            output[8]=Mathf.Clamp(relative.z/12f,-1f,1f);
-            output[9]=Mathf.Clamp(relVelocity.x/12f,-1f,1f);
-            output[10]=Mathf.Clamp(relVelocity.y/20f,-1f,1f);
-            output[11]=Mathf.Clamp(relVelocity.z/12f,-1f,1f);
-            output[12]=self.Grounded?1f:0f;
-            output[13]=self.CanJump?1f:0f;
-            output[14]=self.CanVault?1f:0f;
-            output[15]=self.CanStand?1f:0f;
-            output[16]=role==ChaseRole.Chaser?1f:-1f;
-            output[17]=Mathf.Clamp01(remaining/20f);
-            output[18]=(float)self.State/4f;
-            FillLocal(self,policyLocalScratch);
-            System.Array.Copy(policyLocalScratch,0,output,19,LocalSize);
+            Vector3 v=self.Velocity,rv=opponent.Velocity-v;
+            output[0]=Mathf.Clamp(own.x/6f,-1,1);
+            output[1]=Mathf.Clamp(own.y/4f,-1,1);
+            output[2]=Mathf.Clamp(own.z/6f,-1,1);
+            output[3]=Mathf.Clamp(v.x/9f,-1,1);
+            output[4]=Mathf.Clamp(v.y/10f,-1,1);
+            output[5]=Mathf.Clamp(v.z/9f,-1,1);
+            output[6]=Mathf.Clamp(relative.x/12f,-1,1);
+            output[7]=Mathf.Clamp(relative.y/4f,-1,1);
+            output[8]=Mathf.Clamp(relative.z/12f,-1,1);
+            output[9]=Mathf.Clamp(rv.x/18f,-1,1);
+            output[10]=Mathf.Clamp(rv.y/20f,-1,1);
+            output[11]=Mathf.Clamp(rv.z/18f,-1,1);
+            output[12]=self.Grounded?1:0;
+            output[13]=self.CanJump?1:0;
+            output[14]=self.CanLeap?1:0;
+            output[15]=self.CanSlide?1:0;
+            output[16]=self.CanStand?1:0;
+            output[17]=role==ChaseRole.Chaser?1:-1;
+            output[18]=Mathf.Clamp01(remaining/20f);
+            output[19]=(float)self.State/7f;
+            output[20]=self.FacingDirection.x;
+            output[21]=self.FacingDirection.z;
+            output[22]=Mathf.Clamp01(self.RecoveryRemaining/.50f);
+            output[23]=self.IsCommitted?1:0;
+            output[24]=Mathf.Clamp01(self.Capsule.height/self.Settings.standingHeight);
+            output[25]=Mathf.Clamp01(self.HorizontalVelocity.magnitude/9f);
+            FillLocal(self,scratch);
+            System.Array.Copy(scratch,0,output,26,LocalSize);
         }
-
-
-        public static void FillLocal(ChaseMotor actor, float[] output)
+        public static void FillLocal(ChaseMotor actor,float[] output)
         {
-            if (output==null || output.Length < LocalSize)
-                throw new System.ArgumentException("At least 40 sensor samples required");
-            for(int i=0;i<LocalSize;i++) output[i]=1f;
+            if(output==null||output.Length<LocalSize)throw new System.ArgumentException(
+                "At least 40 local samples required");
+            for(int i=0;i<LocalSize;i++)output[i]=1f;
             Vector3 pos=actor.Body.position;
-            float bottom=pos.y - actor.Settings.standingHeight * .5f;
+            float bottom=pos.y-actor.Settings.standingHeight*.5f;
             for(int i=0;i<Directions;i++)
             {
-                float radians=i*Mathf.PI*2f/Directions;
-                Vector3 direction=new Vector3(Mathf.Cos(radians),0f,Mathf.Sin(radians));
-                // Three samples distinguish an overhead shelf and the open
-                // space underneath it from an ordinary opaque wall.
+                float a=i*Mathf.PI*2f/Directions;
+                Vector3 dir=new Vector3(Mathf.Cos(a),0,Mathf.Sin(a));
                 for(int layer=0;layer<3;layer++)
                 {
-                    float height=layer==0 ? .22f : layer==1 ? .92f : 1.14f;
+                    float height=layer==0?.22f:layer==1?.92f:1.7f;
                     Vector3 origin=new Vector3(pos.x,bottom+height,pos.z);
-                    int count=Physics.RaycastNonAlloc(origin,direction,hits,Range,
+                    int count=Physics.RaycastNonAlloc(origin,dir,hits,Range,
                         ~0,QueryTriggerInteraction.Ignore);
-                    if(count==hits.Length) { for(int j=0;j<Channels;j++)output[j*Directions+i]=0f;continue; }
+                    if(count==hits.Length)
+                    {for(int j=0;j<Channels;j++)output[j*Directions+i]=0f;continue;}
                     for(int j=0;j<count;j++)
                     {
-                        Collider collider=hits[j].collider;
-                        if(collider==null || collider.transform.IsChildOf(actor.transform) ||
-                            collider.GetComponentInParent<ChaseMotor>()!=null) continue;
-                        float value=Mathf.Clamp01(hits[j].distance/Range);
-                        if(layer==0) output[Directions+i]=Mathf.Min(output[Directions+i],value);
-                        if(layer==1) output[i]=Mathf.Min(output[i],value);
-                        if(layer==2) output[Directions*2+i]=Mathf.Min(output[Directions*2+i],value);
-                        if(collider.GetComponent<ChaseVaultSurface>()!=null)
-                            output[Directions*3+i]=Mathf.Min(output[Directions*3+i],value);
-                        if(collider.GetComponent<ChaseHurdle>()!=null)
-                            output[Directions*4+i]=Mathf.Min(output[Directions*4+i],value);
+                        Collider c=hits[j].collider;
+                        if(c==null||c.transform.IsChildOf(actor.transform)||
+                            c.GetComponentInParent<ChaseMotor>()!=null)continue;
+                        float d=Mathf.Clamp01(hits[j].distance/Range);
+                        output[(layer==0?1:layer==1?0:2)*Directions+i]=
+                            Mathf.Min(output[(layer==0?1:layer==1?0:2)*Directions+i],d);
+                        if(c.GetComponent<ChaseHurdle>()!=null)
+                            output[3*Directions+i]=Mathf.Min(output[3*Directions+i],d);
+                        if(c.GetComponent<ChaseBlocker>()!=null)
+                            output[4*Directions+i]=Mathf.Min(output[4*Directions+i],d);
                     }
                 }
             }
@@ -119,14 +106,8 @@ namespace Chase
         public static ChaseObservation Read(ChaseMotor self,ChaseMotor opponent,
             ChaseRole role,float remaining)
         {
-            float[] local=new float[LocalSize];
-            float[] waist=new float[Directions];
-            FillLocal(self,local);
-            System.Array.Copy(local,waist,Directions);
-            return new ChaseObservation(self.Body.position,self.HorizontalVelocity,
-                self.Velocity.y,opponent.Body.position-self.Body.position,
-                opponent.Velocity-self.Velocity,self.Grounded,self.State,self.CanJump,
-                self.CanVault,role,remaining,waist,local,self.CanStand);
+            float[] local=new float[LocalSize];FillLocal(self,local);
+            return new ChaseObservation(self,opponent,role,remaining,local);
         }
     }
 }

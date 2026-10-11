@@ -2,7 +2,7 @@
 import bpy,math,json
 from mathutils import Vector,Matrix
 arm=bpy.data.objects["Chibi_Armature"]
-expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_Crouch","CHASE_Slide","CHASE_Vault","CHASE_Leap","CHASE_Turn"}
+expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
 assert {a.name for a in bpy.data.actions if a.name.startswith("CHASE_")}==expected
 assert all(bpy.data.actions[name].use_fake_user for name in expected)
 assert "Blender -Y forward" in str(arm.get("basis",""))
@@ -57,4 +57,28 @@ for name in expected:
         arm.animation_data.action=a;bpy.context.scene.frame_set(f);bpy.context.view_layer.update()
         for pb in arm.pose.bones:
             assert all(math.isfinite(x) for row in pb.matrix for x in row),(name,pb.name)
+# v0.4 grounded low poses: verify real evaluated shell vertices, not just bone keys.
+def pose_bounds(action, frame):
+    arm.animation_data.action=bpy.data.actions[action]
+    bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+    depsgraph=bpy.context.evaluated_depsgraph_get()
+    z_min=float("inf");z_max=float("-inf")
+    for part in meshes:
+        evaluation=part.evaluated_get(depsgraph)
+        geometry=evaluation.to_mesh()
+        try:
+            for vert in geometry.vertices:
+                z=(evaluation.matrix_world@vert.co).z
+                z_min=min(z_min,z);z_max=max(z_max,z)
+        finally:evaluation.to_mesh_clear()
+    return z_min,z_max
+for frame in (1,7,13,19,25):
+    bottom,top=pose_bounds("CHASE_CrouchWalk",frame)
+    assert bottom>=-.025 and top<=1.55,("crouch walk clearance",frame,bottom,top)
+for frame in (1,4,8,11,14):
+    bottom,top=pose_bounds("CHASE_Slide",frame)
+    assert top<=1.64,("slide roof clearance",frame,top)
+assert pose_bounds("CHASE_Idle",1)[0]>=-.015
+arm.animation_data.action=bpy.data.actions["CHASE_Idle"]
+bpy.context.scene.frame_set(1)
 print("CHASE_ASSET_CONTRACT_PASS",json.dumps({"actions":len(expected),"meshes":len(meshes),"face_dot":round(dot,6),"feet_z":round(zlo,6),"height":round(zhi,6),"run_swings":run}))

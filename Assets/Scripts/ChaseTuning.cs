@@ -1,36 +1,21 @@
 using System;
 using UnityEngine;
-
 namespace Chase
 {
-    [Serializable]
-    public sealed class ChaseTuning
+    [Serializable] public sealed class ChaseTuning
     {
         [Header("Shared motor")]
-        public float standingHeight = 1.8f;
-        public float crouchingHeight = 0.85f;
-        public float radius = 0.35f;
-        public float runSpeed = 6f;
-        public float crouchSpeed = 2f;
-        public float groundAcceleration = 20f;
-        public float groundBraking = 24f;
-        public float airAcceleration = 4f;
-        public float jumpSpeed = 5.5f;
-        public float gravity = 22f;
-        public float mass = 70f;
-        public float jumpBuffer = 0.08f;
-        public float coyoteTime = 0.08f;
-        [Header("Slide and vault")]
-        public float slideThreshold = 3.5f;
-        public float slideDuration = 0.55f;
-        public float slideDeceleration = 4f;
-        public float vaultApproachSpeed = 2.5f;
-        public float vaultReach = 0.65f;
-        public float vaultDuration = 0.6f;
-        public float vaultVerticalSpeed = 8.4f;
+        public float standingHeight = 1.8f, crouchingHeight = 1.55f, slideHeight = 1.55f;
+        public float radius = .35f, runSpeed = 6f, crouchSpeed = 2f;
+        public float groundAcceleration = 20f, groundBraking = 24f, airAcceleration = 4f;
+        public float jumpSpeed = 6.3f, gravity = 22f, mass = 70f;
+        public float jumpBuffer = .08f, coyoteTime = .08f;
+        [Header("Explicit committed moves")]
+        public float leapHorizontalSpeed = 9f, leapVerticalSpeed = 3.9f;
+        public float leapRecovery = .50f, recoverySpeed = 2f;
+        public float slideDuration = .45f, slideDeceleration = 8f, slideRecovery = .20f;
         [Header("Match")]
-        public float countdown = 3f;
-        public float roundDuration = 20f;
+        public float countdown = 3f, roundDuration = 20f;
         public int spawnSeed = 2026;
     }
 }

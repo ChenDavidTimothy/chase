@@ -1,0 +1,72 @@
+{
+  "url": "http://127.0.0.1:8765/?build=v04-verified-fullscreen-20261011",
+  "ready": {
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 961,
+      "top": 0,
+      "right": 1920,
+      "bottom": 961,
+      "left": 0
+    },
+    "inner": [
+      1920,
+      961
+    ],
+    "focus": "unity-canvas",
+    "scrollY": 0
+  },
+  "checks": [
+    {
+      "key": " ",
+      "prevented": true,
+      "focused": "unity-canvas",
+      "scrollY": 0
+    },
+    {
+      "key": "ArrowUp",
+      "prevented": true,
+      "focused": "unity-canvas",
+      "scrollY": 0
+    },
+    {
+      "key": "ArrowDown",
+      "prevented": true,
+      "focused": "unity-canvas",
+      "scrollY": 0
+    },
+    {
+      "key": "ArrowUp",
+      "prevented": true,
+      "focused": "unity-canvas",
+      "scrollY": 0
+    },
+    {
+      "key": "ArrowDown",
+      "prevented": true,
+      "focused": "unity-canvas",
+      "scrollY": 0
+    }
+  ],
+  "after": {
+    "scrollY": 0,
+    "scrollX": 0,
+    "focus": "unity-canvas",
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 961,
+      "top": 0,
+      "right": 1920,
+      "bottom": 961,
+      "left": 0
+    },
+    "loader": "none"
+  },
+  "browserErrorEntries": [],
+  "captureDate": "2026-10-11",
+  "notes": "CDP sends actual Chrome trusted keyboard events to focused Unity WebGL canvas; time intervals are wall seconds."
+}

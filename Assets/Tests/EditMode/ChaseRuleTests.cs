@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -9,10 +10,29 @@ namespace Chase.Tests
         [Test]
         public void SharedAction_NormalizesDiagonal()
         {
-            ChaseAction action = new ChaseAction(new Vector2(1f,1f),true,false);
+            ChaseAction action = new ChaseAction(new Vector2(1f,1f),true,false,false,false);
             Assert.That(action.Move.magnitude,Is.EqualTo(1f).Within(.0001f));
-            Assert.IsTrue(action.JumpOrVault);
+            Assert.IsTrue(action.Jump);
         }
+        [Test]
+        public void EveryMatchSpawnHasAtLeastEightMetersOfInitialSeparation()
+        {
+            var field=typeof(ChaseMatch).GetField("SpawnPairs",
+                BindingFlags.NonPublic|BindingFlags.Static);
+            Assert.NotNull(field);
+            var pairs=(Vector3[,])field.GetValue(null);
+            for(int i=0;i<pairs.GetLength(0);i++)
+            {
+                Vector3 a=pairs[i,0],b=pairs[i,1];
+                a.y=b.y=0f;
+                Assert.That(Vector3.Distance(a,b),Is.GreaterThanOrEqualTo(8f));
+                Assert.LessOrEqual(Mathf.Abs(a.x),5.25f);
+                Assert.LessOrEqual(Mathf.Abs(a.z),5.25f);
+                Assert.LessOrEqual(Mathf.Abs(b.x),5.25f);
+                Assert.LessOrEqual(Mathf.Abs(b.z),5.25f);
+            }
+        }
+
         [Test]
         public void SharedConfiguration_MatchesSpecification()
         {
@@ -20,7 +40,9 @@ namespace Chase.Tests
             Assert.AreEqual(6f,settings.runSpeed);
             Assert.AreEqual(70f,settings.mass);
             Assert.AreEqual(.35f,settings.radius);
-            Assert.AreEqual(.85f,settings.crouchingHeight);
+            Assert.AreEqual(1.55f,settings.crouchingHeight);
+            Assert.AreEqual(1.55f,settings.slideHeight);
+            Assert.AreEqual(9f,settings.leapHorizontalSpeed);
             Assert.AreEqual(20f,settings.roundDuration);
             Assert.AreEqual(3f,settings.countdown);
         }
@@ -108,7 +130,7 @@ namespace Chase.Tests
                 visuals.transform.SetParent(actor.transform,false);
                 motor.Initialize(new ChaseTuning(),visuals.transform);
                 Physics.SyncTransforms();
-                motor.Simulate(new ChaseAction(new Vector2(1f,1f),false,false),.02f,1f);
+                motor.Simulate(new ChaseAction(new Vector2(1f,1f),false,false,false,false),.02f,1f);
                 Assert.LessOrEqual(motor.HorizontalVelocity.magnitude,.401f);
                 Assert.That(motor.HorizontalVelocity.magnitude,Is.GreaterThan(0f));
                 Assert.AreEqual(70f,rigid.mass);
@@ -140,17 +162,17 @@ namespace Chase.Tests
                 motor.Initialize(new ChaseTuning(),visual.transform);
                 Physics.SyncTransforms();
                 body.linearVelocity=new Vector3(4f,0f,0f);
-                motor.Simulate(new ChaseAction(new Vector2(1f,0f),false,true),.02f,1f);
+                motor.Simulate(new ChaseAction(new Vector2(1f,0f),false,false,true,false),.02f,1f);
                 Assert.AreEqual(ChaseMovementState.Sliding,motor.State);
-                Assert.AreEqual(.85f,capsule.height);
+                Assert.AreEqual(1.55f,capsule.height);
                 Assert.IsFalse(capsule.isTrigger);
-                Assert.AreEqual(3.92f,motor.HorizontalVelocity.magnitude,.02f);
+                Assert.AreEqual(3.84f,motor.HorizontalVelocity.magnitude,.02f);
                 motor.ResetMotor(new Vector3(0,.9f,0));
                 Physics.SyncTransforms();
-                motor.Simulate(new ChaseAction(Vector2.zero,false,true),.02f,2f);
+                motor.Simulate(new ChaseAction(Vector2.zero,false,false,false,true),.02f,2f);
                 Assert.AreEqual(ChaseMovementState.Crouching,motor.State);
-                Assert.AreEqual(.85f,capsule.height);
-                motor.Simulate(new ChaseAction(Vector2.zero,false,false),.02f,2.02f);
+                Assert.AreEqual(1.55f,capsule.height);
+                motor.Simulate(new ChaseAction(Vector2.zero,false,false,false,false),.02f,2.02f);
                 Assert.AreEqual(1.8f,capsule.height);
             }
             finally
@@ -177,11 +199,11 @@ namespace Chase.Tests
                 motor.Initialize(new ChaseTuning(),visual);
                 body.linearVelocity=new Vector3(3f,0f,0f);
                 Physics.SyncTransforms();
-                motor.Simulate(new ChaseAction(new Vector2(.5f,0),true,false),.02f,1f);
+                motor.Simulate(new ChaseAction(new Vector2(.5f,0),true,false,false,false),.02f,1f);
                 Assert.Greater(motor.Velocity.y,4.9f);
                 Assert.GreaterOrEqual(motor.HorizontalVelocity.x,3f);
                 float upward=motor.Velocity.y;
-                motor.Simulate(new ChaseAction(new Vector2(.5f,0),true,false),.02f,1.02f);
+                motor.Simulate(new ChaseAction(new Vector2(.5f,0),true,false,false,false),.02f,1.02f);
                 Assert.Less(motor.Velocity.y,upward);
             }
             finally
@@ -191,40 +213,28 @@ namespace Chase.Tests
             }
         }
 
-        [Test]
-        public void Vault_UsesSolidColliderAndObeysObstacleGeometry()
+
+        [Test] public void ExplicitLeapNeverChangesCollisionMode()
         {
-            GameObject actor=new GameObject("Vault actor");
-            GameObject floor=GameObject.CreatePrimitive(PrimitiveType.Cube);
-            GameObject shelf=GameObject.CreatePrimitive(PrimitiveType.Cube);
-            try
-            {
-                actor.transform.position=new Vector3(0,.9f,-1.2f);
+            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var actor=new GameObject("Leap actor");
+            try {
                 floor.transform.position=new Vector3(0,-.13f,0);
                 floor.transform.localScale=new Vector3(10,.26f,10);
-                shelf.transform.position=new Vector3(0,1.125f,0);
-                shelf.transform.localScale=new Vector3(2.2f,.15f,.55f);
-                shelf.AddComponent<ChaseVaultSurface>();
-                Rigidbody body=actor.AddComponent<Rigidbody>();
-                CapsuleCollider capsule=actor.AddComponent<CapsuleCollider>();
-                ChaseMotor motor=actor.AddComponent<ChaseMotor>();
-                Transform visual=new GameObject("visual").transform;
-                visual.SetParent(actor.transform,false);
-                motor.Initialize(new ChaseTuning(),visual);
-                body.linearVelocity=new Vector3(0,0,4f);
+                actor.transform.position=new Vector3(0,.9f,0);
+                actor.AddComponent<Rigidbody>();actor.AddComponent<CapsuleCollider>();
+                var visual=new GameObject("visual");visual.transform.SetParent(actor.transform,false);
+                var motor=actor.AddComponent<ChaseMotor>();
+                motor.Initialize(new ChaseTuning(),visual.transform);
                 Physics.SyncTransforms();
-                motor.Simulate(new ChaseAction(new Vector2(0f,1f),true,false),.02f,1f);
-                Assert.AreEqual(ChaseMovementState.Vaulting,motor.State);
-                Assert.IsFalse(capsule.isTrigger);
-                Assert.IsTrue(shelf.GetComponent<BoxCollider>().enabled);
-            }
-            finally
-            {
-                Object.DestroyImmediate(actor);
-                Object.DestroyImmediate(floor);
-                Object.DestroyImmediate(shelf);
-            }
+                motor.Simulate(new ChaseAction(Vector2.zero,false,true,false,false),.02f,1f);
+                Assert.AreEqual(ChaseMovementState.Leaping,motor.State);
+                Assert.AreEqual(9f,motor.HorizontalVelocity.magnitude,.001f);
+                Assert.IsFalse(motor.Capsule.isTrigger);
+                Assert.IsFalse(motor.Body.isKinematic);
+            }finally{Object.DestroyImmediate(actor);Object.DestroyImmediate(floor);}
         }
+
         sealed class ConstantSource : IChaseActionSource
         {
             public int Calls;
@@ -232,7 +242,7 @@ namespace Chase.Tests
             public ChaseAction ReadAction(float clock)
             {
                 Calls++;
-                return new ChaseAction(new Vector2(9f,9f),true,false);
+                return new ChaseAction(new Vector2(9f,9f),true,false,false,false);
             }
             public void ResetSource() => Resets++;
         }
@@ -271,23 +281,13 @@ namespace Chase.Tests
             }
         }
 
-        [Test]
-        public void VaultExitDistanceAccountsForDirection()
+
+        [Test] public void NoContextualMovementStateOrActionExists()
         {
-            GameObject box=GameObject.CreatePrimitive(PrimitiveType.Cube);
-            try
-            {
-                box.transform.position=Vector3.zero;
-                box.transform.localScale=new Vector3(2.2f,.15f,.55f);
-                ChaseVaultSurface roof=box.AddComponent<ChaseVaultSurface>();
-                Assert.IsTrue(roof.TryExitDistance(new Vector3(0,0,-.275f),
-                    Vector3.forward,out float straight));
-                Assert.AreEqual(.55f,straight,.03f);
-                Assert.IsTrue(roof.TryExitDistance(new Vector3(0,0,-.275f),
-                    new Vector3(.5f,0,.8660254f),out float diagonal));
-                Assert.Greater(diagonal,straight);
-            }
-            finally {Object.DestroyImmediate(box);}
+            Assert.IsFalse(System.Enum.GetNames(typeof(ChaseMovementState))
+                .Any(x=>x.ToLowerInvariant().Contains("vault")));
+            Assert.That(ChaseObservationSensor.PolicySize,Is.EqualTo(66));
         }
+
     }
 }

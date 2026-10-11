@@ -47,9 +47,9 @@ namespace Chase
             Block(new Rect(14,125,controlWidth,71),
                 new Color(.035f,.065f,.12f,.80f));
             GUI.Label(new Rect(24,132,controlWidth-15f,20),
-                "WASD MOVE    UP / SPACE JUMP-VAULT",small);
+                "WASD MOVE    SPACE JUMP    UP LEAP",small);
             GUI.Label(new Rect(24,152,controlWidth-15f,20),
-                "DOWN / SHIFT CROUCH-SLIDE    R RESTART",small);
+                "DOWN SLIDE    SHIFT CROUCH    R RESTART",small);
             GUI.Label(new Rect(24,172,controlWidth-15f,20),
                 "ENTER NEXT ROUND    TAB ROLE    ESC PAUSE",small);
             if (match.Phase == ChasePhase.Active) return;
