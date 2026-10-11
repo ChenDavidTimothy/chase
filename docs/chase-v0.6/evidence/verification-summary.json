@@ -1,0 +1,63 @@
+{
+  "PlayMode": {
+    "total": 67,
+    "passed": 67,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "EditMode": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "GymWebGL": {
+    "status": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "path": "Builds/ChaseAnimationGymWebGL",
+    "serializedPhysicsValidation": "passed"
+  },
+  "ProductionWebGL": {
+    "status": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "path": "Builds/ChaseWebGL",
+    "serializedPhysicsValidation": "passed"
+  },
+  "Linux": {
+    "status": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "path": "Builds/ChaseLinux/Chase.x86_64",
+    "serializedPhysicsValidation": "passed"
+  },
+  "GymChrome": {
+    "result": "passed",
+    "browserErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=v06-final-serialized-football-tackle-8766",
+    "rendered": true
+  },
+  "ProductionChrome": {
+    "result": "passed",
+    "browserErrors": 0,
+    "url": "http://127.0.0.1:8765/?build=v06-final-serialized-football-tackle-8765",
+    "rendered": true
+  },
+  "Blender": {
+    "strictValidator": "passed",
+    "meshesUnchanged": 17,
+    "sourceVerticesUnchanged": 24684,
+    "assetSha256": "56ce28893777fdf0f0bac20229c5352d03316bd9ec50ac96fd4027a0f99fcb97"
+  },
+  "Images": {
+    "verifiedPNGs": 15,
+    "gymComparison": "gym/football-slide-nine-stage.png",
+    "unityEditorPlayMode": "unity-editor-play-mode.png"
+  }
+}

@@ -12,6 +12,9 @@ public static class ChaseReleaseBuild
     {
         // Never permit a browser build to ship transient animation previews.
         Chase.Editor.ChibiAnimationAssetContract.ValidateOrThrow();
+        // Source scenes must serialize these dimensions explicitly; build
+        // must fail before exporting a browser player with old zero defaults.
+        ChaseSlideSceneContract.ValidateScenes();
         var options = new BuildPlayerOptions
         {
             scenes = new[] { scene },

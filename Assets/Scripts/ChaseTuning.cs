@@ -18,6 +18,11 @@ namespace Chase
         public float diveBodyHeight = .95f, diveBodyCenterY = -.26f;
         public float diveBodyCenterForward = .22f;
         public float proneCrawlSpeed = 1.5f;
+        [Header("Feet-first grounded sliding tackle")]
+        public float slideBodyLength = 1.98f, slideBodyWidth = .84f;
+        public float slideBodyHeight = .82f, slideBodyCenterY = -.48f;
+        public float slideBodyCenterForward = -.24f;
+        public float slideCrawlSpeed = 1.10f;
         public float slideDuration = .45f, slideDeceleration = 8f, slideRecovery = .20f;
         [Header("Match")]
         public float countdown = 3f, roundDuration = 20f;

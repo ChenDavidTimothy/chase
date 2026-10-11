@@ -81,8 +81,13 @@ namespace Chase
                     // not a horizontal get-up that visually clips the wall.
                     name = motor.DiveCompactRecovery ? "JumpLanding" : "LeapRecovery";
                     break;
-                case ChaseMovementState.Sliding: name = "Slide"; break;
-                case ChaseMovementState.SlideRecovery: name = "SlideRecovery"; break;
+                case ChaseMovementState.Sliding:
+                    name = motor.SlideCompactContact ? "Crouch" : "Slide";
+                    break;
+                case ChaseMovementState.SlideRecovery:
+                    name = motor.SlideGettingUp ? "SlideRecovery" :
+                        motor.SlideColliderActive ? "Slide" : "Crouch";
+                    break;
                 case ChaseMovementState.Jumping:
                 case ChaseMovementState.Airborne: name = "Jump"; break;
                 case ChaseMovementState.Crouching:
@@ -121,8 +126,10 @@ namespace Chase
                 if (name == "Leap" && current != desired)
                     animator.CrossFadeInFixedTime(desired, .04f, 0,
                         motor.DiveCompactContact ? 0f : .20f);
+                else if (name == "Slide" && current != desired)
+                    animator.CrossFadeInFixedTime(desired,.035f,0,0f);
                 else
-                    animator.CrossFadeInFixedTime(desired, .06f, 0);
+                    animator.CrossFadeInFixedTime(desired,.06f,0);
                 requestedHash = desired;
             }
         }

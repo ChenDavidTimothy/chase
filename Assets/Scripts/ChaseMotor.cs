@@ -10,12 +10,17 @@ namespace Chase
         public Rigidbody Body { get; private set; }
         public CapsuleCollider Capsule { get; private set; }
         public BoxCollider DiveBox { get; private set; }
+        public BoxCollider SlideBox { get; private set; }
+        public bool SlideColliderActive => SlideBox != null && SlideBox.enabled;
+        public bool SlideCompactContact => State == ChaseMovementState.Sliding && slideCompact;
+        public bool SlideGettingUp => State == ChaseMovementState.SlideRecovery && slideRising;
         // At least one solid Collider always remains active; neither is a trigger.
         public ChaseMovementState State { get; private set; }
         public bool Grounded { get; private set; }
         public Vector3 Velocity => Body.linearVelocity;
         public Vector3 HorizontalVelocity => Vector3.ProjectOnPlane(Body.linearVelocity, Vector3.up);
-        public bool CanStand => Capsule != null && Capsule.enabled && !DiveColliderActive &&
+        public bool CanStand => Capsule != null && Capsule.enabled &&
+            !DiveColliderActive && !SlideColliderActive &&
             Capsule.direction == 1 && HasStandingClearance();
         public bool CanJump => Grounded && IsUpright && !Recovering;
         public bool CanLeap => Grounded && IsUpright && !Recovering;
@@ -51,6 +56,7 @@ namespace Chase
         float lastGrounded = -100f, lastTakeoff = -100f, jumpQueuedUntil = -100f;
         float slideLeft, recoveryLeft;
         bool diveShapeCommitted, diveGettingUp, compactDive, forwardContact;
+        bool slideCompact, slideRising;
         Vector3 committedDirection;
         bool previousJump, previousLeap, previousSlide;
         static PhysicsMaterial sharedCapsuleMaterial;
@@ -73,6 +79,13 @@ namespace Chase
                 settings.diveBodyHeight, settings.diveBodyLength);
             DiveBox.isTrigger = false;
             DiveBox.enabled = false;
+            SlideBox = gameObject.AddComponent<BoxCollider>();
+            SlideBox.center = new Vector3(0f,settings.slideBodyCenterY,
+                settings.slideBodyCenterForward);
+            SlideBox.size = new Vector3(settings.slideBodyWidth,
+                settings.slideBodyHeight,settings.slideBodyLength);
+            SlideBox.isTrigger = false;
+            SlideBox.enabled = false;
             Capsule.enabled = true;
             Body.mass = settings.mass;
             Body.useGravity = false;
@@ -97,6 +110,7 @@ namespace Chase
             }
             Capsule.sharedMaterial = sharedCapsuleMaterial;
             DiveBox.sharedMaterial = sharedCapsuleMaterial;
+            SlideBox.sharedMaterial = sharedCapsuleMaterial;
             visual = visualRoot;
             visualInitialScale = visual.localScale;
             standingVisualLocalPosition = visual.localPosition;
@@ -114,9 +128,11 @@ namespace Chase
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
             diveShapeCommitted = diveGettingUp = compactDive = forwardContact = false;
+            slideCompact = slideRising = false;
             Body.rotation = Quaternion.identity;
             Capsule.enabled = true;
             DiveBox.enabled = false;
+            SlideBox.enabled = false;
             Capsule.direction = 1;
             Capsule.radius = Settings.radius;
             SetHeight(Settings.standingHeight);
@@ -230,21 +246,68 @@ namespace Chase
             }
             else if (State == ChaseMovementState.Sliding)
             {
-                slideLeft -= dt;
-                planar = Vector3.MoveTowards(planar, Vector3.zero, Settings.slideDeceleration * dt);
-                if (!Grounded)
-                {
-                    // Leaving an edge interrupts the grounded slide as a normal fall.
-                    // Do not play a grounded get-up timer while airborne.
-                    State = ChaseMovementState.Airborne;
-                    slideLeft = 0f;
-                    jumpQueuedUntil = -100f;
-                }
-                else if (slideLeft <= 0f)
+                slideLeft = Mathf.Max(0f, slideLeft - dt);
+                // The committed direction is fixed at takeoff. WASD cannot
+                // steer or add speed, and a solid wall may reduce it sooner.
+                planar = Vector3.MoveTowards(planar,Vector3.zero,
+                    Settings.slideDeceleration * dt);
+                if (slideLeft <= 0f && Grounded)
                 {
                     State = ChaseMovementState.SlideRecovery;
+                    slideRising = false;
                     recoveryLeft = Settings.slideRecovery;
                     jumpQueuedUntil = -100f;
+                }
+                // Off the ledge: continue falling in the same SOLID slide
+                // body. Do not expand an upright capsule or play a grounded
+                // recovery clip while airborne.
+            }
+            else if (State == ChaseMovementState.SlideRecovery)
+            {
+                bool wantsForward = Vector3.Dot(direction,committedDirection)>.5f;
+                if (!slideRising)
+                {
+                    if (Grounded && (slideCompact ||
+                        CanFitVerticalShape(Settings.crouchingHeight,Body.position)))
+                    {
+                        BeginSlideGetup();
+                        planar=Vector3.MoveTowards(planar,Vector3.zero,
+                            Settings.groundBraking*dt);
+                        slideRising = true;
+                        recoveryLeft = Settings.slideRecovery;
+                    }
+                    else if (Grounded && wantsForward)
+                    {
+                        // A roof lower than even crouch clearance cannot
+                        // force us to expand through it. Crawl forward in the
+                        // committed heading until there's space to rise.
+                        planar = Vector3.MoveTowards(planar,
+                            committedDirection*Settings.slideCrawlSpeed,
+                            Settings.groundAcceleration*dt);
+                    }
+                    else planar=Vector3.MoveTowards(planar,Vector3.zero,
+                        Settings.groundBraking*dt);
+                }
+                else
+                {
+                    planar=Vector3.MoveTowards(planar,Vector3.zero,
+                        Settings.groundBraking*dt);
+                    recoveryLeft = Mathf.Max(0f,recoveryLeft-dt);
+                    if (recoveryLeft<=0f)
+                    {
+                        FinishSlideGetup();
+                        if (action.Crouch || !HasStandingClearance())
+                        {
+                            SetHeight(Settings.crouchingHeight);
+                            State = ChaseMovementState.Crouching;
+                        }
+                        else
+                        {
+                            SetHeight(Settings.standingHeight);
+                            State = Grounded ? ChaseMovementState.Standing :
+                                ChaseMovementState.Airborne;
+                        }
+                    }
                 }
             }
             else if (Recovering)
@@ -338,11 +401,26 @@ namespace Chase
                 else if (doSlide)
                 {
                     jumpQueuedUntil = -100f;
-                    committedDirection = planar.sqrMagnitude > .01f ? planar.normalized : FacingDirection;
-                    SetHeight(Settings.slideHeight);
+                    committedDirection = planar.sqrMagnitude > .01f ?
+                        planar.normalized : direction.sqrMagnitude > .001f ?
+                        direction.normalized : FacingDirection;
+                    // The Animator faces the physical sliding heading,
+                    // including a diagonal moving slide, before the solid
+                    // body swaps shape. Exit restores exactly this yaw.
+                    visualYaw = Mathf.Atan2(committedDirection.x,
+                        committedDirection.z)*Mathf.Rad2Deg;
+                    slideCompact = !TryEnterSlideShape();
+                    slideRising = false;
+                    if (slideCompact)
+                    {
+                        SetHeight(Settings.slideHeight);
+                        if (visual != null)
+                            visual.localRotation = Quaternion.Euler(0f,visualYaw,0f);
+                    }
                     State = ChaseMovementState.Sliding;
                     slideLeft = Settings.slideDuration;
-                    planar = Vector3.MoveTowards(planar, Vector3.zero, Settings.slideDeceleration * dt);
+                    planar = Vector3.MoveTowards(planar,Vector3.zero,
+                        Settings.slideDeceleration*dt);
                 }
                 else
                 {
@@ -368,6 +446,8 @@ namespace Chase
             Body.linearVelocity = new Vector3(planar.x, velocity.y, planar.z);
             if (State != ChaseMovementState.Leaping &&
                 State != ChaseMovementState.DiveProne &&
+                State != ChaseMovementState.Sliding &&
+                State != ChaseMovementState.SlideRecovery &&
                 !(State == ChaseMovementState.LeapRecovery && DiveColliderActive))
                 OrientVisual(planar, dt);
         }
@@ -401,6 +481,56 @@ namespace Chase
             }
         }
 
+        bool TryEnterSlideShape()
+        {
+            Quaternion heading=Quaternion.LookRotation(committedDirection,Vector3.up);
+            Vector3 size=SlideBox.size;
+            Vector3 worldCenter=Body.position+heading*SlideBox.center;
+            int count=Physics.OverlapBoxNonAlloc(worldCenter,size*.5f,
+                clearanceHits,heading,~0,QueryTriggerInteraction.Ignore);
+            if (count==clearanceHits.Length)return false;
+            for (int i=0;i<count;i++)
+            {
+                Collider hit=clearanceHits[i];
+                if (hit==null || hit==Capsule || hit==DiveBox || hit==SlideBox ||
+                    hit.transform.IsChildOf(transform))continue;
+                // Refuse only the unsafe shape switch, NEVER the player's
+                // Down action. Near a wall/opponent a compact SOLID capsule
+                // still makes genuine momentum-based contact and recovery.
+                return false;
+            }
+            Body.rotation=heading;
+            SlideBox.enabled=true;
+            Capsule.enabled=false;
+            if (visual!=null)visual.localRotation=Quaternion.identity;
+            return true;
+        }
+
+        void BeginSlideGetup()
+        {
+            if (!SlideColliderActive)return; // compact capsule already solid
+            // Crouch envelope was queried without intersections first.
+            // The union protects the transition from reclined torso to knee.
+            Capsule.direction=1;
+            Capsule.radius=Settings.radius;
+            SetHeight(Settings.crouchingHeight);
+            Capsule.enabled=true; // keep SlideBox until animation finishes
+        }
+
+        void FinishSlideGetup()
+        {
+            if (SlideColliderActive)
+            {
+                // Capsule remains solid while Box is retired.
+                Body.rotation=Quaternion.identity;
+                SlideBox.enabled=false;
+                if (visual!=null)
+                    visual.localRotation=Quaternion.Euler(0f,visualYaw,0f);
+            }
+            slideRising=false;
+            slideCompact=false;
+        }
+
         // Test the real horizontal Box volume BEFORE enabling it. Queries must
         // not rely on ComputePenetration with an intentionally disabled shape;
         // an overlap is conservatively blocked. The live body remains solid.
@@ -418,7 +548,7 @@ namespace Chase
             for (int i = 0; i < count; i++)
             {
                 Collider hit = clearanceHits[i];
-                if (hit == null || hit == Capsule || hit == DiveBox ||
+                if (hit == null || hit == Capsule || hit == DiveBox || hit == SlideBox ||
                     hit.transform.IsChildOf(transform)) continue;
                 // At takeoff the Box is disabled: be conservative, never
                 // create a newly active Collider intersecting an obstacle.
@@ -461,7 +591,7 @@ namespace Chase
             for (int i = 0; i < count; i++)
             {
                 Collider hit = clearanceHits[i];
-                if (hit == null || hit == Capsule || hit == DiveBox ||
+                if (hit == null || hit == Capsule || hit == DiveBox || hit == SlideBox ||
                     hit.transform.IsChildOf(transform)) continue;
                 // Only the actual floor directly below our feet is exempt;
                 // a raised shelf / wall / opponent may never be ignored.
@@ -570,6 +700,9 @@ namespace Chase
             if (DiveColliderActive)
                 bottom = Mathf.Min(bottom,Body.position.y +
                     DiveBox.center.y - DiveBox.size.y * .5f);
+            if (SlideColliderActive)
+                bottom = Mathf.Min(bottom,Body.position.y+
+                    SlideBox.center.y-SlideBox.size.y*.5f);
             Vector3 start = new Vector3(Body.position.x,
                 bottom + Settings.radius + .11f, Body.position.z);
             int count = Physics.SphereCastNonAlloc(start, Settings.radius * .86f,
@@ -577,7 +710,7 @@ namespace Chase
             for (int i = 0; i < count; i++)
             {
                 RaycastHit hit = groundHits[i];
-                if (hit.distance <= .0001f || hit.distance > .177f || hit.collider == null || (hit.collider == Capsule || hit.collider == DiveBox) ||
+                if (hit.distance <= .0001f || hit.distance > .177f || hit.collider == null || (hit.collider == Capsule || hit.collider == DiveBox || hit.collider == SlideBox) ||
                     hit.collider.transform.IsChildOf(transform) ||
                     hit.collider.GetComponentInParent<ChaseMotor>() != null) continue;
                 if (Vector3.Dot(hit.normal, Vector3.up) >= .65f) return true;

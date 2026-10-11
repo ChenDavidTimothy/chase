@@ -152,7 +152,10 @@ namespace Chase.Tests
                     (ChaseMovementState.Leaping,"Leap"),
                     (ChaseMovementState.DiveProne,"DiveProne"),
                     (ChaseMovementState.LeapRecovery,"LeapRecovery"),
-                    (ChaseMovementState.SlideRecovery,"SlideRecovery"),
+                    // Directly forcing SlideRecovery bypasses the motor's
+                    // collider-safe get-up entry; it correctly holds the low
+                    // pose until SlideGettingUp becomes true.
+                    (ChaseMovementState.SlideRecovery,"Crouch"),
                     (ChaseMovementState.Airborne,"Jump"),
                     (ChaseMovementState.Standing,"Idle")
                 })

@@ -63,7 +63,10 @@ namespace Chase
             output[21]=self.FacingDirection.z;
             output[22]=Mathf.Clamp01(self.RecoveryRemaining/.75f);
             output[23]=self.IsCommitted?1:0;
-            output[24]=Mathf.Clamp01(self.Capsule.height/self.Settings.standingHeight);
+            output[24]=Mathf.Clamp01((self.SlideColliderActive ?
+                self.SlideBox.size.y : self.DiveColliderActive ?
+                self.DiveBox.size.y : self.Capsule.height)/
+                self.Settings.standingHeight);
             output[25]=Mathf.Clamp01(self.HorizontalVelocity.magnitude/9f);
             FillLocal(self,scratch);
             System.Array.Copy(scratch,0,output,26,LocalSize);

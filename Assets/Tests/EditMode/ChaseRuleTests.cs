@@ -42,6 +42,8 @@ namespace Chase.Tests
             Assert.AreEqual(.35f,settings.radius);
             Assert.AreEqual(1.55f,settings.crouchingHeight);
             Assert.AreEqual(1.55f,settings.slideHeight);
+            Assert.AreEqual(.82f,settings.slideBodyHeight);
+            Assert.Greater(settings.slideBodyLength,1.8f);
             Assert.AreEqual(9f,settings.leapHorizontalSpeed);
             Assert.AreEqual(20f,settings.roundDuration);
             Assert.AreEqual(3f,settings.countdown);
@@ -145,7 +147,7 @@ namespace Chase.Tests
         static int RigidbodyCollisionDetectionModeDummy() =>
             (int)CollisionDetectionMode.ContinuousDynamic;
         [Test]
-        public void Slide_And_Crouch_KeepSolidCapsule()
+        public void SlideUsesSolidLowBoxAndCrouchUsesSolidCapsule()
         {
             GameObject actor=new GameObject("Crouch motor test");
             GameObject ground=GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -164,8 +166,11 @@ namespace Chase.Tests
                 body.linearVelocity=new Vector3(4f,0f,0f);
                 motor.Simulate(new ChaseAction(new Vector2(1f,0f),false,false,true,false),.02f,1f);
                 Assert.AreEqual(ChaseMovementState.Sliding,motor.State);
-                Assert.AreEqual(1.55f,capsule.height);
-                Assert.IsFalse(capsule.isTrigger);
+                Assert.IsTrue(motor.SlideColliderActive,
+                    "A football tackle uses the full low solid box");
+                Assert.IsFalse(capsule.enabled);
+                Assert.IsFalse(motor.SlideBox.isTrigger);
+                Assert.AreEqual(.82f,motor.SlideBox.size.y,.001f);
                 Assert.AreEqual(3.84f,motor.HorizontalVelocity.magnitude,.02f);
                 motor.ResetMotor(new Vector3(0,.9f,0));
                 Physics.SyncTransforms();

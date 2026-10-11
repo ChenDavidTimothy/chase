@@ -1,0 +1,177 @@
+{
+  "before": {
+    "face_vis": {
+      "faces": 1632,
+      "sha256": "02f00c69b8e6552c36e48e2e03fc72536223bdbc2cceb94726e311cf9c39318f",
+      "vertices": 1542
+    },
+    "foot_left_vis": {
+      "faces": 1296,
+      "sha256": "923a906beb68c55e4e9cbc5dc0f8ccbe23e8354e4b94854672667c1807d001d4",
+      "vertices": 1250
+    },
+    "foot_right_vis": {
+      "faces": 1296,
+      "sha256": "923a906beb68c55e4e9cbc5dc0f8ccbe23e8354e4b94854672667c1807d001d4",
+      "vertices": 1250
+    },
+    "hand_left_vis": {
+      "faces": 2048,
+      "sha256": "27e9001c09d586f55b872121cb6c30b5392d45328107bebc4ac33a99731ed1d4",
+      "vertices": 1986
+    },
+    "hand_right_vis": {
+      "faces": 2048,
+      "sha256": "27e9001c09d586f55b872121cb6c30b5392d45328107bebc4ac33a99731ed1d4",
+      "vertices": 1986
+    },
+    "head_vis": {
+      "faces": 2048,
+      "sha256": "adc494f8bfcc33b9d4c36bd9f87a924f6a29cda6c8c97bccce3c5cfee998c48a",
+      "vertices": 1986
+    },
+    "lower_arm_left_vis": {
+      "faces": 1296,
+      "sha256": "e2de5b16bc984b3f2e5d3a80622159e9e28ff2f6ba7412fa94432011e9d1620a",
+      "vertices": 1250
+    },
+    "lower_arm_right_vis": {
+      "faces": 1296,
+      "sha256": "e2de5b16bc984b3f2e5d3a80622159e9e28ff2f6ba7412fa94432011e9d1620a",
+      "vertices": 1250
+    },
+    "pelvis_geom_vis": {
+      "faces": 1226,
+      "sha256": "7be83feafb430e822bb8ded153125da6a4bdbb02968681aebaa5456fca97bb68",
+      "vertices": 1228
+    },
+    "shin_left_vis": {
+      "faces": 1296,
+      "sha256": "009736325d425ddb06590f029cf667ec580ef0c2a34979bb1f3882dea005a539",
+      "vertices": 1250
+    },
+    "shin_right_vis": {
+      "faces": 1296,
+      "sha256": "009736325d425ddb06590f029cf667ec580ef0c2a34979bb1f3882dea005a539",
+      "vertices": 1250
+    },
+    "spine_geom_vis": {
+      "faces": 1678,
+      "sha256": "104112475db17114258178e3d4e24351c7d4fb82a848a00b76536185c732b890",
+      "vertices": 1680
+    },
+    "thigh_left_vis": {
+      "faces": 1296,
+      "sha256": "50b910557694e6ac7a7ca651f0130646babf0b17ac3f6ee87bc7eae0161516c1",
+      "vertices": 1250
+    },
+    "thigh_right_vis": {
+      "faces": 1296,
+      "sha256": "50b910557694e6ac7a7ca651f0130646babf0b17ac3f6ee87bc7eae0161516c1",
+      "vertices": 1250
+    },
+    "torso_geom_vis": {
+      "faces": 1774,
+      "sha256": "6830c51a2af27ac989a1b648982993ecb05728961859218b82f57ac75185fab9",
+      "vertices": 1776
+    },
+    "upper_arm_left_vis": {
+      "faces": 1296,
+      "sha256": "60d293943844790ccbab2a2fa875a635229f63a35d475adcdd98f1f707dd1e78",
+      "vertices": 1250
+    },
+    "upper_arm_right_vis": {
+      "faces": 1296,
+      "sha256": "60d293943844790ccbab2a2fa875a635229f63a35d475adcdd98f1f707dd1e78",
+      "vertices": 1250
+    }
+  },
+  "after": {
+    "face_vis": {
+      "faces": 1632,
+      "sha256": "02f00c69b8e6552c36e48e2e03fc72536223bdbc2cceb94726e311cf9c39318f",
+      "vertices": 1542
+    },
+    "foot_left_vis": {
+      "faces": 1296,
+      "sha256": "923a906beb68c55e4e9cbc5dc0f8ccbe23e8354e4b94854672667c1807d001d4",
+      "vertices": 1250
+    },
+    "foot_right_vis": {
+      "faces": 1296,
+      "sha256": "923a906beb68c55e4e9cbc5dc0f8ccbe23e8354e4b94854672667c1807d001d4",
+      "vertices": 1250
+    },
+    "hand_left_vis": {
+      "faces": 2048,
+      "sha256": "27e9001c09d586f55b872121cb6c30b5392d45328107bebc4ac33a99731ed1d4",
+      "vertices": 1986
+    },
+    "hand_right_vis": {
+      "faces": 2048,
+      "sha256": "27e9001c09d586f55b872121cb6c30b5392d45328107bebc4ac33a99731ed1d4",
+      "vertices": 1986
+    },
+    "head_vis": {
+      "faces": 2048,
+      "sha256": "adc494f8bfcc33b9d4c36bd9f87a924f6a29cda6c8c97bccce3c5cfee998c48a",
+      "vertices": 1986
+    },
+    "lower_arm_left_vis": {
+      "faces": 1296,
+      "sha256": "e2de5b16bc984b3f2e5d3a80622159e9e28ff2f6ba7412fa94432011e9d1620a",
+      "vertices": 1250
+    },
+    "lower_arm_right_vis": {
+      "faces": 1296,
+      "sha256": "e2de5b16bc984b3f2e5d3a80622159e9e28ff2f6ba7412fa94432011e9d1620a",
+      "vertices": 1250
+    },
+    "pelvis_geom_vis": {
+      "faces": 1226,
+      "sha256": "7be83feafb430e822bb8ded153125da6a4bdbb02968681aebaa5456fca97bb68",
+      "vertices": 1228
+    },
+    "shin_left_vis": {
+      "faces": 1296,
+      "sha256": "009736325d425ddb06590f029cf667ec580ef0c2a34979bb1f3882dea005a539",
+      "vertices": 1250
+    },
+    "shin_right_vis": {
+      "faces": 1296,
+      "sha256": "009736325d425ddb06590f029cf667ec580ef0c2a34979bb1f3882dea005a539",
+      "vertices": 1250
+    },
+    "spine_geom_vis": {
+      "faces": 1678,
+      "sha256": "104112475db17114258178e3d4e24351c7d4fb82a848a00b76536185c732b890",
+      "vertices": 1680
+    },
+    "thigh_left_vis": {
+      "faces": 1296,
+      "sha256": "50b910557694e6ac7a7ca651f0130646babf0b17ac3f6ee87bc7eae0161516c1",
+      "vertices": 1250
+    },
+    "thigh_right_vis": {
+      "faces": 1296,
+      "sha256": "50b910557694e6ac7a7ca651f0130646babf0b17ac3f6ee87bc7eae0161516c1",
+      "vertices": 1250
+    },
+    "torso_geom_vis": {
+      "faces": 1774,
+      "sha256": "6830c51a2af27ac989a1b648982993ecb05728961859218b82f57ac75185fab9",
+      "vertices": 1776
+    },
+    "upper_arm_left_vis": {
+      "faces": 1296,
+      "sha256": "60d293943844790ccbab2a2fa875a635229f63a35d475adcdd98f1f707dd1e78",
+      "vertices": 1250
+    },
+    "upper_arm_right_vis": {
+      "faces": 1296,
+      "sha256": "60d293943844790ccbab2a2fa875a635229f63a35d475adcdd98f1f707dd1e78",
+      "vertices": 1250
+    }
+  },
+  "unchanged": true
+}

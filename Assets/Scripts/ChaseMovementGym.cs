@@ -93,6 +93,20 @@ namespace Chase
                 keyboard.ResetSource();
                 return;
             }
+            // Gym-only repeatable 6 m/s football tackle setup, aligned
+            // with the original W control axis. Down begins the REAL motor
+            // slide immediately; no animator-only or collider bypasses.
+            if(k!=null && k.jKey.wasPressedThisFrame)
+            {
+                Vector3 forward=inputFrame.forward;
+                forward.y=0f;forward.Normalize();
+                ResetActorAt(new Vector3(5f-forward.x*2.2f,
+                    tuning.standingHeight*.5f,-forward.z*2.2f));
+                motor.Body.linearVelocity=forward*tuning.runSpeed;
+                motor.Body.WakeUp();
+                keyboard.ResetSource();
+                return;
+            }
             if(fixedCamera!=null)keyboard.Poll(inputFrame);
         }
         void FixedUpdate()
@@ -126,15 +140,16 @@ namespace Chase
         void OnGUI()
         {
             if(motor==null)return;
-            GUI.Box(new Rect(12,12,350,264),"CHASE / PHYSICAL SUPERMAN CONTACT TEST");
+            GUI.Box(new Rect(12,12,370,270),"CHASE / PHYSICAL ATHLETIC MOVEMENT GYM");
             GUI.Label(new Rect(24,39,340,25),"WASD MOVE   SPACE JUMP   UP SUPERMAN");
-            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  SHIFT CROUCH  G SHELF  H WALL  V VIEW");
+            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  J SLIDE LANE  G DIVE  H WALL  V VIEW");
             GUI.Label(new Rect(24,86,330,25),"STATE: "+motor.State);
             GUI.Label(new Rect(24,108,330,25),"SPEED: "+
                 motor.HorizontalVelocity.magnitude.ToString("F2")+" m/s   VY: "+
                 motor.Velocity.y.ToString("F2"));
             GUI.Label(new Rect(24,130,330,25),"GROUNDED: "+motor.Grounded+
-                "    BODY: "+(motor.DiveColliderActive ? "PRONE BOX" : "UPRIGHT CAPSULE"));
+                "    BODY: "+(motor.SlideColliderActive ? "LOW TACKLE BOX" :
+                    motor.DiveColliderActive ? "DIVE BOX" : "CAPSULE"));
             GUI.Label(new Rect(24,152,330,25),"RECOVERY: "+
                 motor.RecoveryRemaining.ToString("F2")+" s");
             var d=motor.Body.position-motionStart;d.y=0f;
@@ -143,7 +158,8 @@ namespace Chase
             {
                 var info=driver.Animator.GetCurrentAnimatorStateInfo(0);
                 GUI.Label(new Rect(24,197,330,25),"VISUAL: "+driver.CurrentVisualState+
-                    "  CLIP LEAP: "+info.IsName("Leap"));
+                    "  CLIP: "+(info.IsName("Slide")?"SLIDE":
+                        info.IsName("Leap")?"DIVE":"OTHER"));
             }
             if(motor.DiveCompactContact)
                 GUI.Label(new Rect(24,239,330,25),"DIVE CONTACT / SOLID COMPACT BODY");

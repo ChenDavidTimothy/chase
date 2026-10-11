@@ -307,7 +307,7 @@ namespace Chase.Tests
             for(int i=0;i<40;i++)Step(crouch,Vector2.up,false,false,false,true);
             add("crouch.speed",crouch.HorizontalVelocity.magnitude,"m/s");
             add("crouch.collider_height",crouch.Capsule.height,"m");
-            add("slide.collider_height",new ChaseTuning().slideHeight,"m");
+            add("slide.collider_height",new ChaseTuning().slideBodyHeight,"m");
             add("slide.duration",new ChaseTuning().slideDuration,"s");
             add("slide.recovery",new ChaseTuning().slideRecovery,"s");
             // Comparison on identical open lanes over 10 s.

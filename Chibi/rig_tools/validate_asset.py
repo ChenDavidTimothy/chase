@@ -42,13 +42,13 @@ assert abs(zlo)<.015,zlo
 assert abs(zhi-1.8)<.015,zhi
 idle=[]
 for frame in (1,11,21,31,41):
-    bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+    bpy.context.scene.frame_set(int(frame),subframe=frame%1);bpy.context.view_layer.update()
     idle.append((bone("pelvis").z,bone("foot_left").z,bone("foot_right").z))
 assert max(max(abs(p[i]-idle[0][i]) for i in range(3)) for p in idle)<.005,idle
 run=[]
 arm.animation_data.action=bpy.data.actions["CHASE_Run"]
 for frame in (1,13):
-    bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+    bpy.context.scene.frame_set(int(frame),subframe=frame%1);bpy.context.view_layer.update()
     run.append(bone("shin_left").y-bone("shin_right").y)
 assert run[0]*run[1]<-.01,run
 for name in expected:
@@ -60,7 +60,7 @@ for name in expected:
 # v0.4 grounded low poses: verify real evaluated shell vertices, not just bone keys.
 def pose_bounds(action, frame):
     arm.animation_data.action=bpy.data.actions[action]
-    bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+    bpy.context.scene.frame_set(int(frame),subframe=frame%1);bpy.context.view_layer.update()
     depsgraph=bpy.context.evaluated_depsgraph_get()
     z_min=float("inf");z_max=float("-inf")
     for part in meshes:
@@ -75,9 +75,29 @@ def pose_bounds(action, frame):
 for frame in (1,7,13,19,25):
     bottom,top=pose_bounds("CHASE_CrouchWalk",frame)
     assert bottom>=-.025 and top<=1.55,("crouch walk clearance",frame,bottom,top)
-for frame in (1,4,8,11,14):
+# Football tackle: near-horizontal, FEET FIRST and low throughout the
+# committed slide. Never accept the old 1.49m upright-looking crouch glide.
+for tick in range(4,14*4+1):
+    frame=tick/4
     bottom,top=pose_bounds("CHASE_Slide",frame)
-    assert top<=1.64,("slide roof clearance",frame,top)
+    assert bottom>=-.022,("slide floor penetration",frame,bottom)
+    assert top<=.83,("slide must be genuinely horizontal",frame,top)
+    arm.animation_data.action=bpy.data.actions["CHASE_Slide"]
+    bpy.context.scene.frame_set(int(frame),subframe=frame%1)
+    bpy.context.view_layer.update()
+    head=bone("head");pelvis=bone("pelvis")
+    front=bone("foot_left")
+    assert head.y-pelvis.y>.70,("head must recline behind hips",frame)
+    assert front.y-pelvis.y<-.43,("extended foot must lead",frame)
+    assert abs(head.z-pelvis.z)<.25,("torso must be near horizontal",frame)
+# Fully evaluated recovery, including fractional frames: prevent the
+# intermediate animated feet sinking through the floor or head rising through
+# a standard 1.64m canopy while the crouch collider protects the get-up.
+for tick in range(8,7*8+1):
+    frame=tick/8
+    bottom,top=pose_bounds("CHASE_SlideRecovery",frame)
+    assert bottom>=-.02,("slide recovery floor penetration",frame,bottom)
+    assert top<=1.64,("slide recovery overhead protrusion",frame,top)
 # A settled chest-first dive must fit the physically grounded low Box.
 for frame in (1,5,10,15,19):
     bottom,top=pose_bounds("CHASE_DiveProne",frame)
