@@ -25,7 +25,7 @@ Read [`docs/CHARACTER_COORDINATE_CONTRACT.md`](../../docs/CHARACTER_COORDINATE_C
    ```sh
    CHASE_ALLOW_REGENERATE=1 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 1 --python Chibi/rig_tools/export_unity_fbx.py
    ```
-4. Import into Unity using the existing Generic importer configuration. **Do not add any prefab correction rotation, height offset, or non-unit scale.** Run `ChibiAssetConventionTests`, `ChibiRigPlayTests`, and the full gameplay test suite; verify both roles and applicable builds.
+4. Import into Unity using the existing Generic importer configuration. **After any fresh FBX re-export, run Chase > Repair Production Character Animation Imports, then Chase > Validate Production Character Animation.** The former updates all 11 clip frame boundaries and Animator state references from real FBX takes, and the latter (also run before each Player build) fails if any state uses a `__preview__` motion. Do not edit FBX clips by hand. **Do not add any prefab correction rotation, height offset, or non-unit scale.** Run `ChibiAssetConventionTests`, `ChibiRigPlayTests`, and the full gameplay test suite; verify both roles and applicable builds.
 
 The Blender exporter **refuses to overwrite** the FBX without explicit `CHASE_ALLOW_REGENERATE=1`, and refuses incorrectly oriented or incomplete rigs. Blender's `--python-exit-code 1` is important: without it, a Python traceback might otherwise return a successful shell exit status.
 

@@ -79,6 +79,19 @@ for frame in (1,4,8,11,14):
     bottom,top=pose_bounds("CHASE_Slide",frame)
     assert top<=1.64,("slide roof clearance",frame,top)
 assert pose_bounds("CHASE_Idle",1)[0]>=-.015
+# Forearms hinge forward in character coordinates (-Y), rather than folding
+# behind the elbows. Check every integer frame, not just exported end points.
+for action_name in sorted(expected):
+    action=bpy.data.actions[action_name]
+    arm.animation_data.action=action
+    for frame in range(int(action.frame_range[0]),int(action.frame_range[1])+1):
+        bpy.context.scene.frame_set(frame)
+        bpy.context.view_layer.update()
+        for side in ("left","right"):
+            forearm=arm.pose.bones["lower_arm_"+side]
+            elbow=arm.matrix_world@forearm.head
+            wrist=arm.matrix_world@forearm.tail
+            assert elbow.y-wrist.y>.045,("backwards elbow",action_name,frame,side,elbow.y-wrist.y)
 arm.animation_data.action=bpy.data.actions["CHASE_Idle"]
 bpy.context.scene.frame_set(1)
 print("CHASE_ASSET_CONTRACT_PASS",json.dumps({"actions":len(expected),"meshes":len(meshes),"face_dot":round(dot,6),"feet_z":round(zlo,6),"height":round(zhi,6),"run_swings":run}))

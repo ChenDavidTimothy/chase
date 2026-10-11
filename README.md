@@ -49,8 +49,24 @@ CHASE_ALLOW_REGENERATE=1 blender -b Chibi/Chibi_Rigged.blend --python-exit-code 
 
 Production export and other rig guidance: [Chibi rig tools README](Chibi/rig_tools/README.md). Never reconstruct the character from historical OBJ snapshots, restore `armor.blend`, or apply obsolete +X orientation workarounds. Blender `.blend1` backups belong outside the active source tree.
 
+## Animation consistency across Editor and WebGL
+
+The v0.4 production Animator must reference **real FBX motion clips**, never Unity's transient `__preview__` clips. Eleven current clip frame ranges are validated before every Player build, with looping enabled only on Idle, Run and CrouchWalk. After each intentional Blender animation re-export, use **Chase > Repair Production Character Animation Imports**, then **Chase > Validate Production Character Animation** and run both Unity test suites. `ChibiVisualDriver` reconciles the Animator's actual state with the physics motor every frame, so moving after an earlier Slide cannot leave the visual stuck in a low pose. Both forearm hinges bend in the character's forward direction (-Y in Blender, +Z in Unity); the Blender validator checks every integer animation frame.
+
+See the fresh build/root-cause evidence in [`docs/chase-v0.4/animation-repair-report.md`](docs/chase-v0.4/animation-repair-report.md). A separately built, locally served WebGL Movement Gym permits close-up browser/Editor animation comparison without chase-tag interruptions.
+
 ## Testing and builds
 
-Run EditMode and PlayMode in Unity's Test Runner. The new PlayMode calibration fixture uses actual `Physics.Simulate(.02)`, checks action precedence, momentum, wall collisions, standing clearance and measured travel. Linux output is local and Git-ignored; WebGL uses `Assets/WebGLTemplates/ChaseResponsive` and **must** be served over HTTP with the correct `Content-Encoding: gzip` for compressed resources. The Unity Pipeline Editor plugin enables MCP access and is not needed in shipped gameplay. Neither ML-Agents nor an active vault mechanic is installed.
+Run EditMode and PlayMode in Unity's Test Runner. The new PlayMode calibration fixture uses actual `Physics.Simulate(.02)`, checks action precedence, momentum, wall collisions, standing clearance and measured travel. Linux output is local and Git-ignored; WebGL uses `Assets/WebGLTemplates/ChaseResponsive` and **must** be served over HTTP with the correct `Content-Encoding: gzip` for compressed resources. For deterministic local browser testing, serve WebGL with no-cache, gzip-aware headers:
+
+```bash
+python3 Tools/serve_webgl.py --build Builds/ChaseWebGL --port 8765
+# separate optional test build:
+python3 Tools/serve_webgl.py --build Builds/ChaseAnimationGymWebGL --port 8766
+```
+
+**Reload or reopen the browser after every build.** An existing Unity WebGL runtime remains the older build until its page reloads, even if the files on disk are newer. The provided server prevents browser reuse of stale `.data.gz` / `.wasm.gz` responses on reload.
+
+The Unity Pipeline Editor plugin enables MCP access and is not needed in shipped gameplay. Neither ML-Agents nor an active vault mechanic is installed.
 
 Historical v0.1/v0.2 reports in `docs/` describe superseded mechanics, including the former contextual vault. Do not use their 59-float policy schema, 0.85 m crouch capsule, or old input mapping as production contracts.

@@ -1,0 +1,33 @@
+# CHASE v0.4 animation consistency repair
+
+Date: October 11, 2026. Production character: `Chibi/Chibi_Rigged.blend`. Production visual: `Assets/Resources/ChibiVisual.prefab`, Generic-rigged FBX, 17 unchanged rigid skinned shells, 11 persistent actions. The Unity Editor, native Linux, and WebGL players now reference the **same imported production clips**.
+
+## Verified causes
+
+1. **Wrong Animator motions.** The production Animator Controller pointed nine of its eleven states at Unity's `__preview__Chibi_Armature|CHASE_*` clips, despite real `Chibi_Armature|CHASE_*` FBX assets existing. Editor preview evaluation was therefore not a valid packaged Player check, and the mismatch could cause neutral poses in WebGL.
+2. **Out-of-date importer ranges.** The FBX `.meta` retained old, longer clip frame overrides after v0.4 keyframe retiming. Example: Crouch still used frames 0-20 rather than 0-7; Leap used 0-24 rather than 0-11; Jump used 0-32 rather than 0-17. Stale frame ranges make visual timing diverge even if clips exist.
+3. **Driver trusted only its own previous request.** `ChibiVisualDriver` cached the last requested animation name without checking the **actual** Animator state. If the Animator was externally reset, reimported, or transitioned unexpectedly, the physical motor might resume running while the visual remained in Slide.
+4. **Elbow rotation was reversed.** Blender's character faces -Y, but positive local-Z forearm rotations put the wrists on the +Y side (behind the elbows) in most poses. The upper-arm shoulder hierarchy and mesh geometry were not themselves inverted.
+
+## Repairs
+
+- Reset all 11 Unity FBX clip overrides to **the current FBX take frame ranges**, preserving loop flags only for Idle, Run and CrouchWalk.
+- Rebind every Animator state to its actual imported `Chibi_Armature|CHASE_*` clip, not the editor-only `__preview__` version. No root-motion or collider changes.
+- `ChibiVisualDriver` now verifies real Animator `shortNameHash` / next-state hash every rendered frame. It corrects a mismatched state, including a visually stuck Slide after the motor has exited Sliding. `BindMotor` explicitly validates that a Controller exists. The motor remains the only physics authority.
+- In the only Blender production source, correct both lower-arm local-Z hinge rotations across **all 11 actions**, using approximately -1.30 radians of forearm bend. The wrist must remain forward of the elbow at every sampled integer frame. Original 20 bones, all geometry, materials, asset orientation, visual scale and FPS are retained. The independent Blender validator enforces forward elbows for every integer animation frame.
+- Added `ChibiAnimationAssetContract` in `Assets/Editor`: the **Chase > Validate Production Character Animation** menu and a build-time `IPreprocessBuildWithReport` guard reject preview references, incorrect clip frame ranges, bad loop flags, missing curves, or an incorrect prefab Controller. After an intentional future Blender export, **Chase > Repair Production Character Animation Imports** applies the current source frame ranges, reconnects real clips, saves assets, and immediately revalidates. This repair is explicit, not an import loop.
+
+## Evidence from fresh tests and playable Players
+
+- **Unity EditMode: 15 passed, 0 failed.** New production asset test verifies all eleven real imported clips and all importer frame ranges.
+- **Unity PlayMode: 41 passed, 0 failed.** Added all-state forward-elbow test; forced Animator desynchronization must recover Run and Idle; actual Physics.Simulate movement from a fast start through physical Slide, recovery, W-only Run, and released-input Idle must converge correctly. These tests check actual Animator state and bone movement, not just the visual driver's text label.
+- **Blender 5.2.2:** independent headless validator passes. The combined raw-mesh vertex/topology SHA-256 remains `447ea6c601e05f189f4091111121a7dc207964f5c27257bc2fcf48809880aab4`. The character still faces Blender -Y and is 1.8 m tall. Active source has one `.blend`, without `.blend1` backups.
+- **Production WebGL** and **separate WebGL Movement Gym** both built successfully, zero BuildReport errors and one previously existing Unity Pipeline warning each. Proper gzip HTTP headers verified. The separate gym uses the same prefab, importer, controller and runtime driver, but isolates the player from quick NPC tagging. To avoid stale assets, serve with `python3 Tools/serve_webgl.py --build Builds/ChaseWebGL --port 8765` (or the gym on port 8766). This server sends `Cache-Control: no-store` and correct gzip headers; reload the page after every rebuild because an already-running Unity WebGL instance does not update itself.
+- **Actual Chrome WebGL renderer:** the gym verified that an idle character visibly changes pose when Shift is held and when Down triggers a stationary slide, then returns **pixel-for-pixel to the original Idle frame** after release/recovery. Running screenshots from different times also differ. Representative fixed-region captures and the computed pixel values are in [`animation-repair-evidence/webgl-pose-metrics.json`](animation-repair-evidence/webgl-pose-metrics.json); the repeatable Chrome DevTools keyboard/capture script is [`verify_animation_browser.py`](verify_animation_browser.py).
+- **Linux standalone Player** was rebuilt and launched with the corrected clips. The movement and character render in a native window; there are no reported build errors.
+
+Pixel-difference evidence is strongest for the **stationary** crouch and slide tests: neither locomotion nor moving camera can explain those specific pose changes. A matching idle round trip excludes a permanently stuck low pose. The run-frame comparison contains legitimate camera/floor motion as well as locomotion animation and is only supplementary. Browser visual verification supplements, not replaces, human inspection and the direct Animator/bone assertions in Unity.
+
+## Remaining limitations
+
+The visual collision silhouette is wider than the simplified capsule, and some transitional poses still penetrate the ground. These were already measured in [`rig-clearance.md`](rig-clearance.md) and remain separate from the repaired animation clip selection and elbow hinge issue. Animator guard failures from a future asset re-export are intentionally **build blockers**. The Unity Editor's historical build-time Pipeline assertion messages have been observed, although the actual BuildReports succeed with zero build errors. Human approval of animation aesthetics remains separate from these measurable correctness checks.

@@ -333,6 +333,146 @@ namespace Chase.Tests
         }
 
         [UnityTest]
+        public IEnumerator HoldingOnlyWAfterAnActualSlideAlwaysReturnsToRunThenIdle()
+        {
+            var originalMode=Physics.simulationMode;
+            Physics.simulationMode=SimulationMode.Script;
+            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var actor=new GameObject("real-time slide animation recovery");
+            try
+            {
+                floor.transform.position=new Vector3(0,-.13f,0);
+                floor.transform.localScale=new Vector3(100,.26f,100);
+                actor.transform.position=new Vector3(0,.9f,0);
+                actor.AddComponent<Rigidbody>();actor.AddComponent<CapsuleCollider>();
+                var visual=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"),
+                    actor.transform,false);
+                visual.transform.localPosition=Vector3.down*.9f;
+                var motor=actor.AddComponent<ChaseMotor>();
+                motor.Initialize(new ChaseTuning(),visual.transform);
+                var driver=visual.GetComponent<ChibiVisualDriver>();
+                driver.BindMotor(motor);
+                motor.ResetMotor(actor.transform.position);
+                Physics.SyncTransforms();
+                var anim=driver.Animator;
+                var lateUpdate=typeof(ChibiVisualDriver).GetMethod("LateUpdate",
+                    System.Reflection.BindingFlags.NonPublic|
+                    System.Reflection.BindingFlags.Instance);
+                float clock=10f;
+                Action<Vector2,bool> step=(movement,slide)=>
+                {
+                    motor.Simulate(new ChaseAction(movement,false,false,slide,false),.02f,clock);
+                    Physics.Simulate(.02f);clock+=.02f;
+                    lateUpdate.Invoke(driver,null);
+                    anim.Update(.02f);
+                };
+                for(int i=0;i<22;i++)step(Vector2.up,false);
+                Assert.IsTrue(anim.GetCurrentAnimatorStateInfo(0).IsName("Run"),
+                    "expected Run; visual="+driver.CurrentVisualState+
+                    " physical="+motor.State+" grounded="+motor.Grounded+
+                    " speed="+motor.HorizontalVelocity.magnitude+
+                    " hash="+anim.GetCurrentAnimatorStateInfo(0).shortNameHash+
+                    " active="+anim.isActiveAndEnabled+" initialized="+anim.isInitialized);
+                step(Vector2.up,true);
+                Assert.AreEqual(ChaseMovementState.Sliding,motor.State);
+                for(int i=0;i<75;i++)step(Vector2.up,false);
+                Assert.AreEqual(ChaseMovementState.Standing,motor.State,
+                    "Slide must physically finish on a flat, unobstructed floor");
+                Assert.IsTrue(anim.GetCurrentAnimatorStateInfo(0).IsName("Run"),
+                    "Holding WASD without Down must never leave animation stuck in Slide");
+                Assert.AreEqual("Run",driver.CurrentVisualState);
+                for(int i=0;i<25;i++)step(Vector2.zero,false);
+                Assert.Less(motor.HorizontalVelocity.magnitude,.1f);
+                Assert.IsTrue(anim.GetCurrentAnimatorStateInfo(0).IsName("Idle"));
+                Assert.AreEqual("Idle",driver.CurrentVisualState);
+            }
+            finally
+            {
+                Physics.simulationMode=originalMode;
+                UnityEngine.Object.DestroyImmediate(actor);
+                UnityEngine.Object.DestroyImmediate(floor);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator EveryProductionAnimationBendsBothElbowsTowardCharacterFront()
+        {
+            GameObject root=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"));
+            try
+            {
+                var animator=root.GetComponentInChildren<Animator>(true);
+                var transforms=animator.GetComponentsInChildren<Transform>(true);
+                foreach(string state in new[]{"Idle","Run","Jump","JumpLanding","Leap",
+                    "LeapRecovery","Crouch","CrouchWalk","Slide","SlideRecovery","Turn"})
+                {
+                    foreach(float progress in new[]{0f,.25f,.5f,.75f,.99f})
+                    {
+                        animator.Play(state,0,progress);
+                        animator.Update(.02f);
+                        foreach(string side in new[]{"left","right"})
+                        {
+                            Transform elbow=transforms.Single(t=>t.name=="lower_arm_"+side);
+                            Transform wrist=transforms.Single(t=>t.name=="hand_"+side);
+                            float towardFront=Vector3.Dot(wrist.position-elbow.position,
+                                root.transform.forward);
+                            Assert.Greater(towardFront,.042f,
+                                "Backward elbow: "+state+" progress="+progress+" side="+side);
+                        }
+                    }
+                }
+            }
+            finally{UnityEngine.Object.DestroyImmediate(root);}
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AnimatorRecoversIfSlideWasExternallyStuckAfterMotorReturnedToRunning()
+        {
+            var actor=new GameObject("Stuck slide regression");
+            try
+            {
+                actor.transform.position=new Vector3(0,.9f,0);
+                actor.AddComponent<Rigidbody>();actor.AddComponent<CapsuleCollider>();
+                var visual=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"),
+                    actor.transform,false);
+                var motor=actor.AddComponent<ChaseMotor>();
+                motor.Initialize(new ChaseTuning(),visual.transform);
+                var driver=visual.GetComponent<ChibiVisualDriver>();
+                driver.BindMotor(motor);
+                var animator=driver.Animator;
+                var physicalState=typeof(ChaseMotor).GetField("<State>k__BackingField",
+                    System.Reflection.BindingFlags.NonPublic|
+                    System.Reflection.BindingFlags.Instance);
+                var lateUpdate=typeof(ChibiVisualDriver).GetMethod("LateUpdate",
+                    System.Reflection.BindingFlags.NonPublic|
+                    System.Reflection.BindingFlags.Instance);
+                // A genuine slide state is allowed, but only while the motor says Sliding.
+                physicalState.SetValue(motor,ChaseMovementState.Sliding);
+                lateUpdate.Invoke(driver,null);animator.Update(.10f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Slide"));
+                physicalState.SetValue(motor,ChaseMovementState.Standing);
+                motor.Body.linearVelocity=Vector3.forward*6f;
+                lateUpdate.Invoke(driver,null);animator.Update(.12f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Run"),
+                    "Animator must exit Slide when only movement input remains");
+                // Reproduce Animator desync: same requested Run, someone externally
+                // played Slide. Cached requests cannot prevent self-healing.
+                animator.Play("Slide",0,.7f);animator.Update(.01f);
+                lateUpdate.Invoke(driver,null);animator.Update(.12f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Run"),
+                    "Watchdog must restore the physical Run state after desync");
+                motor.Body.linearVelocity=Vector3.zero;
+                lateUpdate.Invoke(driver,null);animator.Update(.12f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Idle"),
+                    "Releasing WASD must return to Idle even after an earlier slide");
+                Assert.IsFalse(animator.applyRootMotion);
+            }
+            finally{UnityEngine.Object.DestroyImmediate(actor);}
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator AuthoredRunningCycleStridesTowardUnityPositiveZ()
         {
             var root=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"));

@@ -14,6 +14,39 @@ namespace Chase.Tests
         const string PrefabPath="Assets/Resources/ChibiVisual.prefab";
 
         [Test]
+        public void ProductionAnimatorNeverReferencesPreviewOrStaleImportedRanges()
+        {
+            var importer=AssetImporter.GetAtPath(ModelPath) as ModelImporter;
+            Assert.NotNull(importer);
+            var defaults=importer.defaultClipAnimations;
+            var configured=importer.clipAnimations;
+            Assert.AreEqual(11,defaults.Length);
+            Assert.AreEqual(11,configured.Length);
+            foreach(var expected in defaults)
+            {
+                var actual=configured.SingleOrDefault(c=>c.name==expected.name);
+                Assert.NotNull(actual,"Missing FBX take: "+expected.name);
+                Assert.That(actual.firstFrame,Is.EqualTo(expected.firstFrame).Within(.01f));
+                Assert.That(actual.lastFrame,Is.EqualTo(expected.lastFrame).Within(.01f),
+                    "Stale export frame range: "+expected.name);
+            }
+            var controller=AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(
+                "Assets/Art/Characters/Chibi/Animations/Chibi_Validation.controller");
+            Assert.NotNull(controller);
+            var states=controller.layers[0].stateMachine.states.Select(x=>x.state).ToArray();
+            Assert.AreEqual(11,states.Length);
+            foreach(var state in states)
+            {
+                var clip=state.motion as AnimationClip;
+                Assert.NotNull(clip,state.name);
+                Assert.AreEqual("Chibi_Armature|CHASE_"+state.name,clip.name,
+                    "Preview clip assigned to state: "+state.name);
+                Assert.AreEqual(ModelPath,AssetDatabase.GetAssetPath(clip));
+                Assert.Greater(AnimationUtility.GetCurveBindings(clip).Length,40);
+            }
+        }
+
+        [Test]
         public void UnrotatedPrefabUsesMeterScaleAndGroundPivot()
         {
             GameObject prefab=AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);

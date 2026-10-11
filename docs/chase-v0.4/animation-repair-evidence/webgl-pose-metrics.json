@@ -1,0 +1,74 @@
+{
+  "idle_to_crouch": {
+    "changedPixelsGt25": 2744,
+    "meanAbsoluteRgb": 1.814,
+    "crop": [
+      225,
+      287,
+      630,
+      735
+    ],
+    "fullSize": [
+      901,
+      897
+    ]
+  },
+  "idle_to_slide": {
+    "changedPixelsGt25": 3269,
+    "meanAbsoluteRgb": 2.294,
+    "crop": [
+      225,
+      287,
+      630,
+      735
+    ],
+    "fullSize": [
+      901,
+      897
+    ]
+  },
+  "slide_to_idle": {
+    "changedPixelsGt25": 3269,
+    "meanAbsoluteRgb": 2.294,
+    "crop": [
+      225,
+      287,
+      630,
+      735
+    ],
+    "fullSize": [
+      901,
+      897
+    ]
+  },
+  "run_A_vs_B": {
+    "changedPixelsGt25": 15851,
+    "meanAbsoluteRgb": 11.329,
+    "crop": [
+      225,
+      287,
+      630,
+      735
+    ],
+    "fullSize": [
+      901,
+      897
+    ]
+  },
+  "idle_roundtrip": {
+    "changedPixelsGt25": 0,
+    "meanAbsoluteRgb": 0.0,
+    "crop": [
+      225,
+      287,
+      630,
+      735
+    ],
+    "fullSize": [
+      901,
+      897
+    ]
+  },
+  "browserErrors": [],
+  "sourceUrl": "http://127.0.0.1:8766/?build=latest-animation-gym-repaired-20261011"
+}
