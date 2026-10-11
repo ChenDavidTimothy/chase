@@ -82,3 +82,21 @@ template. It keeps the whole arena, score, timer, and controls visible in
 modern desktop browser windows. A local WebGL build must be served via HTTP
 with the correct `Content-Encoding: gzip` headers for `.gz` resources; opening
 `index.html` directly from disk is not supported.
+
+## Chibi rig v0.2
+
+The original Chibi/armor.blend is preserved. A separately editable
+Chibi/Chibi_Rigged.blend contains the functional 20-bone rigid-part rig,
+eight test actions and self-contained provisional neutral materials.
+The Unity FBX imports as Generic because Humanoid retargeting removed
+the intended crouch-height translation despite a valid Avatar.
+
+Two identical, non-colliding visual instances are loaded from
+Assets/Resources/ChibiVisual.prefab and animated by ChibiVisualDriver.
+The physics capsule, collision rules, ChaseAction interface, and fixed
+camera are unchanged. Animator root motion is disabled.
+
+The final game-world visual scale, final colors, and polished animation
+library have not been decided. The oversized head currently does not
+fit fully inside the 0.85m crouch collider visually; see the measured
+limitations and images in docs/chibi-v0.2/rigging-report.md.

@@ -72,36 +72,59 @@ namespace Chase
             CapsuleCollider collider = actor.AddComponent<CapsuleCollider>();
             collider.height = tuning.standingHeight;
             collider.radius = tuning.radius;
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            visual.name = "Body / front marker";
-            visual.transform.SetParent(actor.transform, false);
-            visual.transform.localScale = new Vector3(tuning.radius * 2f,
-                tuning.standingHeight * .5f, tuning.radius * 2f);
-            // Primitive mesh colliders would otherwise remain active until the
-            // next frame, creating transient extra physical bodies.
-            Collider visualCollider=visual.GetComponent<Collider>();
-            visualCollider.enabled=false;
-            if (Application.isPlaying) Destroy(visualCollider);
-            else DestroyImmediate(visualCollider);
-            Material material = new Material(Shader.Find("Standard"));
-            material.color = color;
-            visual.GetComponent<Renderer>().material = material;
-            // Unity's WebGL code stripping may omit SphereCollider when no sphere
-            // exists in the authored scene. A small cube uses the already
-            // included BoxCollider (immediately disabled), so the visual marker
-            // does not introduce a platform-specific physics dependency.
-            GameObject front = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            front.name = "Facing indicator";
-            front.transform.SetParent(visual.transform, false);
-            front.transform.localPosition = new Vector3(0f,.25f,.53f);
-            front.transform.localScale = new Vector3(.42f,.28f,.2f);
-            front.GetComponent<Renderer>().material = new Material(Shader.Find("Standard")) {
-                color = new Color(.97f,.96f,.72f)
-            };
-            Collider frontCollider=front.GetComponent<Collider>();
-            frontCollider.enabled=false;
-            if (Application.isPlaying) Destroy(frontCollider);
-            else DestroyImmediate(frontCollider);
+            GameObject artPrefab = Resources.Load<GameObject>("ChibiVisual");
+            GameObject visual = artPrefab != null ?
+                Instantiate(artPrefab, actor.transform, false) :
+                GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            visual.name = artPrefab != null ? "Chibi Visual / animation only" : "Body / front marker";
+            if (artPrefab == null)
+            {
+                visual.transform.SetParent(actor.transform, false);
+                visual.transform.localScale = new Vector3(tuning.radius * 2f,
+                    tuning.standingHeight * .5f, tuning.radius * 2f);
+                // Primitive mesh colliders would otherwise remain active until the
+                // next frame, creating transient extra physical bodies.
+                Collider visualCollider=visual.GetComponent<Collider>();
+                visualCollider.enabled=false;
+                if (Application.isPlaying) Destroy(visualCollider);
+                else DestroyImmediate(visualCollider);
+                Material material = new Material(Shader.Find("Standard"));
+                material.color = color;
+                visual.GetComponent<Renderer>().material = material;
+                // Unity's WebGL code stripping may omit SphereCollider when no sphere
+                // exists in the authored scene. A small cube uses the already
+                // included BoxCollider (immediately disabled), so the visual marker
+                // does not introduce a platform-specific physics dependency.
+                GameObject front = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                front.name = "Facing indicator";
+                front.transform.SetParent(visual.transform, false);
+                front.transform.localPosition = new Vector3(0f,.25f,.53f);
+                front.transform.localScale = new Vector3(.42f,.28f,.2f);
+                front.GetComponent<Renderer>().material = new Material(Shader.Find("Standard")) {
+                    color = new Color(.97f,.96f,.72f)
+                };
+                Collider frontCollider=front.GetComponent<Collider>();
+                frontCollider.enabled=false;
+                if (Application.isPlaying) Destroy(frontCollider);
+                else DestroyImmediate(frontCollider);
+            }
+            else
+            {
+                // Role cues are provisional material property overrides, not
+                // irreversible textures or mesh edits.
+                foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
+                {
+                    Color tint = renderer.name.StartsWith("face") ?
+                        new Color(.075f,.09f,.11f) :
+                        renderer.name.StartsWith("head") ?
+                        new Color(.80f,.83f,.86f) : color;
+                    MaterialPropertyBlock block = new MaterialPropertyBlock();
+                    renderer.GetPropertyBlock(block);
+                    block.SetColor("_Color", tint);
+                    block.SetColor("_BaseColor", tint);
+                    renderer.SetPropertyBlock(block);
+                }
+            }
             ChaseMotor motor = actor.AddComponent<ChaseMotor>();
             motor.Initialize(tuning, visual.transform);
             ChaseTagContact tag = actor.AddComponent<ChaseTagContact>();

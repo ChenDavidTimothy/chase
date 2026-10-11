@@ -1,0 +1,686 @@
+fileFormatVersion: 2
+guid: 1177448a2dbc93e96b3b4e1083aa7506
+ModelImporter:
+  serializedVersion: 24300
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+    searchTexturesGlobally: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName:
+    animationImportErrors:
+    animationImportWarnings: "\nClip 'Chibi_Armature|CHASE_Crouch' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'torso' is inbetween humanoid
+      transforms and has rotation animation that will be discarded.\n\nClip 'Chibi_Armature|CHASE_Idle'
+      has import animation warnings that might lower retargeting quality:\nNote:
+      Activate translation DOF on avatar to improve retargeting quality.\n\t'neck'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n\nClip
+      'Chibi_Armature|CHASE_Jump' has import animation warnings that might lower
+      retargeting quality:\nNote: Activate translation DOF on avatar to improve retargeting
+      quality.\n\t'torso' is inbetween humanoid transforms and has rotation animation
+      that will be discarded.\n\nClip 'Chibi_Armature|CHASE_Leap' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'torso' is inbetween humanoid
+      transforms and has rotation animation that will be discarded.\n\nClip 'Chibi_Armature|CHASE_Run'
+      has import animation warnings that might lower retargeting quality:\nNote:
+      Activate translation DOF on avatar to improve retargeting quality.\n\t'torso'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n\nClip
+      'Chibi_Armature|CHASE_Slide' has import animation warnings that might lower
+      retargeting quality:\nNote: Activate translation DOF on avatar to improve retargeting
+      quality.\n\t'torso' is inbetween humanoid transforms and has rotation animation
+      that will be discarded.\n\nClip 'Chibi_Armature|CHASE_Turn' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'torso' is inbetween humanoid
+      transforms and has rotation animation that will be discarded.\n\t'neck' is
+      inbetween humanoid transforms and has rotation animation that will be discarded.\n\nClip
+      'Chibi_Armature|CHASE_Vault' has import animation warnings that might lower
+      retargeting quality:\nNote: Activate translation DOF on avatar to improve retargeting
+      quality.\n\t'torso' is inbetween humanoid transforms and has rotation animation
+      that will be discarded.\n"
+    animationRetargetingWarnings:
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Crouch
+      takeName: Chibi_Armature|CHASE_Crouch
+      internalID: 1214906334416807541
+      firstFrame: 0
+      lastFrame: 20
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Idle
+      takeName: Chibi_Armature|CHASE_Idle
+      internalID: -6630117946556171189
+      firstFrame: 0
+      lastFrame: 40
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Jump
+      takeName: Chibi_Armature|CHASE_Jump
+      internalID: -1975785774315693174
+      firstFrame: 0
+      lastFrame: 32
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Leap
+      takeName: Chibi_Armature|CHASE_Leap
+      internalID: 2777771835638671577
+      firstFrame: 0
+      lastFrame: 24
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Run
+      takeName: Chibi_Armature|CHASE_Run
+      internalID: -5670591677805165554
+      firstFrame: 0
+      lastFrame: 24
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Slide
+      takeName: Chibi_Armature|CHASE_Slide
+      internalID: -3202401816079937999
+      firstFrame: 0
+      lastFrame: 25
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Turn
+      takeName: Chibi_Armature|CHASE_Turn
+      internalID: 6009625496300667235
+      firstFrame: 0
+      lastFrame: 24
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Chibi_Armature|CHASE_Vault
+      takeName: Chibi_Armature|CHASE_Vault
+      internalID: -3698751957623650666
+      firstFrame: 0
+      lastFrame: 30
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human:
+    - boneName: pelvis
+      humanName: Hips
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: thigh_left
+      humanName: LeftUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: thigh_right
+      humanName: RightUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: shin_left
+      humanName: LeftLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: shin_right
+      humanName: RightLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: foot_left
+      humanName: LeftFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: foot_right
+      humanName: RightFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: spine
+      humanName: Spine
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: head
+      humanName: Head
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: upper_arm_left
+      humanName: LeftUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: upper_arm_right
+      humanName: RightUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: lower_arm_left
+      humanName: LeftLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: lower_arm_right
+      humanName: RightLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: hand_left
+      humanName: LeftHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: hand_right
+      humanName: RightHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    skeleton:
+    - name: Chibi_Rigged(Clone)
+      parentName:
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Chibi_Armature
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: Root
+      parentName: Chibi_Armature
+      position: {x: -0, y: 0, z: 0.0005}
+      rotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+      scale: {x: 1, y: 1, z: 1}
+    - name: pelvis
+      parentName: Root
+      position: {x: 0, y: 0.004199773, z: 9.313226e-10}
+      rotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+      scale: {x: 1, y: 1, z: 1}
+    - name: spine
+      parentName: pelvis
+      position: {x: -0, y: 0.0012999999, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: torso
+      parentName: spine
+      position: {x: -0, y: 0.0014999998, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: neck
+      parentName: torso
+      position: {x: -0, y: 0.0018999999, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: head
+      parentName: neck
+      position: {x: -0, y: 0.0019000005, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: clavicle_left
+      parentName: torso
+      position: {x: -0, y: 0.0014000004, z: -0.001}
+      rotation: {x: 0.89442736, y: 0, z: 0, w: -0.44721326}
+      scale: {x: 1, y: 1, z: 1.0000001}
+    - name: upper_arm_left
+      parentName: clavicle_left
+      position: {x: -0, y: 0.0010000002, z: 1.4901161e-10}
+      rotation: {x: 0.2949353, y: -0, z: 0, w: 0.9555172}
+      scale: {x: 1, y: 1.0000001, z: 1.0000001}
+    - name: lower_arm_left
+      parentName: upper_arm_left
+      position: {x: -0, y: 0.0017000004, z: 1.4901161e-10}
+      rotation: {x: 0.008241025, y: -0.0004950518, z: -0.037903722, w: 0.9992474}
+      scale: {x: 1, y: 1, z: 0.99999994}
+    - name: hand_left
+      parentName: lower_arm_left
+      position: {x: -1.8626451e-11, y: 0.0016, z: 8.8907487e-10}
+      rotation: {x: -0.000000022464437, y: -0.0000000027906866, z: -0.0000000018626454, w: 1}
+      scale: {x: 0.99999994, y: 0.9999999, z: 0.9999999}
+    - name: clavicle_right
+      parentName: torso
+      position: {x: -0, y: 0.0014000004, z: 0.001}
+      rotation: {x: 0.89442736, y: -0, z: 0, w: 0.44721326}
+      scale: {x: 1, y: 1, z: 1.0000001}
+    - name: upper_arm_right
+      parentName: clavicle_right
+      position: {x: -0, y: 0.0010000002, z: -1.4901161e-10}
+      rotation: {x: -0.2949353, y: -0, z: -0, w: 0.9555172}
+      scale: {x: 1, y: 1.0000001, z: 1.0000001}
+    - name: lower_arm_right
+      parentName: upper_arm_right
+      position: {x: -0, y: 0.0017000004, z: -1.4901161e-10}
+      rotation: {x: -0.008241354, y: 0.00049502664, z: -0.03790387, w: 0.99924725}
+      scale: {x: 1, y: 1, z: 0.99999994}
+    - name: hand_right
+      parentName: lower_arm_right
+      position: {x: -1.8626451e-11, y: 0.0016, z: -8.8907487e-10}
+      rotation: {x: 0.000000022464437, y: 0.0000000027906866, z: -0.0000000018626454, w: 1}
+      scale: {x: 0.99999994, y: 0.9999999, z: 0.9999999}
+    - name: thigh_right
+      parentName: pelvis
+      position: {x: -0, y: -0.0002999997, z: 0.00090000004}
+      rotation: {x: 1, y: -2.6765506e-24, z: 0.00000004371139, w: 6.123234e-17}
+      scale: {x: 1, y: 1, z: 1}
+    - name: shin_right
+      parentName: thigh_right
+      position: {x: -0, y: 0.0018999999, z: 0}
+      rotation: {x: 0.0000000017479875, y: -0.000000043676422, z: -0.039989296, w: 0.9992001}
+      scale: {x: 1, y: 1, z: 1}
+    - name: foot_right
+      parentName: shin_right
+      position: {x: -0, y: 0.0019999999, z: -7.4505804e-11}
+      rotation: {x: 0.5108781, y: -0.48887992, z: 0.510878, w: 0.48887998}
+      scale: {x: 1, y: 0.9999999, z: 0.99999994}
+    - name: thigh_left
+      parentName: pelvis
+      position: {x: -0, y: -0.0002999997, z: -0.00090000004}
+      rotation: {x: 1, y: -2.6765506e-24, z: 0.00000004371139, w: 6.123234e-17}
+      scale: {x: 1, y: 1, z: 1}
+    - name: shin_left
+      parentName: thigh_left
+      position: {x: -0, y: 0.0018999999, z: 0}
+      rotation: {x: 0.0000000017479875, y: -0.000000043676422, z: -0.039989296, w: 0.9992001}
+      scale: {x: 1, y: 1, z: 1}
+    - name: foot_left
+      parentName: shin_left
+      position: {x: -0, y: 0.0019999999, z: 7.4505804e-11}
+      rotation: {x: 0.5108781, y: -0.48887992, z: 0.510878, w: 0.48887998}
+      scale: {x: 1, y: 0.9999999, z: 0.99999994}
+    - name: face_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 1.3399999, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: foot_left_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0.06, y: 0.26000005, z: -0.089999996}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: foot_right_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0.06, y: 0.26000005, z: 0.089999996}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: hand_left_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.7099999, z: -0.17999999}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: hand_right_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.7099999, z: 0.17999999}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: head_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 1.3399999, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: lower_arm_left_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.78999996, z: -0.17999999}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: lower_arm_right_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.78999996, z: 0.17999999}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: pelvis_geom_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.70000005, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: shin_left_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.36000004, z: -0.089999996}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: shin_right_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.36000004, z: 0.089999996}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: spine_geom_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.84999996, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: thigh_left_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.55500007, z: -0.089999996}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: thigh_right_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.55500007, z: 0.089999996}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: torso_geom_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 1, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: upper_arm_left_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.9549999, z: -0.17999999}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    - name: upper_arm_right_vis
+      parentName: Chibi_Rigged(Clone)
+      position: {x: -0, y: 0.9549999, z: 0.17999999}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 100, y: 100, z: 100}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName:
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData:
+  assetBundleName:
+  assetBundleVariant:

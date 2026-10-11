@@ -203,6 +203,15 @@ namespace Chase
             Capsule.height = h;
             Capsule.center = new Vector3(0f, (h - Settings.standingHeight) * 0.5f, 0f);
             if (visual == null) return;
+            if (visual.GetComponent<ChibiVisualDriver>() != null)
+            {
+                // The independent Animator bends the chibi into a crouch.
+                // Never shrink or move the whole production skeleton.
+                visual.localScale = visualInitialScale;
+                visual.localPosition = standingVisualLocalPosition;
+                return;
+            }
+            // Legacy capsule fallback for projects without the art prefab.
             visual.localScale = new Vector3(visualInitialScale.x,
                 visualInitialScale.y * h / Settings.standingHeight, visualInitialScale.z);
             visual.localPosition = standingVisualLocalPosition +
