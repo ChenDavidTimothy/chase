@@ -2,6 +2,10 @@ import bpy,math,json
 from mathutils import Vector,Quaternion
 arm=bpy.data.objects['Chibi_Armature']
 assert bpy.data.filepath.endswith('Chibi_Rigged.blend')
+assert "Blender +X forward" in str(bpy.data.objects["Chibi_Armature"].get("basis", "")), (
+    "Animation regeneration is only valid on the legacy pre-normalization intermediate. "
+    "Do not overwrite normalized production animations. See rig_tools/README.md.")
+
 for act in list(bpy.data.actions):
     if act.name.startswith('CHASE_'):bpy.data.actions.remove(act)
 arm.animation_data_create()
@@ -70,6 +74,7 @@ poses={
 }
 for name,keyposes in poses.items():
     act=bpy.data.actions.new(name)
+    act.use_fake_user = True  # Preserve *every* clip when reopening Blender
     act.use_frame_range=True;act.frame_start=keyposes[0][0];act.frame_end=keyposes[-1][0]
     arm.animation_data.action=act
     for frame,config in keyposes:

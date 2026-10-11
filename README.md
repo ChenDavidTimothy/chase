@@ -1,4 +1,7 @@
-# CHASE v0.1
+# CHASE
+
+> Character asset convention: **Blender -Y forward/+Z up, Unity +Z forward/+Y up, normalized 1.8m foot pivot and no Unity corrective yaw.**
+> See [production coordinate contract](docs/CHARACTER_COORDINATE_CONTRACT.md).
 
 A single-player, keyboard-only, physics-based 3D chase-tag prototype for Unity 6.3 LTS.
 
@@ -96,8 +99,8 @@ Assets/Resources/ChibiVisual.prefab and animated by ChibiVisualDriver.
 The physics capsule, collision rules, ChaseAction interface, and fixed
 camera are unchanged. Animator root motion is disabled.
 
-The final game-world visual scale, final colors, and polished animation
-library have not been decided. The oversized head currently does not
+The normalized standing character is authored at 1.8m and imported at scale 1;
+final colors and polished animation library remain undecided. The oversized head currently does not
 fit fully inside the 0.85m crouch collider visually; see the measured
 limitations and images in docs/chibi-v0.2/rigging-report.md.
 
@@ -106,8 +109,7 @@ limitations and images in docs/chibi-v0.2/rigging-report.md.
 
 The animated visual is explicitly bound to ChaseMotor after match construction,
 rather than relying on a premature Awake lookup. A reset also restarts the
-Idle pose. The Blender +X face is imported as model-local -X; the prefab uses
-a +90 degree model yaw to align the actual face with the motor's +Z forward
-movement. The Idle clip keeps feet and pelvis at fixed height. These changes
+Idle pose. The historical Blender +X model was normalized in v0.3 to Blender -Y.
+The imported FBX and prefab face Unity +Z with zero corrective yaw. The Idle clip keeps feet and pelvis at fixed height. These changes
 do not modify character geometry, motor physics, or controller parity.
 See docs/chibi-v0.2/rigging-report.md for tests and limitations.

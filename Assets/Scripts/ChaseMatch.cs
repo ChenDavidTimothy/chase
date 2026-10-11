@@ -110,6 +110,11 @@ namespace Chase
             }
             else
             {
+                // Physics actors are centered at standing capsule midpoint.
+                // The normalized art pivot is at the feet. This deliberate,
+                // documented -height/2 visual anchor is NOT an axis workaround.
+                // The FBX/prefab itself has identity transform and unit scale.
+                visual.transform.localPosition = Vector3.down * (tuning.standingHeight * 0.5f);
                 // Role cues are provisional material property overrides, not
                 // irreversible textures or mesh edits.
                 foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))

@@ -1,0 +1,60 @@
+"""Read-only contract check: blender -b Chibi/Chibi_Rigged.blend --python Chibi/rig_tools/validate_asset.py"""
+import bpy,math,json
+from mathutils import Vector,Matrix
+arm=bpy.data.objects["Chibi_Armature"]
+expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_Crouch","CHASE_Slide","CHASE_Vault","CHASE_Leap","CHASE_Turn"}
+assert {a.name for a in bpy.data.actions if a.name.startswith("CHASE_")}==expected
+assert all(bpy.data.actions[name].use_fake_user for name in expected)
+assert "Blender -Y forward" in str(arm.get("basis",""))
+assert arm.matrix_world==Matrix.Identity(4)
+assert arm.data.bones["Root"].head_local.length<.00001
+assert abs(float(arm.get("asset_height_m",0))-1.8)<.0001
+meshes=[o for o in bpy.data.objects if o.type=="MESH" and o.name.endswith("_vis")]
+assert len(meshes)==17
+for obj in meshes:
+    assert max(abs(v) for v in obj.rotation_euler)<.00001,obj.name
+    assert max(abs(v-1.) for v in obj.scale)<.00001,obj.name
+    mods=[m for m in obj.modifiers if m.type=="ARMATURE"]
+    assert len(mods)==1 and mods[0].object==arm,obj.name
+    assert len(obj.vertex_groups)==1 and len(obj.data.vertices)>0,obj.name
+    group=obj.vertex_groups[0]
+    for v in obj.data.vertices:
+        weights=[w for w in v.groups if w.group==group.index]
+        assert len(weights)==1 and abs(weights[0].weight-1.)<.0001,(obj.name,v.index)
+def center(name):
+    o=bpy.data.objects[name].evaluated_get(bpy.context.evaluated_depsgraph_get())
+    return sum((o.matrix_world@Vector(c) for c in o.bound_box),Vector())/8
+def bone(name):
+    return arm.matrix_world@arm.pose.bones[name].matrix.translation
+arm.animation_data.action=bpy.data.actions["CHASE_Idle"]
+bpy.context.scene.frame_set(1);bpy.context.view_layer.update()
+forward=center("face_vis")-center("head_vis");forward.z=0
+dot=forward.normalized().dot(Vector((0,-1,0)))
+assert dot>.98,dot
+dg=bpy.context.evaluated_depsgraph_get();zlo=float("inf");zhi=float("-inf")
+for o in meshes:
+    e=o.evaluated_get(dg);m=e.to_mesh()
+    try:
+        for v in m.vertices:
+            z=(e.matrix_world@v.co).z;zlo=min(zlo,z);zhi=max(zhi,z)
+    finally:e.to_mesh_clear()
+assert abs(zlo)<.015,zlo
+assert abs(zhi-1.8)<.015,zhi
+idle=[]
+for frame in (1,11,21,31,41):
+    bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+    idle.append((bone("pelvis").z,bone("foot_left").z,bone("foot_right").z))
+assert max(max(abs(p[i]-idle[0][i]) for i in range(3)) for p in idle)<.005,idle
+run=[]
+arm.animation_data.action=bpy.data.actions["CHASE_Run"]
+for frame in (1,13):
+    bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+    run.append(bone("shin_left").y-bone("shin_right").y)
+assert run[0]*run[1]<-.01,run
+for name in expected:
+    a=bpy.data.actions[name]
+    for f in (int(a.frame_range[0]),int(a.frame_range[1])):
+        arm.animation_data.action=a;bpy.context.scene.frame_set(f);bpy.context.view_layer.update()
+        for pb in arm.pose.bones:
+            assert all(math.isfinite(x) for row in pb.matrix for x in row),(name,pb.name)
+print("CHASE_ASSET_CONTRACT_PASS",json.dumps({"actions":len(expected),"meshes":len(meshes),"face_dot":round(dot,6),"feet_z":round(zlo,6),"height":round(zhi,6),"run_swings":run}))

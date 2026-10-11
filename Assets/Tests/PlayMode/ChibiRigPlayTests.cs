@@ -285,5 +285,74 @@ namespace Chase.Tests
             finally { UnityEngine.Object.DestroyImmediate(root); }
             yield return null;
         }
+        [UnityTest]
+        public IEnumerator MatchSpawnsBothRolesWithFeetAtGroundAndUnrotatedArt()
+        {
+            var host=new GameObject("Character coordinate contract match");
+            ChaseMatch match=null;
+            try
+            {
+                match=host.AddComponent<ChaseMatch>();
+                foreach(ChaseMotor motor in new[]{match.Chaser,match.Evader})
+                {
+                    var visual=motor.GetComponentInChildren<ChibiVisualDriver>();
+                    Assert.NotNull(visual);
+                    Assert.AreSame(motor,visual.Motor);
+                    Assert.Less(Mathf.Abs(visual.transform.localPosition.y+
+                        match.Tuning.standingHeight*.5f),.0001f,
+                        "The capsule center to feet-anchor offset belongs on the visual root");
+                    Assert.Less(Quaternion.Angle(visual.transform.localRotation,
+                        Quaternion.identity),.0001f);
+                    Assert.Less((visual.transform.localScale-Vector3.one).magnitude,.0001f);
+                    Transform importedModel=visual.transform.GetChild(0);
+                    Assert.Less(importedModel.localPosition.magnitude,.0001f);
+                    Assert.Less(Quaternion.Angle(importedModel.localRotation,
+                        Quaternion.identity),.0001f);
+                    Assert.Less((importedModel.localScale-Vector3.one).magnitude,.0001f);
+                    Assert.AreEqual(0,visual.GetComponentsInChildren<Collider>(true).Length);
+                    Assert.AreEqual(1.8f,motor.Capsule.height,.0001f);
+                    Assert.AreEqual(.35f,motor.Capsule.radius,.0001f);
+                    var skins=visual.GetComponentsInChildren<SkinnedMeshRenderer>();
+                    Bounds combined=skins[0].bounds;
+                    foreach(var renderer in skins.Skip(1)) combined.Encapsulate(renderer.bounds);
+                    Assert.That(combined.min.y,Is.InRange(-.04f,.04f),
+                        "Both roles should place the art feet at the arena floor");
+                    Assert.That(combined.max.y,Is.InRange(1.75f,1.85f));
+                    Assert.IsFalse(visual.Animator.applyRootMotion);
+                }
+            }
+            finally
+            {
+                if(match!=null && match.ArenaCamera!=null)
+                    UnityEngine.Object.DestroyImmediate(match.ArenaCamera.gameObject);
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AuthoredRunningCycleStridesTowardUnityPositiveZ()
+        {
+            var root=UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"));
+            try
+            {
+                var anim=root.GetComponentInChildren<Animator>(true);
+                var joints=anim.GetComponentsInChildren<Transform>(true);
+                var pelvis=joints.First(t=>t.name=="pelvis");
+                var left=joints.First(t=>t.name=="shin_left");
+                var right=joints.First(t=>t.name=="shin_right");
+                anim.Play("Run",0,0f);
+                anim.Update(.02f);
+                float first=left.position.z-right.position.z;
+                anim.Play("Run",0,.5f);
+                anim.Update(.02f);
+                float opposite=left.position.z-right.position.z;
+                Assert.Greater(Mathf.Abs(first),.10f,"Run must stride visibly");
+                Assert.Less(first*opposite,-.015f,
+                    "Leg swing must alternate forward/backward on Unity +Z, not reverse the model");
+            }
+            finally{UnityEngine.Object.DestroyImmediate(root);}
+            yield return null;
+        }
     }
 }

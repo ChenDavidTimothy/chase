@@ -56,15 +56,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.2765957
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.2765957
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.2765957
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalPosition.x
@@ -72,7 +72,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.1170212
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalPosition.z
@@ -80,7 +80,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalRotation.x
@@ -88,7 +88,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.7071068
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1177448a2dbc93e96b3b4e1083aa7506, type: 3}
       propertyPath: m_LocalRotation.z
