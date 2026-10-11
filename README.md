@@ -100,3 +100,14 @@ The final game-world visual scale, final colors, and polished animation
 library have not been decided. The oversized head currently does not
 fit fully inside the 0.85m crouch collider visually; see the measured
 limitations and images in docs/chibi-v0.2/rigging-report.md.
+
+
+### v0.2.1 animation playback and facing corrections
+
+The animated visual is explicitly bound to ChaseMotor after match construction,
+rather than relying on a premature Awake lookup. A reset also restarts the
+Idle pose. The Blender +X face is imported as model-local -X; the prefab uses
+a +90 degree model yaw to align the actual face with the motor's +Z forward
+movement. The Idle clip keeps feet and pelvis at fixed height. These changes
+do not modify character geometry, motor physics, or controller parity.
+See docs/chibi-v0.2/rigging-report.md for tests and limitations.

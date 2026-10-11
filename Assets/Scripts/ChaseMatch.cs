@@ -127,6 +127,9 @@ namespace Chase
             }
             ChaseMotor motor = actor.AddComponent<ChaseMotor>();
             motor.Initialize(tuning, visual.transform);
+            // Awake on the visual ran before ChaseMotor existed on this actor.
+            ChibiVisualDriver driver = visual.GetComponent<ChibiVisualDriver>();
+            if (driver != null) driver.BindMotor(motor);
             ChaseTagContact tag = actor.AddComponent<ChaseTagContact>();
             tag.Initialize(this,role);
             return motor;

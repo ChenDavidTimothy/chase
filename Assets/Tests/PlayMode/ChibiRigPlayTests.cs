@@ -168,5 +168,122 @@ namespace Chase.Tests
             finally{UnityEngine.Object.DestroyImmediate(actor);}
             yield return null;
         }
+        [UnityTest]
+        public IEnumerator VisualCreatedBeforeMotorCanBindAndPlayRun()
+        {
+            var actor = new GameObject("Late motor fixture");
+            try
+            {
+                actor.transform.position = new Vector3(0f, .9f, 0f);
+                actor.AddComponent<Rigidbody>();
+                actor.AddComponent<CapsuleCollider>();
+                // Reproduce actual ChaseMatch.CreateCompetitor order, not the
+                // reversed order that masked the original broken binding.
+                var visual = UnityEngine.Object.Instantiate(
+                    Resources.Load<GameObject>("ChibiVisual"), actor.transform, false);
+                var driver = visual.GetComponent<ChibiVisualDriver>();
+                Assert.IsNull(driver.Motor,
+                    "Awake is called before ChaseMotor exists on this actor");
+                var motor = actor.AddComponent<ChaseMotor>();
+                motor.Initialize(new ChaseTuning(), visual.transform);
+                driver.BindMotor(motor);
+                Assert.AreSame(motor, driver.Motor);
+                var animator = driver.Animator;
+                var thigh = animator.GetComponentsInChildren<Transform>(true)
+                    .First(t => t.name == "thigh_left");
+                animator.Play("Run", 0, 0f);
+                animator.Update(.02f);
+                Quaternion firstPose = thigh.localRotation;
+                animator.Update(.38f);
+                Assert.Greater(Quaternion.Angle(firstPose, thigh.localRotation), 20f,
+                    "Running must visibly articulate the legs, not stay neutral");
+                motor.Body.linearVelocity = Vector3.forward * 3.2f;
+                var update = typeof(ChibiVisualDriver).GetMethod("LateUpdate",
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance);
+                update.Invoke(driver, null);
+                animator.Update(.20f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Run"));
+                driver.ResetAnimation();
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Idle"));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(actor); }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ChibiFacePointsAlongEveryWorldMovementDirection()
+        {
+            var actor = new GameObject("Visual facing fixture");
+            try
+            {
+                actor.transform.position = new Vector3(0f, .9f, 0f);
+                actor.AddComponent<Rigidbody>();
+                actor.AddComponent<CapsuleCollider>();
+                var motor = actor.AddComponent<ChaseMotor>();
+                var visual = UnityEngine.Object.Instantiate(
+                    Resources.Load<GameObject>("ChibiVisual"), actor.transform, false);
+                motor.Initialize(new ChaseTuning(), visual.transform);
+                visual.GetComponent<ChibiVisualDriver>().BindMotor(motor);
+                var animator = visual.GetComponentInChildren<Animator>();
+                var skins = visual.GetComponentsInChildren<SkinnedMeshRenderer>();
+                var face = skins.First(r => r.name == "face_vis");
+                var head = skins.First(r => r.name == "head_vis");
+                var orient = typeof(ChaseMotor).GetMethod("OrientVisual",
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance);
+                foreach (var direction in new[] {
+                    Vector3.forward, Vector3.back, Vector3.left, Vector3.right
+                })
+                {
+                    orient.Invoke(motor, new object[] { direction * 4f, 2f });
+                    animator.Play("Idle", 0, 0f);
+                    animator.Update(.05f);
+                    Vector3 faceDirection = face.bounds.center - head.bounds.center;
+                    faceDirection.y = 0f;
+                    Assert.Greater(Vector3.Dot(faceDirection.normalized, direction), .92f,
+                        "Face must point in the movement direction " + direction);
+                }
+            }
+            finally { UnityEngine.Object.DestroyImmediate(actor); }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator IdleKeepsPelvisAndBothFeetGroundedWithoutVerticalBob()
+        {
+            var root = UnityEngine.Object.Instantiate(Resources.Load<GameObject>("ChibiVisual"));
+            try
+            {
+                var animator = root.GetComponentInChildren<Animator>();
+                var bones = animator.GetComponentsInChildren<Transform>(true);
+                Transform pelvis = bones.First(t => t.name == "pelvis");
+                Transform leftFoot = bones.First(t => t.name == "foot_left");
+                Transform rightFoot = bones.First(t => t.name == "foot_right");
+                float pelvisAtRest = 0f, leftAtRest = 0f, rightAtRest = 0f;
+                foreach (float progress in new[] { 0f, .25f, .5f, .75f, .995f })
+                {
+                    animator.Play("Idle", 0, progress);
+                    animator.Update(.02f);
+                    if (progress == 0f)
+                    {
+                        pelvisAtRest = pelvis.position.y;
+                        leftAtRest = leftFoot.position.y;
+                        rightAtRest = rightFoot.position.y;
+                    }
+                    else
+                    {
+                        Assert.AreEqual(pelvisAtRest, pelvis.position.y, .003f,
+                            "Idle should never lift the pelvis");
+                        Assert.AreEqual(leftAtRest, leftFoot.position.y, .003f,
+                            "Left foot must remain planted during idle");
+                        Assert.AreEqual(rightAtRest, rightFoot.position.y, .003f,
+                            "Right foot must remain planted during idle");
+                    }
+                }
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+            yield return null;
+        }
     }
 }

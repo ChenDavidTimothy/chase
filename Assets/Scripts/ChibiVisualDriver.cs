@@ -25,6 +25,26 @@ namespace Chase
             }
         }
 
+        // The visual prefab is instantiated before the match attaches ChaseMotor.
+        // Awake cannot resolve that component yet. Binding must be explicit.
+        public void BindMotor(ChaseMotor sharedMotor)
+        {
+            if (sharedMotor == null) throw new System.ArgumentNullException(nameof(sharedMotor));
+            motor = sharedMotor;
+            if (animator == null) animator = GetComponentInChildren<Animator>(true);
+            ResetAnimation();
+        }
+
+        public void ResetAnimation()
+        {
+            previousState = -1;
+            if (animator != null && animator.isActiveAndEnabled)
+            {
+                animator.Play("Idle", 0, 0f);
+                animator.Update(0f);
+            }
+        }
+
         void LateUpdate()
         {
             if (motor == null || animator == null || !animator.isActiveAndEnabled) return;

@@ -36,7 +36,8 @@ def pose(leg=0,elbow=.12,knee=.08, armswing=0,lean=0,headturn=0,crouch=0,
     }
     return {'rot':rot,'pelvis_z':crouch+up,'root_x':0}
 poses={
- 'CHASE_Idle':[(1,pose()),(11,pose(up=.015,headturn=.04)),(21,pose(up=.028,headturn=0)),(31,pose(up=.015,headturn=-.04)),(41,pose())],
+ 'CHASE_Idle':[(1,pose()),(11,pose(headturn=.018)),(21,pose()),(31,pose(headturn=-.018)),(41,pose())],
+ # Neutral idle deliberately has zero pelvis translation and remains grounded.
  'CHASE_Run':[(1,pose(leg=.85,armswing=-.68,elbow=.55,knee=.15,lean=.17,up=.055)),
     (7,pose(leg=0,armswing=0,elbow=.40,knee=.42,lean=.15,up=-.020)),
     (13,pose(leg=-.85,armswing=.68,elbow=.55,knee=.15,lean=.17,up=.055)),

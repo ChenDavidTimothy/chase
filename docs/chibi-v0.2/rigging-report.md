@@ -56,9 +56,9 @@ The imported FBX contains 17 SkinnedMeshRenderers, eight named clips and no coll
 
 Both Human and Generic Avatar creation report valid, but an in-Editor bone-transform comparison showed that Humanoid retargeting effectively cancels the authored crouch translation: the head stays near world y=1.48. Under Generic, the pelvis drops from y=0.68 to about y=0.33 and the head from y=1.53 to about y=1.14. Therefore the final import intentionally uses Generic. The Avatar is valid, and the actual clip transforms play.
 
-The reusable visual prefab is Assets/Resources/ChibiVisual.prefab. Its model child has an adjustable scale of about 1.2766, a reversible floor-level offset, and a -90 degree yaw that converts Blender +X facing to Unity +Z forward. Neither Blender geometry nor the physical gameplay root is rescaled. The exact final artistic/world scale remains open.
+The reusable visual prefab is Assets/Resources/ChibiVisual.prefab. Its model child has an adjustable scale of about 1.2766, a reversible floor-level offset, and a +90 degree yaw. Empirical Unity SkinnedMeshRenderer inspection established that Blender +X facing becomes imported model-local -X, so the corrected +90 degree offset converts the actual face to CHASE +Z forward. Neither Blender geometry nor the physical gameplay root is rescaled. The exact final artistic/world scale remains open.
 
-The Animator references Assets/Art/Characters/Chibi/Animations/Chibi_Validation.controller. ChibiVisualDriver observes the shared ChaseMotor movement state, cross-fades to Idle, Run, Jump, Crouch, Slide or Vault, and never writes physics velocities or positions. Turn and Leap clips are proof assets only and are not additional gameplay abilities.
+The Animator references Assets/Art/Characters/Chibi/Animations/Chibi_Validation.controller. ChibiVisualDriver is explicitly bound after ChaseMotor is added to the gameplay root (the visual prefab Awake executes first). It observes the shared ChaseMotor movement state, cross-fades to Idle, Run, Jump, Crouch, Slide or Vault, and never writes physics velocities or positions. Turn and Leap clips are proof assets only and are not additional gameplay abilities.
 
 ChaseMatch loads the prefab for both players, using temporary red/blue property-block coloring for role readability. The existing primitive capsule visual remains a fallback if the prefab is unavailable. ChaseMotor.SetHeight continues to change the real CapsuleCollider identically for both roles, but no longer shrinks/scales or translates the entire production skeleton. Root motion is explicitly disabled. No mesh colliders are introduced.
 
@@ -97,3 +97,18 @@ Reproducibility scripts live under Chibi/rig_tools. They are included for audit 
 ## RL compatibility
 
 CHASE action definitions, ChaseAction, IChaseActionSource, ChaseMatch, ChaseObservationSensor and physics rules remain independent of the new Animator. A future headless or RL-controlled simulation can drive ChaseMotor without the visual prefab. No ML-Agents package, reward functions, neural network or training infrastructure was introduced.
+
+
+## CHASE v0.2.1 animation and facing corrections (2026-10-11)
+
+A player-visible audit reproduced three defects in v0.2 and fixed them without changing the approved geometry or the physics rules:
+
+1. **Inactive animation driver.** ChaseMatch instantiated the ChibiVisual prefab before adding ChaseMotor, but ChibiVisualDriver.Awake immediately attempted to resolve ChaseMotor. Live Unity inspection confirmed the driver Motor reference was NULL, preventing all movement-state animation transitions. ChaseMatch now calls ChibiVisualDriver.BindMotor immediately after ChaseMotor.Initialize. The driver resets its Idle pose when a match resets. A regression test recreates this exact initialization order, confirms explicit binding, shows the running leg rotating significantly during playback, and verifies the state transitions.
+2. **180-degree facing mismatch.** Blender's geometry faces positive X. The FBX importer maps this to negative X in the imported Unity model. The v0.2 visual prefab incorrectly rotated the model by -90 degrees, making the face point along the gameplay root's negative Z, while ChaseMotor.OrientVisual uses positive Z as forward. The prefab model child now rotates by +90 degrees. Unity PlayMode tests explicitly check the face-to-head direction against four movement vectors with dot products above 0.92. Meshes and motor rotations are not changed.
+3. **Floating idle.** Blender's CHASE_Idle keyframes translated the pelvis by +0.015 to +0.028 source units. The validation action now keeps the pelvis's height exactly constant across all five keyframes. Idle retains only a very subtle head turn. Blender measured equal pelvis and both foot Z values at frames 1, 11, 21, 31 and 41. Unity tests sample the imported idle clip across its duration and verify grounded feet/pelvis within 0.003 Unity units.
+
+Authoring direction check: the Blender +X face-offset dot product ranges from 0.81 (vault) to 0.999 (run) for the movement validation clips; the intentionally sideways turning pose has a lower dot product. Running keyframes put the left knee ahead and right knee behind at frame 1, reversing at frame 13, with opposite arm swing. These actions were not authored backward.
+
+The new Blender file and FBX were re-exported from the existing approved rigid meshes, with Generic rigging unchanged. The chibi's full-size head still does not visually fit entirely within CHASE's 0.85 m crouched physics capsule. Dedicated animation polish, foot contacts during the running cycle, and shoulder/knee intersections are separate remaining tasks. No ML packages or mechanics were added.
+
+Verified tests and build details for the correction are recorded in the v0.2.1 Git commit.

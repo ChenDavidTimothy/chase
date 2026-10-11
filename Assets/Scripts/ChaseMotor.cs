@@ -82,7 +82,12 @@ namespace Chase
             State = ChaseMovementState.Standing;
             Grounded = true;
             visualYaw = 0f;
-            if (visual != null) visual.localRotation = Quaternion.identity;
+            if (visual != null)
+            {
+                visual.localRotation = Quaternion.identity;
+                ChibiVisualDriver driver = visual.GetComponent<ChibiVisualDriver>();
+                if (driver != null) driver.ResetAnimation();
+            }
             Body.Sleep();
         }
 
