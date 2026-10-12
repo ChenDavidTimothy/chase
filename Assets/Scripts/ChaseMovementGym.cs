@@ -93,6 +93,15 @@ namespace Chase
                 keyboard.ResetSource();
                 return;
             }
+            // An intentionally difficult shelf-edge dive. It is still the
+            // real upward Arrow motor action, not a teleported prone pose.
+            // This staging is only available inside the independent gym.
+            if(k!=null && k.kKey.wasPressedThisFrame)
+            {
+                ResetActorAt(new Vector3(0f,tuning.standingHeight*.5f,2.2f));
+                keyboard.ResetSource();
+                return;
+            }
             // Gym-only repeatable 6 m/s football tackle setup, aligned
             // with the original W control axis. Down begins the REAL motor
             // slide immediately; no animator-only or collider bypasses.
@@ -142,7 +151,7 @@ namespace Chase
             if(motor==null)return;
             GUI.Box(new Rect(12,12,370,270),"CHASE / PHYSICAL ATHLETIC MOVEMENT GYM");
             GUI.Label(new Rect(24,39,340,25),"WASD MOVE   SPACE JUMP   UP SUPERMAN");
-            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  J SLIDE LANE  G DIVE  H WALL  V VIEW");
+            GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  J SLIDE  G OPEN DIVE  K SHELF CRAWL  V VIEW");
             GUI.Label(new Rect(24,86,330,25),"STATE: "+motor.State);
             GUI.Label(new Rect(24,108,330,25),"SPEED: "+
                 motor.HorizontalVelocity.magnitude.ToString("F2")+" m/s   VY: "+

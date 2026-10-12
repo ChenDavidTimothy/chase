@@ -4,7 +4,7 @@ Single-player, keyboard-only, physics-based 3D chase-tag game, Unity **6000.3.26
 
 **v0.6 slide update:** Down Arrow now commits to a true grounded **feet-first football sliding tackle**. Its low solid BoxCollider is 1.98 m long and 0.82 m high, with a matching nearly horizontal Blender pose and a protected get-up. In the independent WebGL gym, use **J**, then **Down** to test a 6 m/s slide under the canopy; **V** shows its side profile. [Current slide contract](docs/chase-v0.6/README.md).
 
-**Authoritative current movement:** [v0.7 single rounded-capsule Superman dive](docs/chase-v0.7/README.md), including the [v0.6 football slide](docs/chase-v0.6/README.md). Earlier implementations remain documented in [v0.6.1](docs/chase-v0.6.1/README.md), [v0.5.3](docs/chase-v0.5.3/README.md), [v0.5.2](docs/chase-v0.5.2/README.md), [v0.5.1](docs/chase-v0.5.1/README.md), and [v0.5](docs/chase-v0.5/README.md) as history, not current tuning. Full movement and character contracts: [movement](docs/MOVEMENT_CONTRACT.md) and [character rig](docs/CHARACTER_COORDINATE_CONTRACT.md).
+**Authoritative current movement:** [v0.8 player-controlled prone crawling](docs/chase-v0.8/README.md), preserving the [v0.7 rounded-capsule Superman dive](docs/chase-v0.7/README.md), including the [v0.6 football slide](docs/chase-v0.6/README.md). Earlier implementations remain documented in [v0.6.1](docs/chase-v0.6.1/README.md), [v0.5.3](docs/chase-v0.5.3/README.md), [v0.5.2](docs/chase-v0.5.2/README.md), [v0.5.1](docs/chase-v0.5.1/README.md), and [v0.5](docs/chase-v0.5/README.md) as history, not current tuning. Full movement and character contracts: [movement](docs/MOVEMENT_CONTRACT.md) and [character rig](docs/CHARACTER_COORDINATE_CONTRACT.md).
 
 ## Play and controls
 

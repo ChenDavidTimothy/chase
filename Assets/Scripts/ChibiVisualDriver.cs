@@ -73,7 +73,8 @@ namespace Chase
                 // body and launch velocity. Never start this action as Jump.
                 case ChaseMovementState.Leaping: name = "Leap"; break;
                 case ChaseMovementState.DiveProne:
-                    name = motor.DiveCompactProne ? "JumpLanding" : "DiveProne";
+                    name = motor.DiveCompactProne ? "JumpLanding" :
+                        motor.ProneCrawling ? "DiveCrawl" : "DiveProne";
                     break;
                 case ChaseMovementState.LeapRecovery:
                     // When the dive body could not unfold beside a wall or

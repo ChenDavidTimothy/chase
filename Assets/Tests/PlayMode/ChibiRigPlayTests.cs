@@ -37,7 +37,7 @@ namespace Chase.Tests
                         Assert.Less(weight.weight1,.01f);
                     }
                 }
-                var states=new[]{"Idle","Run","Jump","Crouch","Slide","Leap","DiveProne","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"};
+                var states=new[]{"Idle","Run","Jump","Crouch","Slide","Leap","DiveProne","DiveCrawl","Turn","JumpLanding","LeapRecovery","CrouchWalk","SlideRecovery"};
                 foreach(string state in states)
                 {
                     Assert.IsTrue(animator.HasState(0,Animator.StringToHash(state)),state+" not playable");
@@ -49,6 +49,55 @@ namespace Chase.Tests
                 Assert.IsFalse(animator.applyRootMotion);
             }
             finally {UnityEngine.Object.DestroyImmediate(root);}
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ProneWiggleAnimationFollowsActualCrawlingVelocity()
+        {
+            var actor=new GameObject("Prone crawl animation verification");
+            try
+            {
+                actor.transform.position=new Vector3(0,.9f,0);
+                actor.AddComponent<Rigidbody>();
+                actor.AddComponent<CapsuleCollider>();
+                var motor=actor.AddComponent<ChaseMotor>();
+                var visual=UnityEngine.Object.Instantiate(
+                    Resources.Load<GameObject>("ChibiVisual"),actor.transform,false);
+                motor.Initialize(new ChaseTuning(),visual.transform);
+                var driver=visual.GetComponent<ChibiVisualDriver>();
+                driver.BindMotor(motor);
+                var animator=driver.Animator;
+                var state=typeof(ChaseMotor).GetField("<State>k__BackingField",
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance);
+                var grounded=typeof(ChaseMotor).GetField("<Grounded>k__BackingField",
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance);
+                var late=typeof(ChibiVisualDriver).GetMethod("LateUpdate",
+                    System.Reflection.BindingFlags.NonPublic |
+                    System.Reflection.BindingFlags.Instance);
+                state.SetValue(motor,ChaseMovementState.DiveProne);
+                grounded.SetValue(motor,true);
+                motor.Capsule.direction=2;
+                motor.Capsule.height=motor.Settings.diveCapsuleLength;
+                motor.Capsule.radius=motor.Settings.diveCapsuleRadius;
+                motor.Body.linearVelocity=Vector3.left*.85f;
+                Assert.IsTrue(motor.ProneCrawling);
+                late.Invoke(driver,null);
+                animator.Update(.20f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0)
+                    .IsName("DiveCrawl"),"Real crawl must animate a wiggling body");
+                Assert.IsFalse(animator.applyRootMotion);
+                motor.Body.linearVelocity=Vector3.zero;
+                Assert.IsFalse(motor.ProneCrawling);
+                late.Invoke(driver,null);
+                animator.Update(.20f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0)
+                    .IsName("DiveProne"),"No input and no motion restores still prone");
+                Assert.IsTrue(motor.Capsule.enabled&&!motor.Capsule.isTrigger);
+            }
+            finally{UnityEngine.Object.DestroyImmediate(actor);}
             yield return null;
         }
 
@@ -514,7 +563,7 @@ namespace Chase.Tests
                 var animator=root.GetComponentInChildren<Animator>(true);
                 var transforms=animator.GetComponentsInChildren<Transform>(true);
                 foreach(string state in new[]{"Idle","Run","Jump","JumpLanding","Leap",
-                    "LeapRecovery","DiveProne","Crouch","CrouchWalk","Slide","SlideRecovery","DiveProne","Turn"})
+                    "LeapRecovery","DiveProne","Crouch","CrouchWalk","Slide","SlideRecovery","DiveProne","DiveCrawl","Turn"})
                 {
                     foreach(float progress in new[]{0f,.25f,.5f,.75f,.99f})
                     {

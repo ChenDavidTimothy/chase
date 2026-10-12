@@ -48,6 +48,10 @@ namespace Chase
             compactDive;
         public bool DiveCompactProne => State == ChaseMovementState.DiveProne &&
             compactDive;
+        // Actual horizontal crawl motion, not input intent or an animation
+        // command. The character keeps the locked diving body orientation.
+        public bool ProneCrawling => State == ChaseMovementState.DiveProne &&
+            Grounded && HorizontalVelocity.sqrMagnitude > .10f;
         public Vector3 FacingDirection => new Vector3(Mathf.Sin(visualYaw * Mathf.Deg2Rad), 0f,
             Mathf.Cos(visualYaw * Mathf.Deg2Rad));
         bool IsUpright => Capsule != null && Capsule.enabled && Capsule.direction == 1 && Capsule.height >= Settings.standingHeight - .01f &&
@@ -200,34 +204,37 @@ namespace Chase
                     jumpQueuedUntil = -100f;
                     State = ChaseMovementState.DiveProne;
                     recoveryLeft = Settings.diveImpactRecovery;
-                    // Always land in the same state; collision has stopped
-                    // the projectile, and the one capsule stays solid.
+                    // Chest contact dissipates airborne projectile momentum.
+                    // Enter the prone state at crawl speed or below so WASD
+                    // responds immediately rather than fighting 9m/s thrust.
+                    planar = Vector3.ClampMagnitude(planar,
+                        Settings.proneCrawlSpeed);
+                    // The same solid capsule stays enabled throughout.
                 }
             }
             else if (State == ChaseMovementState.DiveProne)
             {
                 recoveryLeft = Mathf.Max(0f,recoveryLeft-dt);
-                bool crawlForward=Vector3.Dot(direction,committedDirection)>.5f;
-                if(recoveryLeft>0f)
-                    planar=Vector3.MoveTowards(planar,Vector3.zero,
-                        Settings.groundBraking*dt);
-                else if(compactDive || TryFinishProneDive())
+                // ONE universal rule. Every chest landing permits modest
+                // WASD crawling (including sideways/backwards), with no
+                // automatic recoil, no turning the prone collider and no
+                // context-specific shelf behavior. No input -> brake to rest.
+                // Impact must still pay its 0.40s commitment. The first tick
+                // after it ends automatically attempts to stand if clear.
+                Vector3 crawlTarget = Grounded ?
+                    direction * Settings.proneCrawlSpeed : Vector3.zero;
+                float crawlRate = direction.sqrMagnitude > .001f && Grounded ?
+                    Settings.groundAcceleration : Settings.groundBraking;
+                planar = Vector3.MoveTowards(planar,crawlTarget,crawlRate*dt);
+                if (recoveryLeft<=0f &&
+                    (compactDive ? TryFinishCompactDive() : TryFinishProneDive()))
                 {
-                    // One shape transition, then the usual get-up timer.
+                    // Automatic get-up takes precedence over continued
+                    // crawling whenever the real volume is clear. There is
+                    // no prone toggle or ability to camp beneath open sky.
                     State=ChaseMovementState.LeapRecovery;
                     recoveryLeft=Settings.leapRecovery;
                     planar=Vector3.zero;
-                }
-                else
-                {
-                    // Move at the actual configured crawl speed. Do not
-                    // brake to zero first on EACH frame (that old pattern
-                    // artificially capped movement at 0.4m/s).
-                    Vector3 heading=crawlForward?committedDirection:
-                        -committedDirection;
-                    planar=Vector3.MoveTowards(planar,
-                        heading*Settings.proneCrawlSpeed,
-                        Settings.groundAcceleration*dt);
                 }
             }
             else if (State == ChaseMovementState.Sliding)
@@ -540,6 +547,17 @@ namespace Chase
                     other.transform.IsChildOf(transform))continue;
                 return false;
             }
+            return true;
+        }
+
+        bool TryFinishCompactDive()
+        {
+            // A wall-close dive launches on the existing upright capsule.
+            // It follows the same clearance rule as every other chest
+            // landing; never force get-up because it was compact at launch.
+            if (!Grounded || !CanFitVerticalShape(
+                Settings.crouchingHeight,Body.position))return false;
+            SetHeight(Settings.crouchingHeight);
             return true;
         }
 

@@ -192,51 +192,200 @@ namespace Chase.Tests
                 sawImpact|=m.State==ChaseMovementState.DiveProne;
                 sawRecovery|=m.State==ChaseMovementState.LeapRecovery;
             }
-            Assert.IsTrue(sawImpact && sawRecovery,
-                "Stalled gym shelf dive never recovered. State="+m.State+
-                " position="+m.Body.position+" velocity="+m.Velocity+
-                " grounded="+m.Grounded+" forwardImpact="+m.DiveFlightEnded+
-                " box="+m.DiveColliderActive);
+            Assert.IsTrue(sawImpact,
+                "Real gym shelf dive must land and leave projectile flight");
             Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,
-                "A zero-velocity dive must not persist indefinitely");
+                "A motionless shelf contact must never remain Leaping");
+            if (m.State==ChaseMovementState.DiveProne)
+            {
+                // Under the shelf, staying prone is CORRECT now. Do not
+                // retreat on behalf of the user. Their own S key escapes.
+                Vector3 resting=m.Body.position;
+                for(int i=0;i<40;i++)Step(m);
+                Assert.That(Vector3.Distance(resting,m.Body.position),
+                    Is.LessThan(.04f),"No silent auto-backwards movement");
+                for(int i=0;i<250 && !sawRecovery;i++)
+                {
+                    Step(m,Vector2.down);
+                    sawRecovery|=m.State==ChaseMovementState.LeapRecovery;
+                }
+            }
+            Assert.IsTrue(sawRecovery,
+                "Once the PLAYER exits the shelf, automatic get-up must work. "+
+                "state="+m.State+" position="+m.Body.position);
             yield return null;
         }
 
         [UnityTest]
-        public IEnumerator VariedShelfApproachesAlwaysExitProneWithoutPlayerIntervention()
+        public IEnumerator VariedShelfApproachesRespectPlayerChoiceAndPermitEscape()
         {
-            // Regression for the observed Movement Gym freeze: sometimes
-            // the horizontal box is edge-supported near the shelf's lip,
-            // giving zero velocity with the ground probe under empty air.
-            // All cases must return control automatically even with no keys.
+            // Seven real edge landings. If clear, automatically get up.
+            // If trapped beneath a shelf, remain prone WITHOUT retreating
+            // on the player's behalf. Pressing S must physically crawl back
+            // to open space and then automatically get up.
             foreach(float startZ in new[]{.7f,1f,1.3f,1.6f,1.9f,2.2f,2.4f})
             {
                 Floor();
                 Shelf(4f,.55f,1.85f,.6f);
                 var m=Actor(new Vector3(0,.9f,startZ));
                 Step(m,Vector2.zero,false,true);
-                bool everProne=false,everRecovered=false;
+                bool everProne=false;
                 for(int i=0;i<360;i++)
                 {
                     Step(m);
                     everProne|=m.State==ChaseMovementState.DiveProne;
-                    everRecovered|=m.State==ChaseMovementState.LeapRecovery;
                 }
-                Assert.IsTrue(everProne&&everRecovered,
-                    "One shelf approach never completed impact. startZ="+startZ+
-                    " state="+m.State+" pos="+m.Body.position+
-                    " velocity="+m.Velocity+" grounded="+m.Grounded);
-                Assert.IsTrue(m.State==ChaseMovementState.Standing ||
-                    m.State==ChaseMovementState.Airborne,
-                    "Player must not remain in committed dive after 7.2s, " +
-                    "even without pressing W or restarting. startZ="+startZ+
-                    " state="+m.State+" pos="+m.Body.position);
-                Assert.IsTrue(m.Capsule.enabled && !m.DiveColliderActive,
-                    "Return to ordinary solid capsule after every impact");
+                Assert.IsTrue(everProne,"Must physically chest-land. z="+startZ);
+                Assert.AreNotEqual(ChaseMovementState.Leaping,m.State,
+                    "A zero-velocity projectile cannot remain Leaping");
+                if(m.State==ChaseMovementState.DiveProne)
+                {
+                    Vector3 stationary=m.Body.position;
+                    for(int i=0;i<40;i++)Step(m);
+                    Assert.Less(Vector3.Distance(stationary,m.Body.position),.04f,
+                        "Never automatically crawl backwards under the shelf");
+                    bool escaped=false;
+                    for(int i=0;i<240;i++)
+                    {
+                        Step(m,Vector2.down);
+                        if(m.State==ChaseMovementState.LeapRecovery ||
+                            m.State==ChaseMovementState.Standing ||
+                            m.State==ChaseMovementState.Crouching)
+                        {escaped=true;break;}
+                    }
+                    Assert.IsTrue(escaped,"Manual backward crawl must let the user " +
+                        "exit a physically obstructed landing and then rise. z="+
+                        startZ+" state="+m.State+" pos="+m.Body.position);
+                }
+                Assert.IsTrue(m.Capsule.enabled&&!m.Capsule.isTrigger);
                 foreach(var obj in spawned)
                     if(obj!=null)UnityEngine.Object.DestroyImmediate(obj);
                 spawned.Clear();
             }
+            yield return null;
+        }
+
+        // Install the ceiling ONLY AFTER the dive has made real chest
+        // contact. This precisely isolates the universal prone state from
+        // the separate standing-height launch restriction.
+        ChaseMotor LandUnderRoof(float roofHalfWidth=4f)
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            Step(m,Vector2.zero,false,true);
+            bool landed=false;
+            for(int i=0;i<90;i++)
+            {
+                Step(m);
+                if(m.State==ChaseMovementState.DiveProne)
+                {landed=true;break;}
+            }
+            Assert.IsTrue(landed,"A real ballistic dive must chest-land");
+            Vector3 at=m.Body.position;
+            Cube("real ceiling lower than 1.55m crouch",new Vector3(
+                at.x,1.5f,at.z),new Vector3(roofHalfWidth*2f,.4f,9f));
+            Physics.SyncTransforms();
+            Assert.IsFalse(m.CanStand);
+            return m;
+        }
+
+        [UnityTest]
+        public IEnumerator ProneCrawlWorksInAllFourWorldDirectionsWithFixedFacing()
+        {
+            foreach(Vector2 move in new[]{
+                Vector2.up,Vector2.down,Vector2.left,Vector2.right})
+            {
+                var m=LandUnderRoof();
+                Quaternion heading=m.Body.rotation;
+                Vector3 origin=m.Body.position;
+                bool movedDuringImpact=false;
+                float impact=m.RecoveryRemaining;
+                for(int i=0;i<27;i++)
+                {
+                    Step(m,move,i%3==0,i%4==0,i%5==0);
+                    if(m.RecoveryRemaining>0f &&
+                        Vector3.Distance(m.Body.position,origin)>.025f)
+                        movedDuringImpact=true;
+                    Assert.AreEqual(ChaseMovementState.DiveProne,m.State,
+                        "Low real roof must prevent forced get-up");
+                    Assert.IsTrue(m.Capsule.enabled&&!m.Capsule.isTrigger);
+                    Assert.AreEqual(2,m.Capsule.direction,
+                        "Crawling cannot rotate the low collider into a wall");
+                    Assert.That(Quaternion.Angle(m.Body.rotation,heading),
+                        Is.LessThan(.05f));
+                    Assert.That(m.HorizontalVelocity.magnitude,
+                        Is.LessThanOrEqualTo(m.Settings.proneCrawlSpeed+.025f));
+                }
+                Assert.Greater(impact,0f);
+                Assert.IsTrue(movedDuringImpact,
+                    "Prone controls must work even DURING the 0.40s impact");
+                Vector3 delta=m.Body.position-origin;
+                Vector3 intended=new Vector3(move.x,0f,move.y);
+                Assert.That(Vector3.Dot(delta,intended),
+                    Is.GreaterThan(.08f),"Unable to crawl "+move);
+                Assert.IsTrue(m.ProneCrawling);
+                // Release all buttons. Absolutely NO backwards auto-recoil,
+                // even if the actor cannot stand.
+                for(int i=0;i<22;i++)Step(m);
+                Vector3 rest=m.Body.position;
+                for(int i=0;i<45;i++)Step(m);
+                Assert.That(Vector3.Distance(m.Body.position,rest),
+                    Is.LessThan(.035f),"No-input prone MUST stay at rest");
+                Assert.AreEqual(ChaseMovementState.DiveProne,m.State);
+                Assert.IsFalse(m.ProneCrawling);
+                foreach(var obj in spawned)
+                    if(obj!=null)UnityEngine.Object.DestroyImmediate(obj);
+                spawned.Clear();
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator OpenFloorLandingAutomaticallyGetsUpEvenWhenWASDIsHeld()
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            Step(m,Vector2.zero,false,true);
+            bool sawProne=false,sawGetup=false;
+            Vector3 start=m.Body.position;
+            for(int i=0;i<170;i++)
+            {
+                Step(m,Vector2.left,false,false,false);
+                sawProne|=m.State==ChaseMovementState.DiveProne;
+                sawGetup|=m.State==ChaseMovementState.LeapRecovery;
+                if(m.State==ChaseMovementState.DiveProne)
+                    Assert.That(m.HorizontalVelocity.magnitude,
+                        Is.LessThanOrEqualTo(m.Settings.proneCrawlSpeed+.025f));
+            }
+            Assert.IsTrue(sawProne&&sawGetup);
+            Assert.AreNotEqual(ChaseMovementState.DiveProne,m.State,
+                "Held crawl must NEVER prevent automatic get-up in open sky");
+            Assert.IsFalse(m.DiveColliderActive);
+            Assert.AreEqual(1,m.Capsule.direction);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ProneSideCrawlUnderLowCeilingThenAutomaticGetup()
+        {
+            var m=LandUnderRoof(1.4f);
+            Vector3 initial=m.Body.position;
+            bool sawGetup=false;
+            for(int i=0;i<220;i++)
+            {
+                Step(m,Vector2.right);
+                sawGetup|=m.State==ChaseMovementState.LeapRecovery;
+                if(sawGetup)break;
+                Assert.AreEqual(2,m.Capsule.direction,
+                    "Do not get up halfway underneath the low ceiling");
+            }
+            Assert.IsTrue(sawGetup,
+                "Sideways WASD must lead beyond the canopy and get up");
+            Assert.Greater(m.Body.position.x,initial.x+1f);
+            Assert.IsFalse(m.DiveColliderActive);
+            Assert.IsTrue(m.Capsule.enabled);
+            for(int i=0;i<30;i++)Step(m);
+            Assert.AreEqual(ChaseMovementState.Standing,m.State);
             yield return null;
         }
 

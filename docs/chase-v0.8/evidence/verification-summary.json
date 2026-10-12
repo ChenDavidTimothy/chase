@@ -1,0 +1,73 @@
+{
+  "version": "v0.8",
+  "Unity": {
+    "version": "6000.3.26f1",
+    "PlayMode": {
+      "passed": 74,
+      "failed": 0,
+      "skipped": 0
+    },
+    "EditMode": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "builds": {
+    "MovementGymWebGL": {
+      "status": "Succeeded",
+      "errors": 0,
+      "existing_pipeline_warnings": 1
+    },
+    "ProductionWebGL": {
+      "status": "Succeeded",
+      "errors": 0,
+      "existing_pipeline_warnings": 1
+    },
+    "LinuxStandalone": {
+      "status": "Succeeded",
+      "errors": 0,
+      "existing_pipeline_warnings": 1
+    }
+  },
+  "browser": {
+    "Gym": {
+      "status": "passed",
+      "console_errors": 0,
+      "url": "http://127.0.0.1:8766/?build=chase-v08-player-controlled-prone",
+      "shelf_crawl_and_auto_stand": true
+    },
+    "FootballTackle": {
+      "status": "passed",
+      "console_errors": 0,
+      "url": "http://127.0.0.1:8766/?build=v08-football-slide-regression"
+    },
+    "Production": {
+      "status": "passed",
+      "console_errors": 0,
+      "url": "http://127.0.0.1:8765/?build=chase-v08-universal-prone-production"
+    }
+  },
+  "nativeLinux": {
+    "fresh_binary_launched": true,
+    "runtime_exceptions_reported": 0
+  },
+  "Blender": {
+    "version": "5.2.2 LTS",
+    "validation": "Passed",
+    "production_actions": 13,
+    "imported_FBX_clips": 13,
+    "mesh_parts_unchanged": 17,
+    "source_vertices_unchanged": 24684,
+    "source_file_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371"
+  },
+  "evidence": {
+    "verified_pngs": 22,
+    "gallery": "gym/prone-crawl-eight-stage.png",
+    "scripts": [
+      "verify_prone_crawl_browser.py",
+      "verify_production_browser.py",
+      "verify_tackle_browser.py"
+    ]
+  }
+}

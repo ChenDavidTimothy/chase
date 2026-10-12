@@ -2,7 +2,7 @@
 import bpy,math,json
 from mathutils import Vector,Matrix
 arm=bpy.data.objects["Chibi_Armature"]
-expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_DiveProne","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
+expected={"CHASE_Idle","CHASE_Run","CHASE_Jump","CHASE_JumpLanding","CHASE_DiveProne","CHASE_DiveCrawl","CHASE_Leap","CHASE_LeapRecovery","CHASE_Crouch","CHASE_CrouchWalk","CHASE_Slide","CHASE_SlideRecovery","CHASE_Turn"}
 assert {a.name for a in bpy.data.actions if a.name.startswith("CHASE_")}==expected
 assert all(bpy.data.actions[name].use_fake_user for name in expected)
 assert "Blender -Y forward" in str(arm.get("basis",""))
@@ -102,6 +102,23 @@ for tick in range(8,7*8+1):
 for frame in (1,5,10,15,19):
     bottom,top=pose_bounds("CHASE_DiveProne",frame)
     assert .20<=bottom<=.32 and top<=1.05,("prone mesh clearance",frame,bottom,top)
+# A single, loopable prone wiggle for all WASD directions. Rigging moves
+# limbs only; the Rigidbody owns translation. Every intermediate sample
+# must remain low enough for the same shelf clearance as the idle prone
+# pose. Do not make a walk-cycle that sits upright or sinks into the floor.
+for tick in range(4,25*8+1):
+    frame=tick/8
+    bottom,top=pose_bounds("CHASE_DiveCrawl",frame)
+    assert .17<=bottom<=.36 and top<=1.13,("crawl shell",frame,bottom,top)
+arm.animation_data.action=bpy.data.actions["CHASE_DiveCrawl"]
+bpy.context.scene.frame_set(1)
+start={b.name:(b.location.copy(),b.rotation_quaternion.copy())
+       for b in arm.pose.bones}
+bpy.context.scene.frame_set(25)
+for b in arm.pose.bones:
+    old_pos,old_rot=start[b.name]
+    assert (b.location-old_pos).length<.0001,("crawl loop root snap",b.name)
+    assert abs(b.rotation_quaternion.dot(old_rot))>.9999,("crawl loop",b.name)
 assert pose_bounds("CHASE_Idle",1)[0]>=-.015
 # Forearms hinge forward in character coordinates (-Y), rather than folding
 # behind the elbows. Check every integer frame, not just exported end points.
@@ -118,7 +135,7 @@ for action_name in sorted(expected):
             assert elbow.y-wrist.y>.045,("backwards elbow",action_name,frame,side,elbow.y-wrist.y)
 # Superman launch and get-up articulate through intermediate 1/8-frame keys;
 # detect an elbow flipping briefly between authored whole-frame poses.
-for action_name in ("CHASE_Leap","CHASE_DiveProne","CHASE_LeapRecovery"):
+for action_name in ("CHASE_Leap","CHASE_DiveProne","CHASE_DiveCrawl","CHASE_LeapRecovery"):
     action=bpy.data.actions[action_name]
     arm.animation_data.action=action
     for step in range(round(action.frame_range[0]*16),
