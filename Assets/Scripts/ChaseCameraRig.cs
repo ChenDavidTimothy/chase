@@ -19,6 +19,11 @@ namespace Chase
         readonly HashSet<Renderer> currentOccluders = new HashSet<Renderer>();
         readonly List<Renderer> toRestore = new List<Renderer>();
         readonly RaycastHit[] occlusionHits = new RaycastHit[64];
+        // Obstacles keep exact BoxCollider geometry separate from decorative
+        // rounded meshes. Cache associated renderers once; no per-frame
+        // hierarchy scans or allocations during occlusion queries.
+        readonly Dictionary<Collider,Renderer[]> occlusionSurfaces =
+            new Dictionary<Collider,Renderer[]>();
 
         public void Initialize(ChaseMatch owner)
         {
@@ -29,6 +34,24 @@ namespace Chase
             transform.rotation = Quaternion.Euler(55f,45f,0f);
             lastAspect = -1f;
             RecalculateFraming();
+            IndexOcclusionSurfaces();
+        }
+
+        void IndexOcclusionSurfaces()
+        {
+            occlusionSurfaces.Clear();
+            foreach (ChaseOccluder label in
+                FindObjectsByType<ChaseOccluder>(FindObjectsSortMode.None))
+            {
+                Collider shape=label.GetComponent<Collider>();
+                if(shape==null)continue;
+                Renderer own=label.GetComponent<Renderer>();
+                if(own!=null)
+                    occlusionSurfaces.Add(shape,new[]{own});
+                else if(label.transform.parent!=null)
+                    occlusionSurfaces.Add(shape,label.transform.parent
+                        .GetComponentsInChildren<Renderer>(true));
+            }
         }
 
         void RecalculateFraming()
@@ -53,7 +76,10 @@ namespace Chase
                             lateral / tanX - depth + MaxOffset,
                             vertical / tanY - depth + MaxOffset);
                     }
-            distance = distance * 1.08f + 0.5f;
+            // The Arena V1 miniatures need to read clearly at match scale.
+            // Maintain verified camera-space corner clearance for portrait
+            // and landscape aspect ratios while modestly enlarging the quad.
+            distance = (distance * 1.08f + 0.5f) * .92f;
             basePosition = new Vector3(0f,1.15f,0f) - forward * distance;
             lastAspect = aspect;
         }
@@ -120,9 +146,10 @@ namespace Chase
             for(int i=0;i<count;i++)
             {
                 Collider collider=occlusionHits[i].collider;
-                if(collider == null || collider.GetComponent<ChaseOccluder>()==null) continue;
-                Renderer renderer=collider.GetComponent<Renderer>();
-                if(renderer!=null) currentOccluders.Add(renderer);
+                if(collider==null || !occlusionSurfaces.TryGetValue(
+                    collider,out Renderer[] renderers))continue;
+                foreach(Renderer renderer in renderers)
+                    if(renderer!=null)currentOccluders.Add(renderer);
             }
         }
 

@@ -15,7 +15,6 @@ public static class ChaseModularObstacleBuilder
     const string Folder = "Assets/Obstacles";
     public const string Rail = Folder + "/UnderOverRail.prefab";
     public const string Bench = Folder + "/UnderOverBench.prefab";
-    const string Production = "Assets/Scenes/SampleScene.unity";
     const string Gym = "Assets/Scenes/MovementGym.unity";
 
     struct Specification
@@ -143,23 +142,12 @@ public static class ChaseModularObstacleBuilder
         try
         {
             bool changed=false;
-            if(path==Production)
-            {
-                // Primary central choice between the two tall barriers.
-                changed|=Add(scene,rail,"Central crossing / slide or Superman",
-                    Vector3.zero,0);
-                // A narrower alternative in the west corridor, clear of spawns.
-                changed|=Add(scene,bench,"West bench / slide or Superman",
-                    new Vector3(-4.7f,0,-.2f),0);
-            }
-            else
-            {
-                // Aligned with the fixed camera input forward axis in Gym,
-                // which is +X,+Z. No movement script or fake staging pose.
-                changed|=Add(scene,rail,"GYM under-over rail",new Vector3(-8.5f,0,2f),45);
-                changed|=Add(scene,bench,"GYM narrow under-over bench",
-                    new Vector3(-8.5f,0,-4.5f),45);
-            }
+            // Legacy calibration modules belong only in the independent Gym.
+            // The production arena uses the authored ArenaV1 library instead.
+            changed|=Add(scene,rail,"GYM under-over rail",
+                new Vector3(-8.5f,0,2f),45);
+            changed|=Add(scene,bench,"GYM narrow under-over bench",
+                new Vector3(-8.5f,0,-4.5f),45);
             if(changed)
             {
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -174,7 +162,7 @@ public static class ChaseModularObstacleBuilder
         }
     }
 
-    [MenuItem("Chase/Install Reusable Dual-Route Obstacles")]
+    [MenuItem("Chase/Gym/Repair Original Dual-Route Fixtures")]
     public static void Install()
     {
         if(EditorApplication.isPlayingOrWillChangePlaymode)
@@ -182,7 +170,6 @@ public static class ChaseModularObstacleBuilder
         if(!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())return;
         var rail=EnsurePrefab(Rail,RailShape);
         var bench=EnsurePrefab(Bench,BenchShape);
-        InstallScene(Production,rail,bench);
         InstallScene(Gym,rail,bench);
         AssetDatabase.SaveAssets();
         Validate();
@@ -270,8 +257,7 @@ public static class ChaseModularObstacleBuilder
     {
         VerifyPrefab(Rail,RailShape);
         VerifyPrefab(Bench,BenchShape);
-        VerifyScene(Production,2);
         VerifyScene(Gym,2);
-        Debug.Log("CHASE_MODULAR_OBSTACLE_CONTRACT_PASS: 2 portable prefab variants in both scenes");
+        Debug.Log("CHASE_MODULAR_OBSTACLE_CONTRACT_PASS: legacy prefab variants in gym");
     }
 }

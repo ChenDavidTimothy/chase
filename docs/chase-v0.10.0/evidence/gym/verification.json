@@ -1,0 +1,56 @@
+{
+  "url": "http://127.0.0.1:8766/?build=v010-final-arena-gym",
+  "rendered_gym_contrast": 28.98,
+  "real_keys": [
+    {
+      "key": "b",
+      "prevented": false,
+      "focus": "unity-canvas"
+    },
+    {
+      "key": "w",
+      "prevented": false,
+      "focus": "unity-canvas"
+    },
+    {
+      "key": "ArrowUp",
+      "prevented": true,
+      "focus": "unity-canvas"
+    },
+    {
+      "key": "n",
+      "prevented": false,
+      "focus": "unity-canvas"
+    },
+    {
+      "key": "w",
+      "prevented": false,
+      "focus": "unity-canvas"
+    },
+    {
+      "key": "ArrowDown",
+      "prevented": true,
+      "focus": "unity-canvas"
+    }
+  ],
+  "console_errors": [],
+  "javascript_exceptions": 0,
+  "changed_pixels_over_35": {
+    "01-dive-takeoff": 55819,
+    "02-dive-over-rail": 694112,
+    "03-dive-descent": 848184,
+    "04-dive-recovery": 886537,
+    "06-slide-start": 151881,
+    "07-slide-under-rail": 208618,
+    "08-slide-low-recovery": 244321,
+    "09-slide-crawl-out": 315217,
+    "10-slide-standing": 406048
+  },
+  "under_route_rail_screen_y_before_after": [
+    182.0,
+    631.1
+  ],
+  "evidence": "actual rebuilt Unity WebGL, shared motor, B/W+Up over and N-run-up-W+Down under",
+  "runup_seconds": 0.37,
+  "limitations": "screenshots establish rendered input response, not precise collision clearance (proven by PhysX tests)"
+}

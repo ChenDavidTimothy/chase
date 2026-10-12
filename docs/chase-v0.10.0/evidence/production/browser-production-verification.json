@@ -1,0 +1,58 @@
+{
+  "url": "http://127.0.0.1:8765/?build=chase-v010-final-arena-production",
+  "loaded": {
+    "ready": "complete",
+    "loader": "none",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1236,
+      "height": 719,
+      "top": 0,
+      "right": 1236,
+      "bottom": 719,
+      "left": 0
+    }
+  },
+  "render_ready": {
+    "attempt": 5,
+    "stddev": 20.625
+  },
+  "post_test": {
+    "scrollX": 0,
+    "scrollY": 0,
+    "focus": "unity-canvas",
+    "loading": "none",
+    "events": [
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focused": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowDown",
+        "prevented": true,
+        "focused": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": " ",
+        "prevented": true,
+        "focused": "unity-canvas",
+        "scrollY": 0
+      }
+    ],
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1236,
+      "height": 719,
+      "top": 0,
+      "right": 1236,
+      "bottom": 719,
+      "left": 0
+    }
+  },
+  "console_error_entries": []
+}
