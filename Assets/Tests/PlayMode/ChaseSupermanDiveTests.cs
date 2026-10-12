@@ -290,6 +290,219 @@ namespace Chase.Tests
         }
 
         [UnityTest]
+        public IEnumerator RecoveryNeverTeleportsBodyOrVisibleRootAndPreservesDiveFacing()
+        {
+            foreach (Vector2 input in new[]{Vector2.up,Vector2.right,Vector2.left})
+            {
+                Floor();
+                var m=Actor(new Vector3(0,.9f,0));
+                Transform visual=m.transform.GetChild(0);
+                Vector3 intended=new Vector3(input.x,0f,input.y).normalized;
+                Step(m,input,false,true);
+                Assert.IsTrue(m.DiveColliderActive);
+                bool landed=false,sawTransition=false,sawRecovery=false;
+                float feetAtSwitch=0f;
+                Vector3 oldBody=m.Body.position;
+                for(int tick=0;tick<165;tick++)
+                {
+                    ChaseMovementState before=m.State;
+                    float oldY=m.Body.position.y;
+                    Vector3 oldVisual=m.Body.position+
+                        m.Body.rotation*visual.localPosition;
+                    Quaternion oldVisualRot=m.Body.rotation*
+                        visual.localRotation;
+                    Step(m);
+                    if(m.State==ChaseMovementState.DiveProne)
+                        landed=true;
+                    if(before==ChaseMovementState.DiveProne &&
+                        m.State==ChaseMovementState.LeapRecovery)
+                    {
+                        sawTransition=true;
+                        feetAtSwitch=oldY+m.Settings.diveCapsuleCenterY-
+                            m.Settings.diveCapsuleRadius;
+                        Assert.That(Mathf.Abs(m.Body.position.y-oldY),
+                            Is.LessThan(.012f),
+                            "Get-up must NOT teleport Rigidbody origin vertically");
+                        Vector3 newVisual=m.Body.position+
+                            m.Body.rotation*visual.localPosition;
+                        Quaternion newVisualRotation=m.Body.rotation*
+                            visual.localRotation;
+                        Assert.That(Vector3.Distance(oldVisual,newVisual),
+                            Is.LessThan(.015f),
+                            "Prone/get-up switch must preserve visual world position");
+                        Assert.That(Quaternion.Angle(oldVisualRot,
+                            newVisualRotation),Is.LessThan(.5f),
+                            "Prone/get-up switch must preserve visible world yaw");
+                        Assert.AreEqual(1,m.Capsule.direction);
+                        Assert.IsFalse(m.SlideBox.enabled);
+                    }
+                    if(m.State==ChaseMovementState.LeapRecovery)
+                    {
+                        sawRecovery=true;
+                        Assert.That(Mathf.Abs(m.Body.position.y-oldY),
+                            Is.LessThan(.055f),
+                            "Get-up center must rise smoothly each physics tick");
+                        Assert.That(Vector3.Dot(
+                            (m.Body.rotation*visual.localRotation)*
+                            Vector3.forward,intended),
+                            Is.GreaterThan(.99f),
+                            "Getting up must NOT face an old direction");
+                        Assert.That(m.Body.position.y+m.Capsule.center.y-
+                            m.Capsule.height*.5f,
+                            Is.InRange(feetAtSwitch-.04f,feetAtSwitch+.04f),
+                            "Solid capsule feet must stay in physical contact");
+                    }
+                }
+                Assert.IsTrue(landed&&sawTransition&&sawRecovery,
+                    "Open floor should settle and finish full smooth recovery");
+                Assert.AreEqual(ChaseMovementState.Standing,m.State);
+                Assert.That(Vector3.Dot(visual.forward,intended),
+                    Is.GreaterThan(.99f));
+                Assert.IsTrue(m.Capsule.enabled);
+                Assert.IsFalse(m.Capsule.isTrigger);
+                foreach (var obj in spawned)
+                    if(obj!=null)UnityEngine.Object.DestroyImmediate(obj);
+                spawned.Clear();
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RaisedPlatformGetupPreservesPlatformElevationAndNeverTeleports()
+        {
+            // A fixed global 0.90m Y target used to relocate the athlete
+            // into a raised floor during recovery. Derive from real feet.
+            Cube("solid 0.55m raised ground",
+                new Vector3(0,.275f,0),new Vector3(24,.55f,24));
+            Physics.SyncTransforms();
+            var m=Actor(new Vector3(0,1.45f,0));
+            Step(m,Vector2.up,false,true);
+            bool sawProne=false,sawRecovery=false;
+            for(int i=0;i<175;i++)
+            {
+                float beforeY=m.Body.position.y;
+                Step(m);
+                sawProne|=m.State==ChaseMovementState.DiveProne;
+                sawRecovery|=m.State==ChaseMovementState.LeapRecovery;
+                if(m.State==ChaseMovementState.LeapRecovery)
+                    Assert.That(Mathf.Abs(m.Body.position.y-beforeY),
+                        Is.LessThan(.06f),
+                        "Never jump in height at raised-platform get-up");
+            }
+            Assert.IsTrue(sawProne && sawRecovery);
+            Assert.AreEqual(ChaseMovementState.Standing,m.State);
+            Assert.That(m.Body.position.y,Is.InRange(1.42f,1.50f),
+                "Standing must preserve actual raised floor elevation");
+            Assert.IsFalse(m.DiveColliderActive);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ShelfExitGetupHasNoInstantPositionOrRotationChange()
+        {
+            var m=LandUnderRoof(1.4f);
+            Transform visual=m.transform.GetChild(0);
+            bool sawGetup=false;
+            for(int frame=0;frame<260;frame++)
+            {
+                float previousY=m.Body.position.y;
+                Vector3 previousVisual=m.Body.position+
+                    m.Body.rotation*visual.localPosition;
+                Quaternion previousRotation=m.Body.rotation*
+                    visual.localRotation;
+                ChaseMovementState oldState=m.State;
+                Step(m,Vector2.right);
+                if(oldState==ChaseMovementState.DiveProne &&
+                    m.State==ChaseMovementState.LeapRecovery)
+                {
+                    sawGetup=true;
+                    Assert.Less(Mathf.Abs(m.Body.position.y-previousY),.012f,
+                        "Leaving low canopy must not teleport actor upward");
+                    Vector3 newVisual=m.Body.position+
+                        m.Body.rotation*visual.localPosition;
+                    Quaternion newRotation=m.Body.rotation*
+                        visual.localRotation;
+                    Assert.Less(Vector3.Distance(previousVisual,newVisual),.035f,
+                        "Prone-to-get-up under canopy must preserve body location");
+                    Assert.Less(Quaternion.Angle(previousRotation,newRotation),.5f,
+                        "Prone-to-get-up under canopy must preserve heading");
+                    Assert.AreEqual(1,m.Capsule.direction);
+                }
+                if(sawGetup && m.State==ChaseMovementState.LeapRecovery)
+                    Assert.Less(Mathf.Abs(m.Body.position.y-previousY),.06f,
+                        "Continuation of automatic get-up must be gradual");
+                if(sawGetup && m.State==ChaseMovementState.Standing)break;
+            }
+            Assert.IsTrue(sawGetup,"Crawling out must trigger automatic get-up");
+            Assert.AreEqual(ChaseMovementState.Standing,m.State);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ImportedRigHeadHasNoFrameJumpDuringActualGetupAnimation()
+        {
+            Floor();
+            var actor=new GameObject("real skinned getup actor");
+            spawned.Add(actor);
+            actor.transform.position=new Vector3(0,.9f,0);
+            actor.AddComponent<Rigidbody>();
+            actor.AddComponent<CapsuleCollider>();
+            var source=Resources.Load<GameObject>("ChibiVisual");
+            Assert.NotNull(source);
+            var visual=UnityEngine.Object.Instantiate(
+                source,actor.transform,false);
+            visual.transform.localPosition=Vector3.down*.9f;
+            var m=actor.AddComponent<ChaseMotor>();
+            m.Initialize(new ChaseTuning(),visual.transform);
+            var driver=visual.GetComponent<ChibiVisualDriver>();
+            driver.BindMotor(m);
+            var animator=driver.Animator;
+            var head=System.Array.Find(
+                animator.GetComponentsInChildren<Transform>(true),
+                t=>t.name=="head");
+            Assert.NotNull(head);
+            var late=typeof(ChibiVisualDriver).GetMethod("LateUpdate",
+                System.Reflection.BindingFlags.NonPublic|
+                System.Reflection.BindingFlags.Instance);
+            Physics.SyncTransforms();
+            Step(m); // Ensure scene ground probe is initialized.
+            Assert.IsTrue(m.Grounded,"Real imported model must start grounded");
+            Step(m,Vector2.right,false,true);
+            Assert.AreEqual(ChaseMovementState.Leaping,m.State,
+                "The tested clip must originate from a real launched dive");
+            late.Invoke(driver,null);animator.Update(Dt);
+            bool gotProne=false,gotRecovery=false,finished=false;
+            for(int i=0;i<170;i++)
+            {
+                ChaseMovementState before=m.State;
+                Vector3 headBefore=head.position;
+                Step(m);
+                late.Invoke(driver,null);animator.Update(Dt);
+                gotProne|=m.State==ChaseMovementState.DiveProne;
+                if(m.State==ChaseMovementState.LeapRecovery ||
+                    before==ChaseMovementState.LeapRecovery)
+                {
+                    gotRecovery=true;
+                    float headFrameStep=Vector3.Distance(
+                        headBefore,head.position);
+                    Assert.That(headFrameStep,Is.LessThan(.17f),
+                        "Imported rig head must not pop on any 20ms get-up "+
+                        "frame; state="+m.State+" step="+i);
+                }
+                if(gotRecovery && m.State==ChaseMovementState.Standing)
+                {finished=true;break;}
+            }
+            Assert.IsTrue(gotProne&&gotRecovery&&finished,
+                "Prone="+gotProne+" recovery="+gotRecovery+
+                " finished="+finished+" state="+m.State+
+                " body="+m.Body.position+" grounded="+m.Grounded+
+                " head="+head.position);
+            Assert.AreEqual(1,m.Capsule.direction);
+            Assert.IsFalse(animator.applyRootMotion);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator ProneCrawlWorksInAllFourWorldDirectionsWithFixedFacing()
         {
             foreach(Vector2 move in new[]{

@@ -60,6 +60,13 @@ namespace Chase
 
         float lastGrounded = -100f, lastTakeoff = -100f, jumpQueuedUntil = -100f;
         float slideLeft, recoveryLeft;
+        // Recovery offsets ONLY affect the same already-solid capsule and its
+        // visual child. The physical capsule's feet remain on their original
+        // supporting surface while the actor origin eases to standing height.
+        bool smoothingProneGetup;
+        float recoveryStartY, recoveryTargetY, recoveryGroundY;
+        Vector3 recoveryVisualStart;
+        Quaternion recoveryVisualStartRotation;
         bool compactDive, forwardContact;
         bool slideCompact, slideRising;
         bool solidSupportContact;
@@ -128,7 +135,7 @@ namespace Chase
             lastGrounded = lastTakeoff = jumpQueuedUntil = -100f;
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
-            compactDive = forwardContact = false;
+            compactDive = forwardContact = smoothingProneGetup = false;
             slideCompact = slideRising = solidSupportContact = false;
             Body.rotation = Quaternion.identity;
             Capsule.enabled = true;
@@ -306,6 +313,9 @@ namespace Chase
             else if (Recovering)
             {
                 recoveryLeft = Mathf.Max(0f, recoveryLeft - dt);
+                if (State == ChaseMovementState.LeapRecovery &&
+                    smoothingProneGetup)
+                    AdvanceProneGetup();
                 // Braking must respect acceleration, not snap velocity to 2 m/s.
                 float top = Settings.recoverySpeed;
                 // A dive get-up is still a commitment. Holding W/A/S/D
@@ -321,6 +331,7 @@ namespace Chase
                     // recovery entry. Return to normal locomotion now.
                     compactDive = false;
                     forwardContact = false;
+                    smoothingProneGetup = false;
                     if (action.Crouch || !HasStandingClearance())
                     {
                         SetHeight(Settings.crouchingHeight);
@@ -364,6 +375,11 @@ namespace Chase
                     // After this moment, WASD cannot steer a single degree.
                     committedDirection = direction.sqrMagnitude > .001f ?
                         direction.normalized : FacingDirection;
+                    // Recovery must face the ACTUAL committed projectile
+                    // heading, including a simultaneous A/W/D+Up launch.
+                    // Earlier versions sometimes reused the previous yaw.
+                    visualYaw=Mathf.Atan2(committedDirection.x,
+                        committedDirection.z)*Mathf.Rad2Deg;
                     // The launch ALWAYS happens. The same existing solid
                     // capsule rotates horizontally in open space; beside a
                     // wall/competitor it stays upright to avoid starting
@@ -561,30 +577,81 @@ namespace Chase
             return true;
         }
 
-        // A single transition at recovery entry replaces the previous box
-        // union, repeated upward push, and per-frame complex morph checks.
-        // Check a small vertical sweep and the COMPLETE upright crouch body
-        // before moving or resizing any live collider.
+        // Prepare the new crouched capsule at the SAME physical floor height.
+        // The previous implementation teleported Body.position.y to 0.90m
+        // and changed orientation in a single frame, visibly popping the
+        // actor/camera and sometimes reverting to an old facing direction.
+        // This switch changes collider orientation exactly once, after a
+        // real fit test. The actor origin and visual are NOT teleported.
         bool TryFinishProneDive()
         {
-            if (!Grounded) return false;
-            Vector3 start=Body.position;
-            Vector3 goal=new Vector3(start.x,
-                Settings.standingHeight*.5f,start.z);
-            if (!CanFitVerticalShape(Settings.crouchingHeight,goal))
+            if(!Grounded)return false;
+            float feetY=Body.position.y+Capsule.center.y-Capsule.radius;
+            float targetY=feetY+Settings.standingHeight*.5f;
+            Vector3 destination=new Vector3(Body.position.x,targetY,
+                Body.position.z);
+            if (!CanFitVerticalShape(Settings.crouchingHeight,destination))
                 return false;
-            for(int i=1;i<=4;i++)
-                if(!CanFitDiveShape(Vector3.Lerp(start,goal,i*.25f)))
-                    return false;
-            // A previously verified, small center-height adjustment to
-            // place a feet-grounded crouch. No upward velocity and no
-            // force capable of lifting through an obstruction.
-            Body.position=goal;
+
+            // Compute using the Rigidbody pose, NOT Transform.position
+            // (which may lag under Rigidbody interpolation). The source
+            // visual is a direct child of this physics body.
+            Vector3 oldVisualPosition=visual!=null?
+                Body.position+Body.rotation*visual.localPosition:Vector3.zero;
+            Quaternion oldVisualRotation=visual!=null?
+                Body.rotation*visual.localRotation:Quaternion.identity;
+            recoveryGroundY=feetY;
+            recoveryStartY=Body.position.y;
+            recoveryTargetY=targetY;
+
+            // One non-trigger capsule, with its new vertical bottom exactly
+            // where the prone capsule bottom was. Never move it through the
+            // floor, remove collision, or create a second body.
             Body.rotation=Quaternion.identity;
-            SetHeight(Settings.crouchingHeight);
-            if (visual!=null)
-                visual.localRotation=Quaternion.Euler(0f,visualYaw,0f);
+            Capsule.direction=1;
+            Capsule.radius=Settings.radius;
+            Capsule.height=Settings.crouchingHeight;
+            Capsule.center=new Vector3(0f,feetY+
+                Settings.crouchingHeight*.5f-Body.position.y,0f);
+
+            if(visual!=null)
+            {
+                // Preserve the *world* position and yaw on the exact frame
+                // that the physics collider changes coordinates. Blender's
+                // LeapRecovery starts in the same prone pose as DiveProne.
+                // Since the new Body.rotation is identity, these world
+                // quantities now map directly onto local space. There is
+                // no one-frame interpolation/timing dependency here.
+                visual.localPosition=oldVisualPosition-Body.position;
+                visual.localRotation=oldVisualRotation;
+                recoveryVisualStart=visual.localPosition;
+                recoveryVisualStartRotation=visual.localRotation;
+            }
+            smoothingProneGetup=true;
             return true;
+        }
+
+        void AdvanceProneGetup()
+        {
+            float duration=Mathf.Max(.01f,Settings.leapRecovery);
+            float t=Mathf.Clamp01(1f-recoveryLeft/duration);
+            // Smoothstep has zero positional/rotational velocity at BOTH
+            // endpoints. The crouch capsule remains stationary in the world;
+            // only the actor's origin settles to its ordinary standing basis.
+            float eased=t*t*(3f-2f*t);
+            Vector3 pos=Body.position;
+            pos.y=Mathf.Lerp(recoveryStartY,recoveryTargetY,eased);
+            Body.position=pos;
+            Capsule.center=new Vector3(0f,recoveryGroundY+
+                Settings.crouchingHeight*.5f-pos.y,0f);
+            if (visual!=null)
+            {
+                visual.localPosition=Vector3.Lerp(recoveryVisualStart,
+                    standingVisualLocalPosition,eased);
+                visual.localRotation=Quaternion.Slerp(
+                    recoveryVisualStartRotation,
+                    Quaternion.Euler(0f,visualYaw,0f),eased);
+            }
         }
 
         bool CanFitVerticalShape(float height, Vector3 actorPosition)

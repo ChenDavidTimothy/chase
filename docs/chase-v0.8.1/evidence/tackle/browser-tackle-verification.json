@@ -1,0 +1,68 @@
+{
+  "url": "http://127.0.0.1:8766/?build=v081-football-slide-regression",
+  "rendered_scene": {
+    "frame": 6,
+    "scene_contrast": 17.398,
+    "size": [
+      901,
+      841
+    ]
+  },
+  "keys_and_focus": {
+    "focus": "unity-canvas",
+    "x": 0,
+    "y": 0,
+    "keys": [
+      {
+        "key": "v",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "j",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "w",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "ArrowDown",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "a",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "d",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      }
+    ],
+    "loader": "none"
+  },
+  "console_errors": [],
+  "changed_pixels_gt35": {
+    "01-tackle-launch": 44508,
+    "02-reclined-low-slide": 45975,
+    "03-feet-first-under-canopy": 46181,
+    "04-slide-end": 42918,
+    "05-protected-getup": 32095,
+    "06-rising": 74019,
+    "07-running-again": 113952,
+    "08-standing-idle": 121963
+  },
+  "proof": "real Chrome WebGL with J staging, W + Down takeoff, A/D directional spam during slide, no special motor",
+  "not_proven_by_screenshots": "Exact pose/collision safety is proven separately by PhysX and skinned-mesh tests"
+}

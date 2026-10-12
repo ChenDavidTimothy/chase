@@ -60,6 +60,7 @@ namespace Chase
                 !animator.isInitialized) return;
 
             ChaseMovementState state = motor.State;
+            ChaseMovementState previousState=lastPhysicalState;
             bool landed = motor.Grounded &&
                 (lastPhysicalState == ChaseMovementState.Jumping ||
                  lastPhysicalState == ChaseMovementState.Airborne) &&
@@ -129,6 +130,12 @@ namespace Chase
                         motor.DiveCompactContact ? 0f : .20f);
                 else if (name == "Slide" && current != desired)
                     animator.CrossFadeInFixedTime(desired,.035f,0,0f);
+                else if (name == "LeapRecovery" && current != desired)
+                    animator.CrossFadeInFixedTime(desired,.10f,0,0f);
+                else if (previousState == ChaseMovementState.LeapRecovery)
+                    // LeapRecovery ends in an authored crouch. Blend its
+                    // last low pose into upright idle/run; no sudden head pop.
+                    animator.CrossFadeInFixedTime(desired,.14f,0);
                 else
                     animator.CrossFadeInFixedTime(desired,.06f,0);
                 requestedHash = desired;

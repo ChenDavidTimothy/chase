@@ -1,0 +1,70 @@
+{
+  "url": "http://127.0.0.1:8766/?build=chase-v081-smooth-getup-crawl-regression",
+  "rendered_scene": {
+    "width": 901,
+    "height": 841,
+    "sceneContrast": 13.43
+  },
+  "keys": {
+    "focus": "unity-canvas",
+    "scrollX": 0,
+    "scrollY": 0,
+    "keys": [
+      {
+        "key": "k",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "a",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "d",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "s",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "d",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      }
+    ]
+  },
+  "browser_console_errors": [],
+  "sequence": [
+    "K real shelf-edge dive",
+    "Up real ballistic flight",
+    "chest landing",
+    "no input for 2.2s",
+    "A lateral crawl",
+    "D lateral crawl",
+    "S+D crawl backwards along W/A camera basis",
+    "auto stand in open space",
+    "R reset to actual open spawn, then Up open-floor dive"
+  ],
+  "note": "Screenshots demonstrate actual rendered motion; physics and state guarantees are from Unity PlayMode regressions."
+}

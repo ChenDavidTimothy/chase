@@ -1,0 +1,86 @@
+{
+  "PlayMode": {
+    "total": 78,
+    "passed": 78,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "EditMode": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "WebGLGym": {
+    "status": "Succeeded",
+    "target": "WebGL",
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "errors": 0,
+    "warnings": 1,
+    "serializedScenePhysicsContract": "passed",
+    "output": "Builds/ChaseAnimationGymWebGL"
+  },
+  "WebGLProduction": {
+    "status": "Succeeded",
+    "target": "WebGL",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "errors": 0,
+    "warnings": 1,
+    "serializedScenePhysicsContract": "passed",
+    "output": "Builds/ChaseWebGL"
+  },
+  "Linux": {
+    "status": "Succeeded",
+    "target": "StandaloneLinux64",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "errors": 0,
+    "warnings": 1,
+    "serializedScenePhysicsContract": "passed",
+    "output": "Builds/ChaseLinux/Chase.x86_64"
+  },
+  "SmoothGetupChrome": {
+    "result": "passed",
+    "reportedConsoleErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=v081-smooth-dive-getup"
+  },
+  "ShelfCrawlChrome": {
+    "result": "passed",
+    "reportedConsoleErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=chase-v081-smooth-getup-crawl-regression"
+  },
+  "FootballTackleChrome": {
+    "result": "passed",
+    "reportedConsoleErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=v081-football-slide-regression"
+  },
+  "ProductionChrome": {
+    "result": "passed",
+    "reportedConsoleErrors": 0,
+    "url": "http://127.0.0.1:8765/?build=chase-v081-smooth-getup-production"
+  },
+  "Capture": {
+    "verifiedPNGs": 55,
+    "denseSequenceFrames": 30,
+    "criticalGetupSheet": "gym/getup-eight-critical-frames.png",
+    "editorPlayScreenshot": "unity-editor-play.png"
+  },
+  "Rig": {
+    "validator": "passed",
+    "unchangedSource": true,
+    "actions": 13,
+    "meshes": 17,
+    "sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371"
+  },
+  "NativeLinux": {
+    "recompiledPlayerLaunched": true,
+    "runtimeExceptionsReported": 0
+  },
+  "UnityEditor": {
+    "reopenedAfterRestart": true,
+    "playModeSmoke": "passed",
+    "leftPlayMode": "stopped",
+    "scene": "Assets/Scenes/SampleScene.unity"
+  }
+}

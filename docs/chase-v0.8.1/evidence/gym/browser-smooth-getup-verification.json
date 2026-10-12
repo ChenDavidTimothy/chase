@@ -1,0 +1,12 @@
+{
+  "browser": {
+    "url": "http://127.0.0.1:8766/?build=v081-smooth-dive-getup",
+    "focus": "unity-canvas",
+    "scrollX": 0,
+    "scrollY": 0
+  },
+  "consoleErrors": [],
+  "frames": 30,
+  "capture": "real Chrome sequential frames through Superman takeoff, chest landing and smooth get-up",
+  "noSyntheticMotorState": true
+}
