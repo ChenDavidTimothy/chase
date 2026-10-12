@@ -268,8 +268,8 @@ namespace Chase.Tests
                 var routes=new[]{
                     new {x=0f,z=0f,sign=1,dist=2.7f,top=.94f},
                     new {x=0f,z=0f,sign=-1,dist=2.7f,top=.94f},
-                    new {x=-4.65f,z=0f,sign=1,dist=2.7f,top=.92f},
-                    new {x=-4.65f,z=0f,sign=-1,dist=2.7f,top=.92f}
+                    new {x=-3.55f,z=.55f,sign=1,dist=2.7f,top=.92f},
+                    new {x=-3.55f,z=.55f,sign=-1,dist=2.7f,top=.92f}
                 };
                 foreach(var route in routes)
                 {
@@ -363,6 +363,200 @@ namespace Chase.Tests
                     "Production bot must navigate around the rail supports");
                 Assert.Less(near,1.5f,
                     "Bot should reach the opposite side without obstacle-specific moves");
+            }
+            finally {if(!open)EditorSceneManager.CloseScene(scene,true);}
+        }
+
+        [Test] public void PursuerCanNavigateEverySpawnPairInFlagshipArena()
+        {
+            const string path="Assets/Scenes/SampleScene.unity";
+            var existing=SceneManager.GetSceneByPath(path);
+            bool open=existing.IsValid()&&existing.isLoaded;
+            var scene=open?existing:EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
+            try
+            {
+                var pairs=new[]{
+                    (new Vector3(-4.6f,.9f,-1.4f),new Vector3(4.6f,.9f,3.9f)),
+                    (new Vector3(4.6f,.9f,1.4f),new Vector3(-4.6f,.9f,-3.8f)),
+                    (new Vector3(-1.2f,.9f,4.6f),new Vector3(3.8f,.9f,-4.4f)),
+                    (new Vector3(-1.5f,.9f,-4.7f),new Vector3(3.2f,.9f,4.4f))
+                };
+                for(int pair=0;pair<pairs.Length;pair++)
+                    for(int reverse=0;reverse<2;reverse++)
+                    {
+                        var self=reverse==0?pairs[pair].Item1:pairs[pair].Item2;
+                        var dest=reverse==0?pairs[pair].Item2:pairs[pair].Item1;
+                        var owner=new GameObject("live navigation probe");
+                        spawned.Add(owner);
+                        var bot=owner.AddComponent<ChaseBot>();
+                        var actors=new List<GameObject>();
+                        ChaseMotor Make(Vector3 position)
+                        {
+                            var obj=new GameObject("probe body");
+                            spawned.Add(obj);actors.Add(obj);
+                            obj.transform.position=position;
+                            obj.AddComponent<Rigidbody>();
+                            obj.AddComponent<CapsuleCollider>();
+                            var visual=new GameObject("visual");
+                            visual.transform.SetParent(obj.transform,false);
+                            var motor=obj.AddComponent<ChaseMotor>();
+                            motor.Initialize(new ChaseTuning(),visual.transform);
+                            return motor;
+                        }
+                        var actor=Make(self);
+                        var target=Make(dest);
+                        Physics.SyncTransforms();
+                        bot.Initialize(actor,target,ChaseRole.Chaser);
+                        float nearest=float.PositiveInfinity;
+                        for(int tick=0;tick<520;tick++)
+                        {
+                            var action=bot.Decide(clock);
+                            actor.Simulate(action,Dt,clock);
+                            Physics.Simulate(Dt);
+                            clock+=Dt;
+                            nearest=Mathf.Min(nearest,
+                                Vector3.Distance(actor.Body.position,target.Body.position));
+                            if(nearest<1.2f)break;
+                        }
+                        Assert.Less(nearest,1.5f,
+                            "Chaser unable to reach static evader in spawn "+
+                            pair+" direction "+reverse+" min="+nearest+
+                            " final="+actor.Body.position+" state="+actor.State+
+                            " grounded="+actor.Grounded);
+                        spawned.Remove(owner);
+                        UnityEngine.Object.DestroyImmediate(owner);
+                        foreach(var obj in actors)
+                        {
+                            spawned.Remove(obj);UnityEngine.Object.DestroyImmediate(obj);
+                        }
+                    }
+            }
+            finally {if(!open)EditorSceneManager.CloseScene(scene,true);}
+        }
+
+        // Skill should have a timing window. A route requiring one exact
+        // input frame would be a button puzzle, not a competitive line.
+        // The Chibi's visual Leap spans 1.18m laterally (measured from the
+        // approved Blender action), wider than its 0.86m physical capsule.
+        [Test] public void ProductionCrossingsPermitMultipleTakeoffTimings()
+        {
+            const string path="Assets/Scenes/SampleScene.unity";
+            var existing=SceneManager.GetSceneByPath(path);
+            bool open=existing.IsValid()&&existing.isLoaded;
+            var scene=open?existing:EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
+            try
+            {
+                foreach(var route in new[]{
+                    new {x=0f,z=0f,width=2.3f,top=.94f},
+                    new {x=-3.55f,z=.55f,width=1.7f,top=.92f}})
+                    foreach(int sign in new[]{-1,1})
+                    {
+                        var distances=new[]{2.4f,2.55f,2.7f,2.85f,3f};
+                        int valid=0;
+                        float shortest=float.PositiveInfinity;
+                        foreach(float startDistance in distances)
+                        {
+                            var obj=new GameObject("live layout timing probe");
+                            spawned.Add(obj);
+                            obj.transform.position=new Vector3(route.x,.9f,
+                                route.z-sign*startDistance);
+                            obj.AddComponent<Rigidbody>();obj.AddComponent<CapsuleCollider>();
+                            var visual=new GameObject("visual");
+                            visual.transform.SetParent(obj.transform,false);
+                            var m=obj.AddComponent<ChaseMotor>();
+                            m.Initialize(new ChaseTuning(),visual.transform);
+                            Physics.SyncTransforms();
+                            bool crossed=false,clean=true;
+                            float maxForward=-100f,minBottom=100f;
+                            for(int t=0;t<90;t++)
+                            {
+                                m.Simulate(new ChaseAction(
+                                    new Vector2(0,sign),false,t==0,false,false),Dt,clock);
+                                Physics.Simulate(Dt);clock+=Dt;
+                                float p=sign*(m.Body.position.z-route.z);
+                                maxForward=Mathf.Max(maxForward,p);
+                                if(m.DiveCompactContact)clean=false;
+                                if(m.State==ChaseMovementState.Leaping&&
+                                    m.DiveColliderActive && Mathf.Abs(p)<1.14f)
+                                {
+                                    crossed=true;
+                                    float bottom=m.Body.position.y+
+                                        m.Capsule.center.y-m.Capsule.radius;
+                                    minBottom=Mathf.Min(minBottom,bottom);
+                                    if(bottom<route.top+.003f||
+                                        sign*m.Body.linearVelocity.z<8.8f)
+                                        clean=false;
+                                }
+                            }
+                            if(clean&&crossed&&maxForward>1.5f&&
+                                minBottom>route.top+.003f)
+                            {
+                                valid++;shortest=Mathf.Min(shortest,startDistance);
+                            }
+                            spawned.Remove(obj);UnityEngine.Object.DestroyImmediate(obj);
+                        }
+                        Assert.GreaterOrEqual(valid,2,
+                            "Only a single or no usable takeoff timing at "+
+                            route.x+" sign "+sign+" valid="+valid);
+                        Debug.Log("CHASE_MASTERED_LINE x="+route.x+" direction="+sign+
+                            " safe_timing_samples="+valid+"/5 first="+shortest);
+                    }
+            }
+            finally {if(!open)EditorSceneManager.CloseScene(scene,true);}
+        }
+
+        [Test] public void ProductionCrossingsPreserveActualFeetFirstUnderpasses()
+        {
+            const string path="Assets/Scenes/SampleScene.unity";
+            var existing=SceneManager.GetSceneByPath(path);
+            bool open=existing.IsValid()&&existing.isLoaded;
+            var scene=open?existing:EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
+            try
+            {
+                foreach(var route in new[]{
+                    new {x=0f,z=0f,underside=.86f},
+                    new {x=-3.55f,z=.55f,underside=.85f}})
+                    foreach(int sign in new[]{-1,1})
+                    {
+                        var obj=new GameObject("live layout underpass probe");
+                        spawned.Add(obj);
+                        obj.transform.position=new Vector3(route.x,.9f,
+                            route.z-sign*1.15f);
+                        obj.AddComponent<Rigidbody>();obj.AddComponent<CapsuleCollider>();
+                        var visual=new GameObject("visual");
+                        visual.transform.SetParent(obj.transform,false);
+                        var m=obj.AddComponent<ChaseMotor>();
+                        m.Initialize(new ChaseTuning(),visual.transform);
+                        m.Body.linearVelocity=Vector3.forward*(sign*6f);
+                        Physics.SyncTransforms();
+                        bool under=false,exited=false,stood=false;
+                        float minGap=100f;
+                        for(int t=0;t<220;t++)
+                        {
+                            m.Simulate(new ChaseAction(new Vector2(0,sign),
+                                false,false,t==0,false),Dt,clock);
+                            Physics.Simulate(Dt);clock+=Dt;
+                            float p=sign*(m.Body.position.z-route.z);
+                            if(p>-.3f&&p<.5f)
+                            {
+                                under=true;
+                                Assert.IsTrue(m.SlideColliderActive);
+                                float top=m.Body.position.y+m.SlideBox.center.y+
+                                    m.SlideBox.size.y*.5f;
+                                float gap=route.underside-top;
+                                minGap=Mathf.Min(minGap,gap);
+                                Assert.Greater(gap,.003f,
+                                    "Sliding Chibi cannot visibly pass through a low crossing");
+                            }
+                            exited|=p>1.5f;
+                            stood|=exited&&m.State==ChaseMovementState.Standing;
+                        }
+                        Assert.IsTrue(under&&exited&&stood,
+                            "Production underpass failed at "+route.x+" dir "+sign);
+                        Debug.Log("CHASE_UNDERPASS x="+route.x+" dir="+sign+
+                            " minimum_box_clearance="+minGap.ToString("F3"));
+                        spawned.Remove(obj);UnityEngine.Object.DestroyImmediate(obj);
+                    }
             }
             finally {if(!open)EditorSceneManager.CloseScene(scene,true);}
         }

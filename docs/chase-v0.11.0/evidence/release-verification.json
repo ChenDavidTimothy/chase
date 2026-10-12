@@ -1,0 +1,50 @@
+{
+  "playmode": {
+    "total": 85,
+    "passed": 85,
+    "failed": 0
+  },
+  "editmode": {
+    "total": 31,
+    "passed": 31,
+    "failed": 0
+  },
+  "WebGLProduction": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "result": "Succeeded",
+    "errors": "0",
+    "warnings": "1"
+  },
+  "WebGLGym": {
+    "target": "WebGL",
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "result": "Succeeded",
+    "errors": "0",
+    "warnings": "1"
+  },
+  "LinuxProduction": {
+    "target": "StandaloneLinux64",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "result": "Succeeded",
+    "errors": "0",
+    "warnings": "1"
+  },
+  "route_metrics": [
+    "CHASE_ARENA_COUNTERPLAY Crossline radius=0.345 left=6.50m right=6.50m",
+    "CHASE_ARENA_COUNTERPLAY West Switchback radius=0.345 left=6.00m right=6.00m",
+    "CHASE_ARENA_COUNTERPLAY Crossline radius=0.49 left=7.00m right=7.00m",
+    "CHASE_ARENA_COUNTERPLAY West Switchback radius=0.49 left=6.50m right=6.00m",
+    "CHASE_MASTERED_LINE x=0 direction=-1 safe_timing_samples=4/5 first=2.4",
+    "CHASE_MASTERED_LINE x=0 direction=1 safe_timing_samples=4/5 first=2.4",
+    "CHASE_MASTERED_LINE x=-3.55 direction=-1 safe_timing_samples=4/5 first=2.55",
+    "CHASE_MASTERED_LINE x=-3.55 direction=1 safe_timing_samples=4/5 first=2.4",
+    "CHASE_UNDERPASS x=0 dir=-1 minimum_box_clearance=0.030",
+    "CHASE_UNDERPASS x=0 dir=1 minimum_box_clearance=0.030",
+    "CHASE_UNDERPASS x=-3.55 dir=-1 minimum_box_clearance=0.020",
+    "CHASE_UNDERPASS x=-3.55 dir=1 minimum_box_clearance=0.020"
+  ],
+  "blender_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371",
+  "production_browser": [],
+  "gym_browser": []
+}

@@ -29,16 +29,22 @@ public static class ChaseArenaV1Builder
     // Deliberate distribution, not a random obstacle scatter.
     // The central Z runway stays open for diving; flanking pieces offer
     // loops, changes of elevation, concealment and competing escape routes.
+    // ARENA 01: three recognizable, connected contest areas.
+    // CROSSLINE (center): the committed Superman / slide rail and both ends.
+    // WEST SWITCHBACK: short bench, reversal frame and crouch roof; chasers
+    // can cut the corner rather than having to follow an identical action.
+    // EAST ELEVATION: jumpable deck, slope, open offset gates and aerial slot.
+    // Open floor between these pieces is intentional room for interception.
     public static readonly Placement[] Layout = {
         new Placement("UnderOverRail",0f,0f),
-        new Placement("UnderOverBench",-4.65f,0f),
+        new Placement("UnderOverBench",-3.55f,.55f),
         new Placement("AerialSlot",3.35f,2.45f),
-        new Placement("LowCanopy",-3.10f,3.15f),
-        new Placement("LowHurdle",.85f,-4.15f),
-        new Placement("TurnFrame",-3.0f,-2.30f),
+        new Placement("LowCanopy",-3.20f,4.35f),
+        new Placement("LowHurdle",0f,-4.90f),
+        new Placement("TurnFrame",-1.55f,-3.55f),
         new Placement("LowDeck",2.35f,-3.35f),
         new Placement("OffsetGates",3.75f,-.55f,0f),
-        new Placement("InclineRun",1.60f,-1.50f,0f)
+        new Placement("InclineRun",1.65f,4.20f,0f)
     };
     static readonly string[] Old = {
         "Tall barrier A","Tall barrier B","Pillar A","Pillar B",
@@ -347,7 +353,7 @@ public static class ChaseArenaV1Builder
             new Vector3(0,.28f,0));
         slope.localRotation=Quaternion.Euler(-13f,0,0);
         Solid(slope,"Inclined walking plane / solid",Vector3.zero,
-            new Vector3(1.90f,.14f,2.20f),hurdle:true);
+            new Vector3(1.90f,.14f,2.20f),blocker:true,hurdle:true);
         BoxArt(slope,"Inclined walking plane / warm top",Vector3.zero,
             new Vector3(1.9f,.14f,2.2f),cream);
         foreach(float side in new[]{-.88f,.88f})
@@ -365,7 +371,7 @@ public static class ChaseArenaV1Builder
         {
             float z=lane*.70f,x=lane*.48f;
             var t=Node("Gate "+lane,r,new Vector3(x,0,z));
-            foreach(float side in new[]{-0.62f,.62f})
+            foreach(float side in new[]{-0.75f,.75f})
             {
                 Solid(t,"Gate pillar "+side+" / solid",
                     new Vector3(side,.72f,0),new Vector3(.13f,1.44f,.19f),
@@ -374,11 +380,11 @@ public static class ChaseArenaV1Builder
                     new Vector3(side,.72f,0),new Vector3(.13f,1.44f,.19f),frame);
             }
             Solid(t,"Gate upper rail / solid",new Vector3(0,1.39f,0),
-                new Vector3(1.37f,.10f,.19f),blocker:true,overhead:true);
+                new Vector3(1.63f,.10f,.19f),blocker:true,overhead:true);
             BoxArt(t,"Gate upper rail / ivory",new Vector3(0,1.39f,0),
-                new Vector3(1.37f,.10f,.19f),cream);
+                new Vector3(1.63f,.10f,.19f),cream);
             BoxArt(t,"Upper accent",new Vector3(0,1.45f,-.098f),
-                new Vector3(1.34f,.02f,.015f),mint);
+                new Vector3(1.58f,.02f,.015f),mint);
         }
     }
     static void WritePrefab(string name,Action<Transform> author)
@@ -407,6 +413,54 @@ public static class ChaseArenaV1Builder
         WritePrefab("OffsetGates",MakeGates);
         WritePrefab("InclineRun",MakeIncline);
         AssetDatabase.SaveAssets();
+    }
+
+    // The independent Gym uses the SAME production crossing prefabs. The
+    // historic v0.9.0 authoring assets are retired, but the calibration
+    // scene and its separate measurement obstacles remain valid regression
+    // tools. Only the two crossing fixtures owned by this method are replaced.
+    [MenuItem("Chase/Gym/Refresh Production Crossing Fixtures")]
+    public static void RefreshGymFixtures()
+    {
+        const string path="Assets/Scenes/MovementGym.unity";
+        var scene=SceneManager.GetSceneByPath(path);
+        bool loaded=scene.IsValid()&&scene.isLoaded;
+        if(!loaded)scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
+        try
+        {
+            var root=scene.GetRootGameObjects()
+                .Single(o=>o.name.StartsWith("MOVEMENT GYM  /"));
+            foreach(string oldName in new[]{
+                "MODULAR OBSTACLES / reusable prefabs",
+                "GYM / certified production crossings"})
+            {
+                var old=root.transform.Cast<Transform>()
+                    .FirstOrDefault(t=>t.name==oldName);
+                if(old!=null)UnityEngine.Object.DestroyImmediate(old.gameObject);
+            }
+            var group=Node("GYM / certified production crossings",root.transform);
+            foreach(var stage in new[]{
+                new { prefab="UnderOverRail",name="GYM under-over rail",
+                    x=-8.5f,z=2f},
+                new { prefab="UnderOverBench",name="GYM narrow under-over bench",
+                    x=-8.5f,z=-4.5f}
+            })
+            {
+                var source=AssetDatabase.LoadAssetAtPath<GameObject>(
+                    Folder+"/"+stage.prefab+".prefab");
+                if(source==null)throw new InvalidOperationException(
+                    "Missing production Gym crossing "+stage.prefab);
+                var instance=(GameObject)PrefabUtility.InstantiatePrefab(source,scene);
+                instance.name=stage.name;
+                instance.transform.SetParent(group,false);
+                instance.transform.localPosition=new Vector3(stage.x,0,stage.z);
+                instance.transform.localRotation=Quaternion.Euler(0,45f,0);
+            }
+            EditorSceneManager.MarkSceneDirty(scene);
+            if(!EditorSceneManager.SaveScene(scene))
+                throw new InvalidOperationException("Unable to save Gym fixture scene");
+        }
+        finally {if(!loaded)EditorSceneManager.CloseScene(scene,true);}
     }
 
     // This method is explicit and safe to repeat. It does not alter the

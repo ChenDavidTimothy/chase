@@ -48,7 +48,12 @@ namespace Chase
                     bool good = Mathf.Abs(p.x) < 5.5f && Mathf.Abs(p.z) < 5.5f;
                     if (good)
                     {
-                        int hitCount=Physics.OverlapSphereNonAlloc(p + Vector3.up * .95f,
+                        // Sense a *standing body column*, including low
+                        // podium/ramp sides. The old waist sphere missed
+                        // shallow raised geometry and repeatedly steered the
+                        // bot into an unwalkable vertical side of the incline.
+                        int hitCount=Physics.OverlapCapsuleNonAlloc(
+                            p + Vector3.up * .35f,p + Vector3.up * 1.35f,
                             .47f,scanHits,~0,QueryTriggerInteraction.Ignore);
                         if(hitCount==scanHits.Length) good=false;
                         for(int i=0;i<hitCount && good;i++)

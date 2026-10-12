@@ -80,12 +80,71 @@ public static class ChaseArenaV1Contract
                 CheckPart(asset,"Inclined walking plane / solid",Vector3.zero,
                     new Vector3(1.9f,.14f,2.2f));
                 break;
+            case "OffsetGates":
+                // Blender CHASE_Leap has an animated 1.182m-wide pose,
+                // even though the narrow physical capsule is 0.86m.
+                // A centered dive through the gate therefore needs real
+                // visual width and margin, not just a collider-sized slot.
+                foreach(int lane in new[]{-1,1})
+                {
+                    var gate=Descendant(asset.transform,"Gate "+lane);
+                    if(gate==null)throw new InvalidOperationException("Missing offset gate");
+                    var left=Descendant(gate,"Gate pillar -0.75 / solid");
+                    var right=Descendant(gate,"Gate pillar 0.75 / solid");
+                    if(left==null||right==null)
+                        throw new InvalidOperationException("Missing physical gate posts");
+                    float width=right.localPosition.x-left.localPosition.x-
+                        (left.GetComponent<BoxCollider>().size.x+
+                         right.GetComponent<BoxCollider>().size.x)*.5f;
+                    if(width<1.36f || width-1.182f<.15f)
+                        throw new InvalidOperationException(
+                            "Gate too narrow for Chibi's visible flying limbs");
+                }
+                break;
             case "LowDeck":
                 CheckPart(asset,"Podium deck / solid",
                     new Vector3(0,.22f,0),new Vector3(1.85f,.44f,1.25f));
                 break;
         }
     }
+    public static void ValidateGym()
+    {
+        const string path="Assets/Scenes/MovementGym.unity";
+        var scene=SceneManager.GetSceneByPath(path);
+        bool alreadyLoaded=scene.IsValid()&&scene.isLoaded;
+        if(!alreadyLoaded)scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
+        try
+        {
+            var root=scene.GetRootGameObjects()
+                .Single(x=>x.name.StartsWith("MOVEMENT GYM  /"));
+            if(root.transform.Cast<Transform>().Any(t=>
+                t.name=="MODULAR OBSTACLES / reusable prefabs"))
+                throw new InvalidOperationException("Obsolete Gym fixture group remains");
+            var group=root.transform.Cast<Transform>().SingleOrDefault(t=>
+                t.name=="GYM / certified production crossings");
+            if(group==null||group.childCount!=2)
+                throw new InvalidOperationException("Missing verified Gym crossings");
+            foreach(var spec in new[]{
+                new{index=0,name="UnderOverRail",x=-8.5f,z=2f},
+                new{index=1,name="UnderOverBench",x=-8.5f,z=-4.5f}
+            })
+            {
+                var t=group.GetChild(spec.index);
+                if(AssetDatabase.GetAssetPath(
+                    PrefabUtility.GetCorrespondingObjectFromSource(t.gameObject))
+                    !=ChaseArenaV1Builder.Folder+"/"+spec.name+".prefab")
+                    throw new InvalidOperationException("Gym references old prefab "+t.name);
+                Near(t.localPosition.x,spec.x,"Gym "+spec.name+" X");
+                Near(t.localPosition.z,spec.z,"Gym "+spec.name+" Z");
+                Near(t.localEulerAngles.y,45f,"Gym crossing yaw");
+                if(t.localScale!=Vector3.one)
+                    throw new InvalidOperationException("Scaled Gym crossing");
+            }
+        }
+        finally {if(!alreadyLoaded)EditorSceneManager.CloseScene(scene,true);}
+        Debug.Log("CHASE_GYM_PRODUCTION_FIXTURES_PASS");
+    }
+
     public static void Validate()
     {
         foreach(var spec in ChaseArenaV1Builder.Layout.Select(p=>p.prefab).Distinct())
@@ -139,8 +198,8 @@ public static class ChaseArenaV1Contract
             // traversal is independently verified in PhysX tests.
             foreach(var station in new[]{new Vector3(0,.9f,-2.7f),
                 new Vector3(0,.9f,2.7f),
-                new Vector3(-4.65f,.9f,-2.7f),
-                new Vector3(-4.65f,.9f,2.7f),
+                new Vector3(-3.55f,.9f,-2.15f),
+                new Vector3(-3.55f,.9f,3.25f),
                 new Vector3(3.35f,.9f,5.15f)})
             {
                 var body=new Bounds(station,new Vector3(.7f,1.8f,.7f));

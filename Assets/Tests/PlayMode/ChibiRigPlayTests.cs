@@ -53,6 +53,72 @@ namespace Chase.Tests
         }
 
         [UnityTest]
+        public IEnumerator ApprovedBlenderVisualFitsItsSlideAndLeapClearanceEnvelope()
+        {
+            // Bakes the actual imported 17-part skinned production rig.
+            // The animator has no physics authority. These measurements
+            // prevent a visually enormous Chibi head/arms from silently
+            // exceeding the obstacle dimensions chosen for the tiny body.
+            var prefab=Resources.Load<GameObject>("ChibiVisual");
+            Assert.NotNull(prefab);
+            var visual=UnityEngine.Object.Instantiate(prefab);
+            try
+            {
+                var animator=visual.GetComponentInChildren<Animator>(true);
+                var skins=visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                Assert.AreEqual(17,skins.Length);
+                Bounds Measure(string state,float phase)
+                {
+                    animator.Play(state,0,phase);
+                    animator.Update(.02f);
+                    Bounds result=new Bounds();
+                    bool first=true;
+                    foreach(var renderer in skins)
+                    {
+                        var baked=new Mesh();
+                        try
+                        {
+                            renderer.BakeMesh(baked);
+                            foreach(var point in baked.vertices)
+                            {
+                                // BakeMesh includes the FBX's 100x import scale.
+                                // Applying TransformPoint would scale it again
+                                // and produce a fictitious 173m-tall Chibi.
+                                Vector3 world=renderer.transform.position+
+                                    renderer.transform.rotation*point;
+                                if(first){result=new Bounds(world,Vector3.zero);first=false;}
+                                else result.Encapsulate(world);
+                            }
+                        }
+                        finally {UnityEngine.Object.DestroyImmediate(baked);}
+                    }
+                    Assert.IsFalse(first);
+                    return result;
+                }
+                foreach(float phase in new[]{.1f,.5f,.9f})
+                {
+                    Bounds slide=Measure("Slide",phase);
+                    Assert.Less(slide.size.y,.83f,
+                        "Imported oversized Chibi head clips nominal slide box");
+                    Assert.Greater(slide.size.y,.67f,
+                        "Unexpected imported slide animation scaling");
+                    Assert.Less(slide.size.x,.84f,
+                        "Slide width must remain inside its real 0.84m box");
+                }
+                foreach(float phase in new[]{.52f,.72f,.90f})
+                {
+                    Bounds leap=Measure("Leap",phase);
+                    Assert.That(leap.size.x,Is.InRange(1.02f,1.31f),
+                        "Actual Superman arms differ from validated Blender width");
+                    Assert.Less(leap.size.y,.83f,
+                        "Horizontal Leap pose has become unexpectedly upright");
+                }
+            }
+            finally {UnityEngine.Object.DestroyImmediate(visual);}
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator ProneWiggleAnimationFollowsActualCrawlingVelocity()
         {
             var actor=new GameObject("Prone crawl animation verification");

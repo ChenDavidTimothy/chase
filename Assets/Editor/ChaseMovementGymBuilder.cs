@@ -113,6 +113,7 @@ public static class ChaseMovementGymBuilder
         if(!string.IsNullOrEmpty(current) && current!=Path)
             EditorSceneManager.OpenScene(current,OpenSceneMode.Single);
         AssetDatabase.SaveAssets();
-        Debug.Log("CHASE_V05_MOVEMENT_GYM_CREATED: "+Path);
+        ChaseArenaV1Builder.RefreshGymFixtures();
+        Debug.Log("CHASE_MOVEMENT_GYM_REBUILT_WITH_PRODUCTION_FIXTURES: "+Path);
     }
 }
