@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace Chase
 {
@@ -254,6 +255,14 @@ namespace Chase
             { MenuPage = ChaseMenuPage.HowTo; ResetMenuSelection(); SyncPresentation(); }
         }
 
+        public void OpenPractice()
+        {
+            if(!showFrontEnd || MenuPage!=ChaseMenuPage.HowTo)return;
+            Time.timeScale=1f;
+            keyboard.Clear();
+            SceneManager.LoadScene("PracticePlayground",LoadSceneMode.Single);
+        }
+
         public void OpenSettings()
         {
             if (showFrontEnd && MenuPage == ChaseMenuPage.MainMenu)
@@ -352,7 +361,7 @@ namespace Chase
                     return Application.platform==RuntimePlatform.WebGLPlayer?3:4;
                 case ChaseMenuPage.Difficulty: return 5; // back + four rivals
                 case ChaseMenuPage.Arena: return 2;
-                case ChaseMenuPage.HowTo: return 1;
+                case ChaseMenuPage.HowTo: return 2;
                 case ChaseMenuPage.Settings: return 3;
                 default:return Phase==ChasePhase.Paused?3:
                     Phase==ChasePhase.Ended?4:0;
@@ -394,7 +403,10 @@ namespace Chase
                     if(MenuSelection==0) MenuBack();
                     else StartSelectedArena();
                     break;
-                case ChaseMenuPage.HowTo: MenuBack();break;
+                case ChaseMenuPage.HowTo:
+                    if(MenuSelection==0)MenuBack();
+                    else OpenPractice();
+                    break;
                 case ChaseMenuPage.Settings:
                     if(MenuSelection==0) MenuBack();
                     else if(MenuSelection==1) SetKeyHints(!ShowKeyHints);

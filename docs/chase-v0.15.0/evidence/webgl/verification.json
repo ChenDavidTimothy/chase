@@ -1,0 +1,57 @@
+{
+  "clicks": [
+    [
+      "how-to-play",
+      [
+        489,
+        470
+      ]
+    ],
+    [
+      "enter-practice",
+      [
+        602,
+        591
+      ]
+    ],
+    [
+      "practice-to-main-menu",
+      [
+        618,
+        462
+      ]
+    ],
+    [
+      "play-from-returned-menu",
+      [
+        602,
+        403
+      ]
+    ],
+    [
+      "runner-difficulty",
+      [
+        713,
+        381
+      ]
+    ],
+    [
+      "launch-match",
+      [
+        323,
+        551
+      ]
+    ]
+  ],
+  "status": {
+    "focus": "unity-canvas",
+    "scrollY": 0,
+    "scrollX": 0,
+    "title": "CHASE | Mastered Routes"
+  },
+  "walking_changed_pixels": 164466,
+  "return_showcase_changed_pixels": 74514,
+  "console_errors": [],
+  "javascript_exceptions": 0,
+  "notes": "Actual CDP physical mouse/keyboard input; no Unity method shortcuts"
+}

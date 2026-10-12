@@ -251,8 +251,11 @@ namespace Chase
                     Label(new Rect(x+35,y+276,430,28),
                         "Run, dive, slide. Keep moving.",body);
                     Controls(new Rect(x+28,y+334,485,145),1f);
-                    Label(new Rect(x+37,y+496,430,24),
+                    Label(new Rect(x+37,y+485,430,24),
                         "Chaser tags. Evader survives 20 seconds.",small);
+                    if(Button(new Rect(x+34,y+526,452,57),
+                        "ENTER PRACTICE  >",Mint,true,1))
+                        match.OpenPractice();
                     break;
                 case ChaseMenuPage.Settings:
                     Back(x+33,y+166);

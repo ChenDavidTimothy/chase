@@ -18,9 +18,12 @@ public static class ChaseReleaseBuild
         ChaseArenaV1Contract.ValidateGym();
         ChaseMenuReplayContract.Validate();
         ChaseArenaV1Contract.Validate();
+        ChasePracticePlaygroundContract.Validate();
         var options = new BuildPlayerOptions
         {
-            scenes = new[] { scene },
+            scenes = scene=="Assets/Scenes/SampleScene.unity" ?
+                new[] { scene, ChasePracticePlaygroundBuilder.ScenePath } :
+                new[] { scene },
             target = target,
             locationPathName = output,
             options = BuildOptions.DetailedBuildReport
