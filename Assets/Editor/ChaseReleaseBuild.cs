@@ -16,6 +16,7 @@ public static class ChaseReleaseBuild
         // must fail before exporting a browser player with old zero defaults.
         ChaseMovementSceneContract.ValidateScenes();
         ChaseArenaV1Contract.ValidateGym();
+        ChaseMenuReplayContract.Validate();
         ChaseArenaV1Contract.Validate();
         var options = new BuildPlayerOptions
         {

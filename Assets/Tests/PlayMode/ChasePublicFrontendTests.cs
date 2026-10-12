@@ -25,6 +25,98 @@ namespace Chase.Tests
             if(m!=null)Object.DestroyImmediate(m.gameObject);
         }
 
+        [UnityTest] public IEnumerator RecordedShowcaseNeverRunsAHiddenMatch()
+        {
+            var match=PublicMatch();
+            try
+            {
+                var showcase=match.GetComponent<ChaseMenuShowcase>();
+                Assert.NotNull(showcase);
+                Assert.IsTrue(showcase.Loaded);
+                Assert.IsTrue(showcase.Playing);
+                Assert.AreEqual(3,showcase.ShotCount);
+                for(int shot=0;shot<3;shot++)
+                    Assert.That(showcase.FrameCount(shot),Is.InRange(180,300));
+                Assert.IsFalse(match.Chaser.gameObject.activeInHierarchy);
+                Assert.IsFalse(match.Evader.gameObject.activeInHierarchy);
+
+                Transform menuRoot=null;
+                foreach(Transform child in match.transform)
+                    if(child.name=="MENU SHOWCASE / visual-only recorded chase")
+                        menuRoot=child;
+                Assert.NotNull(menuRoot);
+                Assert.AreEqual(2,menuRoot.childCount);
+                Assert.IsEmpty(menuRoot.GetComponentsInChildren<Collider>(true));
+                Assert.IsEmpty(menuRoot.GetComponentsInChildren<Rigidbody>(true));
+                Assert.IsEmpty(menuRoot.GetComponentsInChildren<ChaseBot>(true));
+                Assert.AreEqual(2,
+                    menuRoot.GetComponentsInChildren<Animator>(true).Length);
+                float start=match.CountdownRemaining;
+                yield return null;
+                yield return null;
+                Assert.That(match.CountdownRemaining,Is.EqualTo(start).Within(.001f));
+
+                match.OpenPlay();
+                Assert.IsTrue(showcase.Playing);
+                match.SelectDifficulty(ChaseDifficulty.Rival);
+                Assert.AreEqual(ChaseMenuPage.Arena,match.MenuPage);
+                Assert.IsFalse(showcase.Playing);
+                Assert.IsFalse(menuRoot.gameObject.activeSelf);
+                Assert.IsFalse(match.Chaser.gameObject.activeInHierarchy);
+                Assert.IsFalse(match.Evader.gameObject.activeInHierarchy);
+                match.MenuBack();
+                Assert.IsTrue(showcase.Playing);
+                Assert.IsTrue(menuRoot.gameObject.activeSelf);
+                match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                Assert.IsFalse(showcase.Playing);
+                Assert.IsFalse(menuRoot.gameObject.activeSelf);
+                Assert.IsTrue(match.Chaser.gameObject.activeInHierarchy);
+                Assert.IsTrue(match.Evader.gameObject.activeInHierarchy);
+                match.ReturnToMenu();
+                Assert.IsTrue(showcase.Playing);
+                Assert.IsTrue(menuRoot.gameObject.activeSelf);
+                Assert.IsFalse(match.Chaser.gameObject.activeInHierarchy);
+                Assert.IsFalse(match.Evader.gameObject.activeInHierarchy);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        [UnityTest] public IEnumerator ShowcaseLoopsCleanlyAtItsRecordedDuration()
+        {
+            var match=PublicMatch();
+            try
+            {
+                var demo=match.GetComponent<ChaseMenuShowcase>();
+                Assert.NotNull(demo);
+                float duration=0f;
+                for(int i=0;i<demo.ShotCount;i++)
+                    duration+=(demo.FrameCount(i)-1)/50f;
+                Assert.That(duration,Is.InRange(10f,18f));
+                var elapsed=typeof(ChaseMenuShowcase).GetField("elapsed",
+                    BindingFlags.Instance|BindingFlags.NonPublic);
+                var lastSample=typeof(ChaseMenuShowcase).GetField("lastSample",
+                    BindingFlags.Instance|BindingFlags.NonPublic);
+                Transform visual=null;
+                foreach(Transform child in match.transform)
+                    if(child.name=="MENU SHOWCASE / visual-only recorded chase")
+                        visual=child.GetChild(0);
+                Assert.NotNull(visual);
+                elapsed.SetValue(demo,.50f);
+                lastSample.SetValue(demo,-1);
+                yield return null;
+                Vector3 first=visual.position;
+                elapsed.SetValue(demo,duration+.50f);
+                lastSample.SetValue(demo,-1);
+                yield return null;
+                Assert.Less(Vector3.Distance(first,visual.position),.20f,
+                    "Recorded menu must loop without positional drift");
+                Assert.IsFalse(match.Chaser.gameObject.activeInHierarchy);
+                Assert.IsFalse(match.Evader.gameObject.activeInHierarchy);
+            }
+            finally {DestroyMatch(match);}
+        }
+
         [UnityTest] public IEnumerator FrontEndWaitsForExplicitPlaySelection()
         {
             var match=PublicMatch();

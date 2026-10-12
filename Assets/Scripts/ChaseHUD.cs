@@ -23,7 +23,7 @@ namespace Chase
             new Dictionary<(int,Color,FontStyle,TextAnchor),GUIStyle>();
         GUIStyle roundShape, title, brand, body, small, micro, buttonText,
             buttonPrimaryText, buttonSmall, large, centered, keyText, keyLabel;
-        Texture2D rounded, arrowUp, arrowDown;
+        Texture2D rounded, arrowUp, arrowDown, arenaStill;
         ChasePhase previousPhase;
         float goUntil;
         float hintBrightUntil;
@@ -107,6 +107,7 @@ namespace Chase
             rounded.Apply(false,true);
             arrowUp=ArrowTexture(true);
             arrowDown=ArrowTexture(false);
+            arenaStill=Resources.Load<Texture2D>("MenuArenaStill");
             roundShape=new GUIStyle(GUIStyle.none);
             roundShape.normal.background=rounded;
             roundShape.border=new RectOffset(12,12,12,12);
@@ -170,19 +171,23 @@ namespace Chase
         {
             // Arena remains a real 3D preview. One opaque edge gives the copy
             // contrast without hiding all of the playable course.
+            bool arena=match.MenuPage==ChaseMenuPage.Arena;
             GUI.DrawTexture(new Rect(0,0,w,h),Texture2D.whiteTexture,
                 ScaleMode.StretchToFill,true,0,
-                new Color(.025f,.05f,.075f,.50f),0,0);
+                arena?new Color(.025f,.05f,.075f,.25f):
+                    new Color(.025f,.05f,.075f,.43f),0,0);
         }
 
         void MenuPanel(float w,float h)
         {
-            float x=Mathf.Max(28f,w*.065f);
+            float x=match.MenuPage==ChaseMenuPage.Arena?
+                Mathf.Max(35f,w*.058f):(w-554f)*.5f;
             float ph=Mathf.Min(h-52,630f);
             float y=(h-ph)*.5f;
             Tile(new Rect(x-13,y-9,554,ph+18),
-                new Color(.035f,.091f,.14f,.92f));
+                new Color(.035f,.091f,.14f,.98f));
             Tile(new Rect(x-13,y-9,7,ph+18),Mint);
+            Tile(new Rect(x+528,y+12,4,ph-24),new Color(.26f,.64f,.59f,.35f));
 
             Brand(x+33,y+30);
             switch(match.MenuPage)
@@ -452,7 +457,42 @@ namespace Chase
             if(match.MenuPage!=ChaseMenuPage.InMatch)
             {
                 Backdrop(w,h);
+                // Faint static Arena 01 art fills the opposite side of the
+                // composition when the recorded chase is close to an edge.
+                // This texture is captured from the real authored arena and
+                // costs no additional camera or physics simulation.
+                var showcase=match.GetComponent<ChaseMenuShowcase>();
+                if(match.MenuPage!=ChaseMenuPage.Arena && arenaStill!=null)
+                {
+                    // Only paint the quiet opposite margin. Overlaying a
+                    // still onto the moving Chibis would create double
+                    // silhouettes and weaken the recorded trick's clarity.
+                    bool right=showcase==null ||
+                        showcase.CurrentShotIndex!=1;
+                    Color prior=GUI.color;
+                    GUI.color=new Color(.70f,.88f,.90f,.24f);
+                    GUI.BeginGroup(new Rect(right?w*.5f:0,0,w*.5f,h));
+                    GUI.DrawTexture(new Rect(right?-w*.5f:0,0,w,h),
+                        arenaStill,ScaleMode.ScaleAndCrop,true);
+                    GUI.EndGroup();
+                    GUI.color=prior;
+                }
+                if(showcase!=null && showcase.Playing &&
+                    showcase.CutOpacity>0f)
+                {
+                    Color color=GUI.color;
+                    GUI.color=new Color(.022f,.055f,.084f,
+                        showcase.CutOpacity*.90f);
+                    GUI.DrawTexture(new Rect(0,0,w,h),
+                        Texture2D.whiteTexture);
+                    GUI.color=color;
+                }
                 MenuPanel(w,h);
+                // The footage is a decorative recording, never a live match.
+                if(match.MenuPage!=ChaseMenuPage.Arena)
+                    Label(new Rect(w-166,h-32,147,18),"RECORDED CHASE",
+                        Text(11,Muted,FontStyle.Bold,
+                            TextAnchor.MiddleRight));
             }
             else
             {

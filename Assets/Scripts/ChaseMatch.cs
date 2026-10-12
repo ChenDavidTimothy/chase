@@ -34,6 +34,7 @@ namespace Chase
         public event Action<ChaseRole> RoundEnded;
 
         ChaseBot bot;
+        ChaseMenuShowcase menuShowcase;
         ChaseKeyboard keyboard;
         ChaseCameraRig cameraRig;
         IChaseActionSource chaserSource;
@@ -77,6 +78,24 @@ namespace Chase
             Evader = CreateCompetitor("EVADER", ChaseRole.Evader, new Color(.16f,.55f,1f));
             cameraRig.Initialize(this);
             BeginRound(false);
+            if (showFrontEnd)
+            {
+                SetActorsVisible(false);
+                menuShowcase=gameObject.AddComponent<ChaseMenuShowcase>();
+                menuShowcase.Initialize(arenaCamera);
+            }
+        }
+
+        void SetActorsVisible(bool visible)
+        {
+            Chaser.gameObject.SetActive(visible);
+            Evader.gameObject.SetActive(visible);
+        }
+
+        void SyncPresentation()
+        {
+            if (!showFrontEnd) return;
+            if (menuShowcase!=null) menuShowcase.SetPage(MenuPage);
         }
 
         ChaseMotor CreateCompetitor(string label, ChaseRole role, Color color)
@@ -186,7 +205,10 @@ namespace Chase
         public void OpenPlay()
         {
             if (showFrontEnd && MenuPage == ChaseMenuPage.MainMenu)
+            {
                 MenuPage = ChaseMenuPage.Difficulty;
+                SyncPresentation();
+            }
         }
 
         public void SelectDifficulty(ChaseDifficulty selection)
@@ -194,6 +216,7 @@ namespace Chase
             if (!showFrontEnd || MenuPage != ChaseMenuPage.Difficulty) return;
             Difficulty = selection;
             MenuPage = ChaseMenuPage.Arena;
+            SyncPresentation();
         }
 
         public void StartSelectedArena()
@@ -205,6 +228,8 @@ namespace Chase
             EvaderWins = 0;
             HumanRole = ChaseRole.Evader;
             MenuPage = ChaseMenuPage.InMatch;
+            SyncPresentation();
+            SetActorsVisible(true);
             BeginRound(false);
         }
 
@@ -244,6 +269,7 @@ namespace Chase
                 case ChaseMenuPage.Arena:
                     MenuPage = ChaseMenuPage.Difficulty; break;
             }
+            SyncPresentation();
         }
 
         public void ReturnToMenu()
@@ -252,6 +278,9 @@ namespace Chase
             Time.timeScale = 1f;
             keyboard.Clear();
             MenuPage = ChaseMenuPage.MainMenu;
+            SetActorsVisible(false);
+            cameraRig.ResetView();
+            SyncPresentation();
         }
 
         public void ResumeMatch()

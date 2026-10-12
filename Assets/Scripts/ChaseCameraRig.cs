@@ -97,6 +97,10 @@ namespace Chase
         void LateUpdate()
         {
             if (match == null || match.Human == null) return;
+            // Menu showcase owns its stable camera. Never track hidden match
+            // actors or perform costly occlusion rays before real Play Arena.
+            if(match.FrontEndEnabled && match.MenuPage!=ChaseMenuPage.InMatch)
+                return;
             if (Mathf.Abs(attachedCamera.aspect-lastAspect)>.01f) RecalculateFraming();
             Vector3 pos = match.Human.Body.position;
             Vector3 desired = Vector3.ClampMagnitude(new Vector3(pos.x,0f,pos.z) * .25f,
