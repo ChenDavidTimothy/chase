@@ -1,0 +1,53 @@
+{
+  "release": "v0.12.0",
+  "engine": "Unity 6000.3.26f1",
+  "tests": {
+    "playmode": {
+      "total": 89,
+      "passed": 89,
+      "failed": 0
+    },
+    "editmode": {
+      "total": 31,
+      "passed": 31,
+      "failed": 0
+    }
+  },
+  "builds": {
+    "WebGLProduction": {
+      "target": "WebGL",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "WebGLGym": {
+      "target": "WebGL",
+      "scene": "Assets/Scenes/MovementGym.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "LinuxProduction": {
+      "target": "StandaloneLinux64",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    }
+  },
+  "browser": {
+    "title": "CHASE | Mastered Routes",
+    "pointer_clicks": 15,
+    "key_events": 6,
+    "console_errors": [],
+    "javascript_exceptions": 0,
+    "full_flow": "main menu, How To, Settings, Difficulty, Arena, Countdown, Gameplay, Pause, Resume, Menu, Result, Next Round"
+  },
+  "native": {
+    "menu_rendered": true,
+    "runtime_errors": false,
+    "synthetic_mouse_navigation": "inconclusive"
+  },
+  "blender_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371"
+}

@@ -70,6 +70,8 @@ public static class ChaseMovementSceneContract
                 }
                 if(!Correct(match.Tuning))
                     throw new InvalidOperationException("CHASE mismatched movement collider config in "+path);
+                if(!match.FrontEndEnabled)
+                    throw new InvalidOperationException("Production must open at public main menu");
             }
             else
             {

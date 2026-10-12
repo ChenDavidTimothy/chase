@@ -26,6 +26,21 @@ namespace Chase
         Vector3 escapeGoal;
         int waypointIndex;
         bool initialized;
+        ChaseDifficulty difficulty = ChaseDifficulty.Runner;
+        public ChaseDifficulty Difficulty => difficulty;
+        public void Configure(ChaseDifficulty setting) => difficulty=setting;
+
+        float MoveFactor => difficulty==ChaseDifficulty.Rookie ? .72f :
+            difficulty==ChaseDifficulty.Runner ? 1f : 1f;
+        float ReplanPeriod => difficulty==ChaseDifficulty.Rookie ? .60f :
+            difficulty==ChaseDifficulty.Runner ? .35f :
+            difficulty==ChaseDifficulty.Rival ? .24f : .16f;
+        float DecisionPeriod => difficulty==ChaseDifficulty.Rookie ? 1.10f :
+            difficulty==ChaseDifficulty.Runner ? .70f :
+            difficulty==ChaseDifficulty.Rival ? .48f : .34f;
+        float Prediction => difficulty==ChaseDifficulty.Rookie ? 0f :
+            difficulty==ChaseDifficulty.Runner ? .12f :
+            difficulty==ChaseDifficulty.Rival ? .20f : .30f;
 
         public void Initialize(ChaseMotor self, ChaseMotor other, ChaseRole botRole)
         {
@@ -182,16 +197,16 @@ namespace Chase
             if (now >= nextChoice)
             {
                 if (role == ChaseRole.Evader) escapeGoal = ChooseEscapeGoal();
-                nextChoice = now + 0.7f;
+                nextChoice = now + DecisionPeriod;
             }
             Vector3 goal = role == ChaseRole.Chaser ?
-                opponent.Body.position + opponent.HorizontalVelocity * 0.12f : escapeGoal;
+                opponent.Body.position + opponent.HorizontalVelocity * Prediction : escapeGoal;
             goal.x = Mathf.Clamp(goal.x, -5.25f, 5.25f);
             goal.z = Mathf.Clamp(goal.z, -5.25f, 5.25f);
             if (now >= nextPlan || waypointIndex >= path.Count)
             {
                 PlanPath(goal);
-                nextPlan = now + 0.35f;
+                nextPlan = now + ReplanPeriod;
             }
             while (waypointIndex < path.Count - 1 &&
                 Vector3.Distance(new Vector3(motor.Body.position.x,0,motor.Body.position.z),
@@ -219,7 +234,7 @@ namespace Chase
                     crouch = true;
             }
             // No bot-only movement authority and no automatic vaulting.
-            return new ChaseAction(new Vector2(direction.x,direction.z),jump,
+            return new ChaseAction(new Vector2(direction.x,direction.z)*MoveFactor,jump,
                 false,false,crouch);
         }
     }

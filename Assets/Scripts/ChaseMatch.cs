@@ -9,6 +9,14 @@ namespace Chase
     {
         [SerializeField] ChaseTuning tuning = new ChaseTuning();
         [SerializeField] Camera arenaCamera;
+        // Enabled only on the authored public production scene. Dynamically
+        // spawned test matches remain auto-starting for physics regressions.
+        [SerializeField] bool showFrontEnd;
+        public bool FrontEndEnabled => showFrontEnd;
+        public ChaseMenuPage MenuPage { get; private set; } = ChaseMenuPage.InMatch;
+        public ChaseDifficulty Difficulty { get; private set; } = ChaseDifficulty.Runner;
+        public bool ShowKeyHints { get; private set; } = true;
+        public bool HighlightKeys { get; private set; } = true;
         public ChaseTuning Tuning => tuning;
         public ChasePhase Phase { get; private set; }
         public ChaseRole HumanRole { get; private set; } = ChaseRole.Evader;
@@ -58,6 +66,12 @@ namespace Chase
             if (cameraRig == null) cameraRig = arenaCamera.gameObject.AddComponent<ChaseCameraRig>();
             keyboard = gameObject.AddComponent<ChaseKeyboard>();
             bot = gameObject.AddComponent<ChaseBot>();
+            if (showFrontEnd)
+            {
+                ShowKeyHints = PlayerPrefs.GetInt("CHASE_Hints",1)!=0;
+                HighlightKeys = PlayerPrefs.GetInt("CHASE_Highlights",1)!=0;
+                MenuPage = ChaseMenuPage.MainMenu;
+            }
             gameObject.AddComponent<ChaseHUD>();
             Chaser = CreateCompetitor("CHASER", ChaseRole.Chaser, new Color(.92f,.22f,.25f));
             Evader = CreateCompetitor("EVADER", ChaseRole.Evader, new Color(.16f,.55f,1f));
@@ -158,6 +172,7 @@ namespace Chase
             Vector3 first = SpawnPairs[currentSpawn,0], second = SpawnPairs[currentSpawn,1];
             Chaser.ResetMotor(HumanRole == ChaseRole.Chaser ? first : second);
             Evader.ResetMotor(HumanRole == ChaseRole.Evader ? first : second);
+            bot.Configure(Difficulty);
             bot.Initialize(Opponent, Human, HumanRole == ChaseRole.Evader ?
                 ChaseRole.Chaser : ChaseRole.Evader);
             chaserSource = HumanRole == ChaseRole.Chaser ? (IChaseActionSource)keyboard : bot;
@@ -168,9 +183,126 @@ namespace Chase
             cameraRig.ResetView();
         }
 
+        public void OpenPlay()
+        {
+            if (showFrontEnd && MenuPage == ChaseMenuPage.MainMenu)
+                MenuPage = ChaseMenuPage.Difficulty;
+        }
+
+        public void SelectDifficulty(ChaseDifficulty selection)
+        {
+            if (!showFrontEnd || MenuPage != ChaseMenuPage.Difficulty) return;
+            Difficulty = selection;
+            MenuPage = ChaseMenuPage.Arena;
+        }
+
+        public void StartSelectedArena()
+        {
+            if (!showFrontEnd || MenuPage != ChaseMenuPage.Arena) return;
+            Time.timeScale = 1f;
+            RoundNumber = 1;
+            ChaserWins = 0;
+            EvaderWins = 0;
+            HumanRole = ChaseRole.Evader;
+            MenuPage = ChaseMenuPage.InMatch;
+            BeginRound(false);
+        }
+
+        public void OpenHowTo()
+        {
+            if (showFrontEnd && MenuPage == ChaseMenuPage.MainMenu)
+                MenuPage = ChaseMenuPage.HowTo;
+        }
+
+        public void OpenSettings()
+        {
+            if (showFrontEnd && MenuPage == ChaseMenuPage.MainMenu)
+                MenuPage = ChaseMenuPage.Settings;
+        }
+
+        public void SetKeyHints(bool enabled)
+        {
+            ShowKeyHints = enabled;
+            if (showFrontEnd) PlayerPrefs.SetInt("CHASE_Hints",enabled?1:0);
+        }
+
+        public void SetKeyHighlight(bool enabled)
+        {
+            HighlightKeys = enabled;
+            if (showFrontEnd) PlayerPrefs.SetInt("CHASE_Highlights",enabled?1:0);
+        }
+
+        public void MenuBack()
+        {
+            if (!showFrontEnd) return;
+            switch (MenuPage)
+            {
+                case ChaseMenuPage.Difficulty:
+                case ChaseMenuPage.HowTo:
+                case ChaseMenuPage.Settings:
+                    MenuPage = ChaseMenuPage.MainMenu; break;
+                case ChaseMenuPage.Arena:
+                    MenuPage = ChaseMenuPage.Difficulty; break;
+            }
+        }
+
+        public void ReturnToMenu()
+        {
+            if (!showFrontEnd) return;
+            Time.timeScale = 1f;
+            keyboard.Clear();
+            MenuPage = ChaseMenuPage.MainMenu;
+        }
+
+        public void ResumeMatch()
+        {
+            if (MenuPage != ChaseMenuPage.InMatch || Phase != ChasePhase.Paused)
+                return;
+            Phase = beforePause;
+            Time.timeScale = 1f;
+            keyboard.Clear();
+        }
+
+        public void Rematch()
+        {
+            if (MenuPage != ChaseMenuPage.InMatch) return;
+            Time.timeScale = 1f;
+            BeginRound(true);
+        }
+
+        public void NextRound()
+        {
+            if (MenuPage != ChaseMenuPage.InMatch || Phase != ChasePhase.Ended)
+                return;
+            RoundNumber++;
+            BeginRound(false);
+        }
+
+        public void SwitchRole()
+        {
+            if (MenuPage != ChaseMenuPage.InMatch || Phase != ChasePhase.Ended)
+                return;
+            HumanRole = HumanRole == ChaseRole.Evader ? ChaseRole.Chaser : ChaseRole.Evader;
+            RoundNumber++;
+            BeginRound(false);
+        }
+
+        public void QuitGame()
+        {
+            if (!showFrontEnd) return;
+            Application.Quit();
+        }
+
         void Update()
         {
             Keyboard keys = Keyboard.current;
+            if (MenuPage != ChaseMenuPage.InMatch)
+            {
+                keyboard.Clear();
+                if (keys != null && keys.escapeKey.wasPressedThisFrame)
+                    MenuBack();
+                return;
+            }
             if (keys != null)
             {
                 if (keys.escapeKey.wasPressedThisFrame)
@@ -216,7 +348,7 @@ namespace Chase
 
         void FixedUpdate()
         {
-            if (Phase != ChasePhase.Active) return;
+            if (MenuPage != ChaseMenuPage.InMatch || Phase != ChasePhase.Active) return;
             // Physics collision callbacks for the previous step have already run.
             // Deferring timeout gives collision/tag priority in the final step.
             if (timeoutPending) { Finish(ChaseRole.Evader); return; }

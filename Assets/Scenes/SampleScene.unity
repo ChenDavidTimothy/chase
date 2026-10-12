@@ -974,6 +974,7 @@ MonoBehaviour:
     roundDuration: 20
     spawnSeed: 2026
   arenaCamera: {fileID: 0}
+  showFrontEnd: 1
 --- !u!4 &548438873
 Transform:
   m_ObjectHideFlags: 0

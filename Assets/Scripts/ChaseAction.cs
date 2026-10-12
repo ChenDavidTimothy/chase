@@ -16,6 +16,8 @@ namespace Chase
     {
         Standing, Crouching, Airborne, Jumping, Leaping, Sliding, LeapRecovery, SlideRecovery, DiveProne
     }
+    public enum ChaseDifficulty { Rookie, Runner, Rival, Phantom }
+    public enum ChaseMenuPage { InMatch, MainMenu, Difficulty, Arena, HowTo, Settings }
     public enum ChaseRole { Chaser, Evader }
     public enum ChasePhase { Countdown, Active, Ended, Paused }
 }

@@ -1,0 +1,205 @@
+{
+  "url": "http://127.0.0.1:8765/?build=v012-public-menu-final",
+  "page_title": "CHASE | Mastered Routes",
+  "geometry": {
+    "left": 0,
+    "top": 0,
+    "width": 1236,
+    "height": 719,
+    "backingWidth": 1236,
+    "backingHeight": 719
+  },
+  "pointer_clicks": [
+    [
+      "howto",
+      [
+        218,
+        470
+      ]
+    ],
+    [
+      "back",
+      [
+        161,
+        236
+      ]
+    ],
+    [
+      "settings",
+      [
+        442,
+        470
+      ]
+    ],
+    [
+      "toggle-hints",
+      [
+        331,
+        386
+      ]
+    ],
+    [
+      "toggle-hints-restore",
+      [
+        331,
+        386
+      ]
+    ],
+    [
+      "back-to-menu",
+      [
+        161,
+        236
+      ]
+    ],
+    [
+      "play",
+      [
+        331,
+        403
+      ]
+    ],
+    [
+      "rival",
+      [
+        218,
+        482
+      ]
+    ],
+    [
+      "launch",
+      [
+        331,
+        551
+      ]
+    ],
+    [
+      "resume",
+      [
+        618,
+        425
+      ]
+    ],
+    [
+      "return-menu",
+      [
+        724,
+        481
+      ]
+    ],
+    [
+      "play-again",
+      [
+        331,
+        403
+      ]
+    ],
+    [
+      "runner",
+      [
+        442,
+        381
+      ]
+    ],
+    [
+      "launch-again",
+      [
+        331,
+        551
+      ]
+    ],
+    [
+      "next-round",
+      [
+        618,
+        426
+      ]
+    ]
+  ],
+  "real_inputs": [
+    {
+      "key": "w",
+      "focus": "unity-canvas",
+      "prevented": false,
+      "scroll": 0
+    },
+    {
+      "key": "ArrowUp",
+      "focus": "unity-canvas",
+      "prevented": true,
+      "scroll": 0
+    },
+    {
+      "key": "ArrowDown",
+      "focus": "unity-canvas",
+      "prevented": true,
+      "scroll": 0
+    },
+    {
+      "key": " ",
+      "focus": "unity-canvas",
+      "prevented": true,
+      "scroll": 0
+    },
+    {
+      "key": "Escape",
+      "focus": "unity-canvas",
+      "prevented": false,
+      "scroll": 0
+    },
+    {
+      "key": "Escape",
+      "focus": "unity-canvas",
+      "prevented": false,
+      "scroll": 0
+    }
+  ],
+  "console_errors": [],
+  "exceptions": 0,
+  "status": {
+    "href": "http://127.0.0.1:8765/?build=v012-public-menu-final",
+    "focus": "unity-canvas",
+    "scrollY": 0,
+    "scrollX": 0,
+    "inputs": [
+      {
+        "key": "w",
+        "focus": "unity-canvas",
+        "prevented": false,
+        "scroll": 0
+      },
+      {
+        "key": "ArrowUp",
+        "focus": "unity-canvas",
+        "prevented": true,
+        "scroll": 0
+      },
+      {
+        "key": "ArrowDown",
+        "focus": "unity-canvas",
+        "prevented": true,
+        "scroll": 0
+      },
+      {
+        "key": " ",
+        "focus": "unity-canvas",
+        "prevented": true,
+        "scroll": 0
+      },
+      {
+        "key": "Escape",
+        "focus": "unity-canvas",
+        "prevented": false,
+        "scroll": 0
+      },
+      {
+        "key": "Escape",
+        "focus": "unity-canvas",
+        "prevented": false,
+        "scroll": 0
+      }
+    ],
+    "loading": "none"
+  },
+  "notes": "Real CDP mouse+keyboard interaction, zero Unity SendMessage shortcuts"
+}
