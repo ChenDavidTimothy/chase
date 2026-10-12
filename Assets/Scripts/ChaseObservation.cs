@@ -65,7 +65,7 @@ namespace Chase
             output[23]=self.IsCommitted?1:0;
             output[24]=Mathf.Clamp01((self.SlideColliderActive ?
                 self.SlideBox.size.y : self.DiveColliderActive ?
-                self.DiveBox.size.y : self.Capsule.height)/
+                self.Capsule.radius*2f : self.Capsule.height)/
                 self.Settings.standingHeight);
             output[25]=Mathf.Clamp01(self.HorizontalVelocity.magnitude/9f);
             FillLocal(self,scratch);

@@ -14,7 +14,7 @@ public static class ChaseReleaseBuild
         Chase.Editor.ChibiAnimationAssetContract.ValidateOrThrow();
         // Source scenes must serialize these dimensions explicitly; build
         // must fail before exporting a browser player with old zero defaults.
-        ChaseSlideSceneContract.ValidateScenes();
+        ChaseMovementSceneContract.ValidateScenes();
         var options = new BuildPlayerOptions
         {
             scenes = new[] { scene },

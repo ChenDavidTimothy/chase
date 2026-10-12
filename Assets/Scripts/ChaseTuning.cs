@@ -13,10 +13,11 @@ namespace Chase
         [Header("Explicit committed moves")]
         public float leapHorizontalSpeed = 9f, leapVerticalSpeed = 5.2f;
         public float leapRecovery = .35f, diveImpactRecovery = .40f, recoverySpeed = 2f;
-        [Header("Headfirst dive collision")]
-        public float diveBodyLength = 2.30f, diveBodyWidth = 1.20f;
-        public float diveBodyHeight = .95f, diveBodyCenterY = -.26f;
-        public float diveBodyCenterForward = .22f;
+        [Header("One rounded solid dive collider (same standing capsule)")]
+        public float diveCapsuleLength = 1.95f;
+        public float diveCapsuleRadius = .43f;
+        public float diveCapsuleCenterY = -.29f;
+        public float diveCapsuleCenterForward = .16f;
         public float proneCrawlSpeed = 1.5f;
         [Header("Feet-first grounded sliding tackle")]
         public float slideBodyLength = 1.98f, slideBodyWidth = .84f;

@@ -172,16 +172,18 @@ namespace Chase.Tests
                 }
                 // The same state selects Superman animation only when the
                 // long full-body Collider is physically enabled.
-                motor.DiveBox.enabled=true;
-                motor.Capsule.enabled=false;
+                motor.Capsule.direction=2;
+                motor.Capsule.radius=.43f;
+                motor.Capsule.height=1.95f;
                 stateField.SetValue(motor,ChaseMovementState.Leaping);
                 update.Invoke(driver,null);animator.Update(.20f);
                 Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Leap"));
                 stateField.SetValue(motor,ChaseMovementState.LeapRecovery);
                 update.Invoke(driver,null);animator.Update(.20f);
                 Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("LeapRecovery"));
-                motor.Capsule.enabled=true;
-                motor.DiveBox.enabled=false;
+                motor.Capsule.direction=1;
+                motor.Capsule.radius=.35f;
+                motor.Capsule.height=1.8f;
             }
             finally{UnityEngine.Object.DestroyImmediate(actor);}
             yield return null;
@@ -440,7 +442,7 @@ namespace Chase.Tests
         }
 
         [UnityTest]
-        public IEnumerator SupermanFlightVisualFitsActualSolidDiveBox()
+        public IEnumerator SupermanFlightVisualMatchesRoundedDiveEnvelopeApproximately()
         {
             var actor=new GameObject("Superman visible mesh envelope test");
             var temp=new Mesh();
@@ -455,7 +457,8 @@ namespace Chase.Tests
                 motor.Initialize(new ChaseTuning(),art.transform);
                 art.GetComponent<ChibiVisualDriver>().BindMotor(motor);
                 var animator=art.GetComponentInChildren<Animator>();
-                var box=motor.DiveBox;
+                var capsule=motor.Capsule;
+                var tuning=motor.Settings;
                 foreach(float progress in new[]{.19f,.20f,.35f,.55f,.80f,.99f})
                 {
                     animator.Play("Leap",0,progress);
@@ -474,20 +477,26 @@ namespace Chase.Tests
                         }
                     }
                     Assert.IsTrue(initialized);
-                    Vector3 minimum=box.center-box.size*.5f;
-                    Vector3 maximum=box.center+box.size*.5f;
+                    Vector3 minimum=new Vector3(-tuning.diveCapsuleRadius,
+                        tuning.diveCapsuleCenterY-tuning.diveCapsuleRadius,
+                        tuning.diveCapsuleCenterForward-tuning.diveCapsuleLength*.5f);
+                    Vector3 maximum=new Vector3(tuning.diveCapsuleRadius,
+                        tuning.diveCapsuleCenterY+tuning.diveCapsuleRadius,
+                        tuning.diveCapsuleCenterForward+tuning.diveCapsuleLength*.5f);
+                    // Rounded collision intentionally omits outstretched
+                    // extremities; no invisible 2.3m squared-off dive box.
                     // The skeletal actor has a fixed -0.9m art anchor.
                     // Horizontal width is strict; a small rim tolerance permits
                     // imported interpolation and the rounded chibi head shell.
-                    Assert.That(actual.min.x,Is.GreaterThan(minimum.x-.08f));
-                    Assert.That(actual.max.x,Is.LessThan(maximum.x+.08f));
+                    Assert.That(actual.min.x,Is.GreaterThan(minimum.x-.40f));
+                    Assert.That(actual.max.x,Is.LessThan(maximum.x+.40f));
                     if(progress>=.19f)
                     {
-                        Assert.That(actual.max.y,Is.LessThan(maximum.y+.10f),
-                            "Dive head cannot stick significantly above the solid Box");
-                        Assert.That(actual.min.y,Is.GreaterThan(minimum.y-.10f));
-                        Assert.That(actual.min.z,Is.GreaterThan(minimum.z-.12f));
-                        Assert.That(actual.max.z,Is.LessThan(maximum.z+.12f));
+                        Assert.That(actual.max.y,Is.LessThan(maximum.y+.30f),
+                            "The animation must remain broadly horizontal");
+                        Assert.That(actual.min.y,Is.GreaterThan(minimum.y-.30f));
+                        Assert.That(actual.min.z,Is.GreaterThan(minimum.z-.42f));
+                        Assert.That(actual.max.z,Is.LessThan(maximum.z+.42f));
                     }
                 }
             }

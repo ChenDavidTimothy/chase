@@ -6,10 +6,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Chase;
 
-// Both serialized production/gym scenes MUST specify the same low tackle
-// dimensions. Missing serialized fields on old scenes can otherwise produce
-// editor/build discrepancies even when a new ChaseTuning() has good defaults.
-public static class ChaseSlideSceneContract
+// Both saved scenes must serialize the same actual slide and dive collider.
+// Missing values fail release builds rather than silently diverging.
+public static class ChaseMovementSceneContract
 {
     const string Production="Assets/Scenes/SampleScene.unity";
     const string Gym="Assets/Scenes/MovementGym.unity";
@@ -23,7 +22,11 @@ public static class ChaseSlideSceneContract
         Mathf.Abs(t.slideCrawlSpeed-1.10f)<.002f &&
         Mathf.Abs(t.slideDuration-.45f)<.002f &&
         Mathf.Abs(t.slideDeceleration-8f)<.002f &&
-        Mathf.Abs(t.slideRecovery-.20f)<.002f;
+        Mathf.Abs(t.slideRecovery-.20f)<.002f &&
+        Mathf.Abs(t.diveCapsuleLength-1.95f)<.002f &&
+        Mathf.Abs(t.diveCapsuleRadius-.43f)<.002f &&
+        Mathf.Abs(t.diveCapsuleCenterY+.29f)<.002f &&
+        Mathf.Abs(t.diveCapsuleCenterForward-.16f)<.002f;
 
     static void Apply(ChaseTuning t)
     {
@@ -36,6 +39,10 @@ public static class ChaseSlideSceneContract
         t.slideDuration=.45f;
         t.slideDeceleration=8f;
         t.slideRecovery=.20f;
+        t.diveCapsuleLength=1.95f;
+        t.diveCapsuleRadius=.43f;
+        t.diveCapsuleCenterY=-.29f;
+        t.diveCapsuleCenterForward=.16f;
     }
 
     static void Inspect(string path,bool repair)
@@ -60,7 +67,7 @@ public static class ChaseSlideSceneContract
                     EditorSceneManager.SaveScene(scene);
                 }
                 if(!Correct(match.Tuning))
-                    throw new InvalidOperationException("CHASE mismatched physical slide config in "+path);
+                    throw new InvalidOperationException("CHASE mismatched movement collider config in "+path);
             }
             else
             {
@@ -76,7 +83,11 @@ public static class ChaseSlideSceneContract
                         ("slideBodyHeight",.82f),("slideBodyCenterY",-.48f),
                         ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",1.10f),
                         ("slideDuration",.45f),("slideDeceleration",8f),
-                        ("slideRecovery",.20f)
+                        ("slideRecovery",.20f),
+                        ("diveCapsuleLength",1.95f),
+                        ("diveCapsuleRadius",.43f),
+                        ("diveCapsuleCenterY",-.29f),
+                        ("diveCapsuleCenterForward",.16f)
                     })
                         settings.FindPropertyRelative(field.Item1).floatValue=field.Item2;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -91,7 +102,11 @@ public static class ChaseSlideSceneContract
                     ("slideBodyHeight",.82f),("slideBodyCenterY",-.48f),
                     ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",1.10f),
                     ("slideDuration",.45f),("slideDeceleration",8f),
-                    ("slideRecovery",.20f)
+                    ("slideRecovery",.20f),
+                        ("diveCapsuleLength",1.95f),
+                        ("diveCapsuleRadius",.43f),
+                        ("diveCapsuleCenterY",-.29f),
+                        ("diveCapsuleCenterForward",.16f)
                 })
                 {
                     var f=settings.FindPropertyRelative(field.Item1);
@@ -100,7 +115,7 @@ public static class ChaseSlideSceneContract
                             " differs from authoritative physics: "+path);
                 }
             }
-            Debug.Log("CHASE_SLIDE_SCENE_CONTRACT_PASS: "+path);
+            Debug.Log("CHASE_MOVEMENT_SCENE_CONTRACT_PASS: "+path);
         }
         finally
         {
@@ -108,13 +123,13 @@ public static class ChaseSlideSceneContract
         }
     }
 
-    [MenuItem("Chase/Repair Authored Slide Physics")]
+    [MenuItem("Chase/Repair Authored Movement Physics")]
     public static void RepairScenes()
     {
         Inspect(Production,true);
         Inspect(Gym,true);
         AssetDatabase.SaveAssets();
-        Debug.Log("CHASE_SLIDE_SCENES_REPAIRED");
+        Debug.Log("CHASE_MOVEMENT_SCENES_REPAIRED");
     }
     public static void ValidateScenes()
     {

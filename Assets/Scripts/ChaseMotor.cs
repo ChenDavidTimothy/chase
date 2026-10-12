@@ -9,7 +9,6 @@ namespace Chase
         public ChaseTuning Settings { get; private set; }
         public Rigidbody Body { get; private set; }
         public CapsuleCollider Capsule { get; private set; }
-        public BoxCollider DiveBox { get; private set; }
         public BoxCollider SlideBox { get; private set; }
         public bool SlideColliderActive => SlideBox != null && SlideBox.enabled;
         public bool SlideCompactContact => State == ChaseMovementState.Sliding && slideCompact;
@@ -33,7 +32,9 @@ namespace Chase
             State == ChaseMovementState.DiveProne;
         public float RecoveryRemaining => Recovering ? recoveryLeft : 0f;
         public float CommittedRemaining => State == ChaseMovementState.Sliding ? slideLeft : 0f;
-        public bool DiveColliderActive => DiveBox != null && DiveBox.enabled;
+        public bool DiveColliderActive => Capsule != null && Capsule.enabled &&
+            Capsule.direction == 2 && State != ChaseMovementState.Standing &&
+            State != ChaseMovementState.Crouching;
         // The same committed move always starts. Where the long body cannot
         // safely fit, it starts with the already-solid compact contact shape.
         // No takeoff is refused for a nearby wall or another athlete.
@@ -55,7 +56,7 @@ namespace Chase
 
         float lastGrounded = -100f, lastTakeoff = -100f, jumpQueuedUntil = -100f;
         float slideLeft, recoveryLeft;
-        bool diveShapeCommitted, diveGettingUp, compactDive, forwardContact;
+        bool compactDive, forwardContact;
         bool slideCompact, slideRising;
         bool solidSupportContact;
         Vector3 supportActorPosition;
@@ -73,15 +74,10 @@ namespace Chase
             Settings = settings;
             Body = GetComponent<Rigidbody>();
             Capsule = GetComponent<CapsuleCollider>();
-            DiveBox = GetComponent<BoxCollider>();
-            if (DiveBox == null) DiveBox = gameObject.AddComponent<BoxCollider>();
-            DiveBox.center = new Vector3(0f, settings.diveBodyCenterY,
-                settings.diveBodyCenterForward);
-            DiveBox.size = new Vector3(settings.diveBodyWidth,
-                settings.diveBodyHeight, settings.diveBodyLength);
-            DiveBox.isTrigger = false;
-            DiveBox.enabled = false;
-            SlideBox = gameObject.AddComponent<BoxCollider>();
+            // Exactly one CapsuleCollider handles upright, airborne and
+            // horizontal dive. The only BoxCollider is the football slide.
+            SlideBox = GetComponent<BoxCollider>();
+            if (SlideBox == null) SlideBox = gameObject.AddComponent<BoxCollider>();
             SlideBox.center = new Vector3(0f,settings.slideBodyCenterY,
                 settings.slideBodyCenterForward);
             SlideBox.size = new Vector3(settings.slideBodyWidth,
@@ -111,7 +107,6 @@ namespace Chase
                 };
             }
             Capsule.sharedMaterial = sharedCapsuleMaterial;
-            DiveBox.sharedMaterial = sharedCapsuleMaterial;
             SlideBox.sharedMaterial = sharedCapsuleMaterial;
             visual = visualRoot;
             visualInitialScale = visual.localScale;
@@ -129,11 +124,10 @@ namespace Chase
             lastGrounded = lastTakeoff = jumpQueuedUntil = -100f;
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
-            diveShapeCommitted = diveGettingUp = compactDive = forwardContact = false;
+            compactDive = forwardContact = false;
             slideCompact = slideRising = solidSupportContact = false;
             Body.rotation = Quaternion.identity;
             Capsule.enabled = true;
-            DiveBox.enabled = false;
             SlideBox.enabled = false;
             Capsule.direction = 1;
             Capsule.radius = Settings.radius;
@@ -157,7 +151,7 @@ namespace Chase
             Vector3 direction = new Vector3(action.Move.x, 0f, action.Move.y);
             Vector3 velocity = Body.linearVelocity;
             Vector3 planar = new Vector3(velocity.x, 0f, velocity.z);
-            // The long horizontal body can be supported at its head or feet
+            // The horizontal body can be supported at its head or feet
             // while its center hangs over a shelf edge. A single center ray
             // misses that contact and previously left Leaping forever.
             // A Rigidbody may be moved/reset between physics ticks. Never
@@ -184,15 +178,15 @@ namespace Chase
             if (State == ChaseMovementState.Leaping)
             {
                 // One ballistic flight; collision is its physical endpoint.
-                // The full box in open space and the non-overlapping compact
-                // collider next to a wall have identical impact consequences.
+                // The rounded capsule and compact upright fallback share one
+                // impact-to-recovery path without extra collision shapes.
                 // Never reapply launch velocity or accept midair steering.
                 if (forwardContact)
                 {
                     planar = Vector3.zero;
                     velocity.y = Mathf.Min(velocity.y,0f);
                 }
-                // A wall can also wedge the long body at its front without
+                // A wall can also wedge the rounded body at its front without
                 // generating a support normal directly under the actor.
                 // Treat a genuine, motionless impact as a landing attempt
                 // rather than maintaining an eternal zero-speed Leaping pose.
@@ -206,87 +200,34 @@ namespace Chase
                     jumpQueuedUntil = -100f;
                     State = ChaseMovementState.DiveProne;
                     recoveryLeft = Settings.diveImpactRecovery;
-                    // Keep the collision body solid all through recovery;
-                    // a compact contact never expands through an obstacle.
+                    // Always land in the same state; collision has stopped
+                    // the projectile, and the one capsule stays solid.
                 }
             }
             else if (State == ChaseMovementState.DiveProne)
             {
-                // Physically chest-first on the ground; held buttons cannot
-                // cancel this recovery. Existing momentum brakes rather than
-                // being replaced by a new horizontal impulse.
-                recoveryLeft = Mathf.Max(0f, recoveryLeft - dt);
-                // Once impact is over, W permits a slow crawl toward the
-                // shelf exit. Sideways or reverse input cannot steer the
-                // headfirst body; no input means no automatic ground glide.
-                bool crawlForward = Vector3.Dot(direction,committedDirection) > .5f;
-                planar = Vector3.MoveTowards(planar, committedDirection *
-                    (recoveryLeft > 0f || diveGettingUp || !crawlForward ? 0f :
-                        Settings.proneCrawlSpeed),Settings.groundBraking * dt);
-                if (recoveryLeft <= 0f && compactDive)
+                recoveryLeft = Mathf.Max(0f,recoveryLeft-dt);
+                bool crawlForward=Vector3.Dot(direction,committedDirection)>.5f;
+                if(recoveryLeft>0f)
+                    planar=Vector3.MoveTowards(planar,Vector3.zero,
+                        Settings.groundBraking*dt);
+                else if(compactDive || TryFinishProneDive())
                 {
-                    // The compact collision body stayed upright on impact.
-                    // It does not need the horizontal body's push-up phase.
-                    // Nevertheless it has paid the SAME prone-impact timer,
-                    // followed by the SAME .35s committed get-up timer.
-                    State = ChaseMovementState.LeapRecovery;
-                    recoveryLeft = Settings.leapRecovery;
+                    // One shape transition, then the usual get-up timer.
+                    State=ChaseMovementState.LeapRecovery;
+                    recoveryLeft=Settings.leapRecovery;
+                    planar=Vector3.zero;
                 }
-                else if (recoveryLeft <= 0f)
+                else
                 {
-                    // A horizontal body contacts the floor with the actor
-                    // origin at ~0.57 m, while the standing reference is 0.9 m.
-                    // Physically push up BEFORE extending the collider; never
-                    // expand into the floor or any overhead shelf.
-                    Vector3 target = new Vector3(Body.position.x,
-                        Settings.standingHeight * .5f, Body.position.z);
-                    bool spaceToRise = CanFitVerticalShape(
-                        Settings.crouchingHeight,target) && CanFitDiveShape(target);
-                    if (!spaceToRise || !Grounded)
-                    {
-                        diveGettingUp = false;
-                        // Impacted a shelf lip or wall and cannot unfold to
-                        // standing here. Physically recoil along the existing
-                        // prone collider instead of waiting for clearance at
-                        // the SAME blocked point forever. A deliberate held
-                        // forward key can still crawl through a passage.
-                        // No teleport, collision disable, or sideways input.
-                        Vector3 retreat = crawlForward ? committedDirection :
-                            -committedDirection;
-                        planar = Vector3.MoveTowards(planar,
-                            retreat*Settings.proneCrawlSpeed,
-                            Settings.groundAcceleration*dt);
-                    }
-                    else
-                    {
-                        // Rise is a short transition, not an endless upward
-                        // force against a long body that PhysX keeps pinned
-                        // under a ledge. Check the swept intermediate volume
-                        // FIRST, then lift the existing SOLID box together
-                        // with the new crouch capsule. Never cross a wall,
-                        // roof or competitor while changing collider shapes.
-                        bool clearSweep=true;
-                        for(int step=1;step<4;step++)
-                        {
-                            Vector3 at=Vector3.Lerp(Body.position,target,step*.25f);
-                            if (!CanFitDiveShape(at))
-                            {
-                                clearSweep=false;
-                                break;
-                            }
-                        }
-                        if (clearSweep)
-                        {
-                            Body.position=target;
-                            BeginGetupColliderUnion(Settings.crouchingHeight);
-                            planar=Vector3.zero;
-                            velocity.y=0f;
-                            Grounded=true;
-                            State=ChaseMovementState.LeapRecovery;
-                            recoveryLeft=Settings.leapRecovery;
-                            diveGettingUp=false;
-                        }
-                    }
+                    // Move at the actual configured crawl speed. Do not
+                    // brake to zero first on EACH frame (that old pattern
+                    // artificially capped movement at 0.4m/s).
+                    Vector3 heading=crawlForward?committedDirection:
+                        -committedDirection;
+                    planar=Vector3.MoveTowards(planar,
+                        heading*Settings.proneCrawlSpeed,
+                        Settings.groundAcceleration*dt);
                 }
             }
             else if (State == ChaseMovementState.Sliding)
@@ -369,12 +310,8 @@ namespace Chase
                 planar = Vector3.MoveTowards(planar, target, rate * dt);
                 if (recoveryLeft <= 0f)
                 {
-                    // During the chest->hands->crouch get-up animation BOTH
-                    // colliders remain solid. Only at the end can the fully
-                    // upright capsule take over. No invisible horizontal hands
-                    // or body can pass through a shelf during interpolation.
-                    if (State == ChaseMovementState.LeapRecovery && DiveColliderActive)
-                        FinishDiveShape();
+                    // The single capsule was already changed to crouch at
+                    // recovery entry. Return to normal locomotion now.
                     compactDive = false;
                     forwardContact = false;
                     if (action.Crouch || !HasStandingClearance())
@@ -420,11 +357,10 @@ namespace Chase
                     // After this moment, WASD cannot steer a single degree.
                     committedDirection = direction.sqrMagnitude > .001f ?
                         direction.normalized : FacingDirection;
-                    // Decide the safe COLLISION shape, not whether the
-                    // player's move is accepted. Nearby walls or other
-                    // competitors can block the long box but cannot cancel
-                    // the headfirst attempt. The compact rigidbody still
-                    // hits those obstacles and causes legitimate contact.
+                    // The launch ALWAYS happens. The same existing solid
+                    // capsule rotates horizontally in open space; beside a
+                    // wall/competitor it stays upright to avoid starting
+                    // inside another physical body.
                     compactDive = !TryEnterDiveShape();
                     forwardContact = false;
                     if (compactDive && visual != null)
@@ -439,7 +375,6 @@ namespace Chase
                     planar = committedDirection * Settings.leapHorizontalSpeed;
                     velocity.y = Settings.leapVerticalSpeed;
                     State = ChaseMovementState.Leaping;
-                    diveGettingUp = false;
                     lastTakeoff = clock;
                     Grounded = false;
                 }
@@ -493,7 +428,7 @@ namespace Chase
                 State != ChaseMovementState.DiveProne &&
                 State != ChaseMovementState.Sliding &&
                 State != ChaseMovementState.SlideRecovery &&
-                !(State == ChaseMovementState.LeapRecovery && DiveColliderActive))
+                State != ChaseMovementState.LeapRecovery)
                 OrientVisual(planar, dt);
         }
 
@@ -504,8 +439,7 @@ namespace Chase
         {
             bool otherActor=collision.collider!=null &&
                 collision.collider.GetComponentInParent<ChaseMotor>()!=null;
-            // Every real solid supporting contact counts, including feet or
-            // head of a long box resting on an elevated shelf edge.
+            // Count contact on the front/rear of the rounded capsule as support.
             for (int i=0;i<collision.contactCount;i++)
             {
                 var contact=collision.GetContact(i);
@@ -546,7 +480,7 @@ namespace Chase
             for (int i=0;i<count;i++)
             {
                 Collider hit=clearanceHits[i];
-                if (hit==null || hit==Capsule || hit==DiveBox || hit==SlideBox ||
+                if (hit==null || hit==Capsule || hit==SlideBox ||
                     hit.transform.IsChildOf(transform))continue;
                 // Refuse only the unsafe shape switch, NEVER the player's
                 // Down action. Near a wall/opponent a compact SOLID capsule
@@ -585,38 +519,53 @@ namespace Chase
             slideCompact=false;
         }
 
-        // Test the real horizontal Box volume BEFORE enabling it. Queries must
-        // not rely on ComputePenetration with an intentionally disabled shape;
-        // an overlap is conservatively blocked. The live body remains solid.
-        bool CanFitDiveShape(Vector3 actorPosition)
+        // One rounded capsule is safer at shelf corners than the previous
+        // long cuboid. Query the exact prospective rounded envelope before
+        // rotating the live collider; no overlaps, no collider gap.
+        bool CanFitDiveShape(Vector3 position)
         {
-            Quaternion orientation = Quaternion.LookRotation(committedDirection, Vector3.up);
-            Vector3 center = actorPosition +
-                orientation * new Vector3(0f, Settings.diveBodyCenterY,
-                    Settings.diveBodyCenterForward);
-            Vector3 half = new Vector3(Settings.diveBodyWidth,
-                Settings.diveBodyHeight, Settings.diveBodyLength) * .5f;
-            int count = Physics.OverlapBoxNonAlloc(center, half, clearanceHits,
-                orientation, ~0, QueryTriggerInteraction.Ignore);
-            if (count == clearanceHits.Length) return false;
-            for (int i = 0; i < count; i++)
+            Quaternion rotation=Quaternion.LookRotation(committedDirection,Vector3.up);
+            Vector3 c=position+rotation*new Vector3(0f,
+                Settings.diveCapsuleCenterY,Settings.diveCapsuleCenterForward);
+            float half=Settings.diveCapsuleLength*.5f-Settings.diveCapsuleRadius;
+            Vector3 axis=rotation*Vector3.forward*half;
+            int n=Physics.OverlapCapsuleNonAlloc(c-axis,c+axis,
+                Settings.diveCapsuleRadius-.006f,clearanceHits,
+                ~0,QueryTriggerInteraction.Ignore);
+            if(n==clearanceHits.Length)return false;
+            for(int i=0;i<n;i++)
             {
-                Collider hit = clearanceHits[i];
-                if (hit == null || hit == Capsule || hit == DiveBox || hit == SlideBox ||
-                    hit.transform.IsChildOf(transform)) continue;
-                // At takeoff the Box is disabled: be conservative, never
-                // create a newly active Collider intersecting an obstacle.
-                if (!DiveBox.enabled) return false;
-                // While getting up the Box is ALREADY an active collider.
-                // A wall touching its front face can be returned by the broad-
-                // phase OverlapBox even when it is not truly penetrating.
-                // Exact enabled-box penetration separates a valid tangential
-                // contact from a real wall overlap at the projected rise.
-                if (Physics.ComputePenetration(DiveBox, actorPosition, orientation,
-                    hit, hit.transform.position, hit.transform.rotation,
-                    out Vector3 normal, out float depth) && depth > .025f)
-                    return false;
+                var other=clearanceHits[i];
+                if(other==null || other==Capsule || other==SlideBox ||
+                    other.transform.IsChildOf(transform))continue;
+                return false;
             }
+            return true;
+        }
+
+        // A single transition at recovery entry replaces the previous box
+        // union, repeated upward push, and per-frame complex morph checks.
+        // Check a small vertical sweep and the COMPLETE upright crouch body
+        // before moving or resizing any live collider.
+        bool TryFinishProneDive()
+        {
+            if (!Grounded) return false;
+            Vector3 start=Body.position;
+            Vector3 goal=new Vector3(start.x,
+                Settings.standingHeight*.5f,start.z);
+            if (!CanFitVerticalShape(Settings.crouchingHeight,goal))
+                return false;
+            for(int i=1;i<=4;i++)
+                if(!CanFitDiveShape(Vector3.Lerp(start,goal,i*.25f)))
+                    return false;
+            // A previously verified, small center-height adjustment to
+            // place a feet-grounded crouch. No upward velocity and no
+            // force capable of lifting through an obstruction.
+            Body.position=goal;
+            Body.rotation=Quaternion.identity;
+            SetHeight(Settings.crouchingHeight);
+            if (visual!=null)
+                visual.localRotation=Quaternion.Euler(0f,visualYaw,0f);
             return true;
         }
 
@@ -625,14 +574,11 @@ namespace Chase
             Vector3 offset = Vector3.down * (Settings.standingHeight - height) * .5f;
             Vector3 center = actorPosition + offset;
             float half = Mathf.Max(0f, height * .5f - Settings.radius);
-            return CanOccupy(center + Vector3.up * half,
-                center - Vector3.up * half, Settings.radius,
-                Quaternion.identity, 1, height, offset, actorPosition);
+            return CanOccupy(center+Vector3.up*half,center-Vector3.up*half,
+                Settings.radius);
         }
 
-        bool CanOccupy(Vector3 a, Vector3 b, float radius,
-            Quaternion orientation, int direction, float height, Vector3 center,
-            Vector3 actorPosition)
+        bool CanOccupy(Vector3 a,Vector3 b,float radius)
         {
             // A slightly inset overlap query avoids false positives from
             // perfectly tangent floor contact. Unlike ComputePenetration on a
@@ -645,7 +591,7 @@ namespace Chase
             for (int i = 0; i < count; i++)
             {
                 Collider hit = clearanceHits[i];
-                if (hit == null || hit == Capsule || hit == DiveBox || hit == SlideBox ||
+                if (hit == null || hit == Capsule || hit == SlideBox ||
                     hit.transform.IsChildOf(transform)) continue;
                 // Only the actual floor directly below our feet is exempt;
                 // a raised shelf / wall / opponent may never be ignored.
@@ -657,45 +603,23 @@ namespace Chase
 
         bool TryEnterDiveShape()
         {
-            if (!CanFitDiveShape(Body.position)) return false;
-            Body.rotation = Quaternion.LookRotation(committedDirection, Vector3.up);
-            // Enable the alternate full-body Collider BEFORE disabling the
-            // upright one. There is never a collision-free physics step.
-            DiveBox.enabled = true;
-            Capsule.enabled = false;
-            if (visual != null) visual.localRotation = Quaternion.identity;
-            diveShapeCommitted = true;
+            if(!CanFitDiveShape(Body.position))return false;
+            Body.rotation=Quaternion.LookRotation(committedDirection,Vector3.up);
+            Capsule.direction=2;
+            Capsule.radius=Settings.diveCapsuleRadius;
+            Capsule.height=Settings.diveCapsuleLength;
+            Capsule.center=new Vector3(0f,Settings.diveCapsuleCenterY,
+                Settings.diveCapsuleCenterForward);
+            if (visual!=null)visual.localRotation=Quaternion.identity;
             return true;
-        }
-
-        void BeginGetupColliderUnion(float lowHeight)
-        {
-            // Safe projected vertical envelope was already checked.
-            // Enable upright crouch collider while retaining the prone Box.
-            // Their union covers each intermediate animation silhouette.
-            Capsule.direction = 1;
-            Capsule.radius = Settings.radius;
-            SetHeight(lowHeight);
-            Capsule.enabled = true;
-            // DiveBox remains enabled until the visual get-up ends.
-            diveGettingUp = false;
-        }
-
-        void FinishDiveShape()
-        {
-            Body.rotation = Quaternion.identity;
-            // The crouch collider already protects this body. Removing the
-            // extra horizontal box at animation completion only reduces the
-            // occupied volume. The collider is never fully disabled.
-            DiveBox.enabled = false;
-            if (visual != null)
-                visual.localRotation = Quaternion.Euler(0f, visualYaw, 0f);
-            diveShapeCommitted = false;
-            diveGettingUp = false;
         }
 
         void SetHeight(float h)
         {
+            // Restore the ordinary vertical shape at the single well-defined
+            // recovery transition; slide and normal crouch reuse it.
+            Capsule.direction=1;
+            Capsule.radius=Settings.radius;
             // Fixed feet: capsule midpoint moves down inside the actor as it bends.
             Capsule.height = h;
             Capsule.center = new Vector3(0f, (h - Settings.standingHeight) * .5f, 0f);
@@ -749,19 +673,20 @@ namespace Chase
         bool DetectGround()
         {
             float bottom = Capsule.enabled ?
-                Body.position.y + Capsule.center.y - Capsule.height * .5f :
+                Body.position.y + Capsule.center.y -
+                (Capsule.direction==1?Capsule.height*.5f:Capsule.radius) :
                 float.PositiveInfinity;
             if (DiveColliderActive)
-                bottom = Mathf.Min(bottom,Body.position.y +
-                    DiveBox.center.y - DiveBox.size.y * .5f);
+                bottom=Mathf.Min(bottom,Body.position.y+
+                    Capsule.center.y-Capsule.radius);
             if (SlideColliderActive)
                 bottom = Mathf.Min(bottom,Body.position.y+
                     SlideBox.center.y-SlideBox.size.y*.5f);
-            // Sample center AND the two longitudinal ends of an extended
-            // physical body. The support under an edge-contacting shoulder
+            // Sample center and both ends of long physical bodies: support
+            // beneath an edge-contacting shoulder
             // would be invisible to the old center-only probe.
             int probes=(DiveColliderActive || SlideColliderActive)?3:1;
-            float reach=DiveColliderActive ? DiveBox.size.z*.35f :
+            float reach=DiveColliderActive ? Settings.diveCapsuleLength*.34f :
                 SlideColliderActive ? SlideBox.size.z*.35f : 0f;
             for(int probe=0;probe<probes;probe++)
             {
@@ -776,7 +701,7 @@ namespace Chase
                     RaycastHit hit=groundHits[i];
                     if (hit.distance<=.0001f || hit.distance>.177f ||
                         hit.collider==null || hit.collider==Capsule ||
-                        hit.collider==DiveBox || hit.collider==SlideBox ||
+                        hit.collider==SlideBox ||
                         hit.collider.transform.IsChildOf(transform) ||
                         hit.collider.GetComponentInParent<ChaseMotor>()!=null)
                         continue;

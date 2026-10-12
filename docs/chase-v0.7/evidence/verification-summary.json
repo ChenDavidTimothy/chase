@@ -1,0 +1,77 @@
+{
+  "PlayMode": {
+    "total": 70,
+    "passed": 70,
+    "failed": 0,
+    "inconclusive": 0,
+    "skipped": 0
+  },
+  "EditMode": {
+    "total": 15,
+    "passed": 15,
+    "failed": 0,
+    "inconclusive": 0,
+    "skipped": 0
+  },
+  "GymWebGL": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "target": "WebGL",
+    "scene": "Assets/Scenes/MovementGym.unity",
+    "output": "Builds/ChaseAnimationGymWebGL",
+    "sceneContract": "passed"
+  },
+  "ProductionWebGL": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "target": "WebGL",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "output": "Builds/ChaseWebGL",
+    "sceneContract": "passed"
+  },
+  "Linux": {
+    "result": "Succeeded",
+    "errors": 0,
+    "warnings": 1,
+    "target": "StandaloneLinux64",
+    "scene": "Assets/Scenes/SampleScene.unity",
+    "output": "Builds/ChaseLinux/Chase.x86_64",
+    "sceneContract": "passed"
+  },
+  "RepeatedShelfAndWall": {
+    "result": "passed",
+    "browserErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=chase-v07-rounded-dive-shelf-wall",
+    "shelfAttempts": 2,
+    "wallAttempts": 2,
+    "postImpactWaitSeconds": 7
+  },
+  "FootballSlide": {
+    "result": "passed",
+    "browserErrors": 0,
+    "url": "http://127.0.0.1:8766/?build=chase-v07-rounded-dive-shelf-wall"
+  },
+  "ProductionChrome": {
+    "result": "passed",
+    "browserErrors": 0,
+    "url": "http://127.0.0.1:8765/?build=chase-v07-production-audited"
+  },
+  "Blender": {
+    "strictValidator": "passed",
+    "originalSourceUnchanged": true,
+    "sourceSha256": "56ce28893777fdf0f0bac20229c5352d03316bd9ec50ac96fd4027a0f99fcb97",
+    "actionCount": 12,
+    "meshCount": 17
+  },
+  "LinuxPlayer": {
+    "launched": true,
+    "runtimeExceptionsReported": 0
+  },
+  "Screenshots": {
+    "verified": 31,
+    "diveRecoveryMontage": "dive-recovery-rounded-capsule.png",
+    "footballSlideMontage": "gym/football-tackle-unaffected.png"
+  }
+}

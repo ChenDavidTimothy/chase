@@ -45,6 +45,8 @@ namespace Chase.Tests
             Assert.AreEqual(.82f,settings.slideBodyHeight);
             Assert.Greater(settings.slideBodyLength,1.8f);
             Assert.AreEqual(9f,settings.leapHorizontalSpeed);
+            Assert.AreEqual(1.95f,settings.diveCapsuleLength);
+            Assert.AreEqual(.43f,settings.diveCapsuleRadius);
             Assert.AreEqual(20f,settings.roundDuration);
             Assert.AreEqual(3f,settings.countdown);
         }

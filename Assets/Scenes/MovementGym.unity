@@ -168,11 +168,10 @@ MonoBehaviour:
     leapRecovery: 0.35
     diveImpactRecovery: 0.4
     recoverySpeed: 2
-    diveBodyLength: 2.3
-    diveBodyWidth: 1.2
-    diveBodyHeight: 0.95
-    diveBodyCenterY: -0.26
-    diveBodyCenterForward: 0.22
+    diveCapsuleLength: 1.95
+    diveCapsuleRadius: 0.43
+    diveCapsuleCenterY: -0.29
+    diveCapsuleCenterForward: 0.16
     proneCrawlSpeed: 1.5
     slideBodyLength: 1.98
     slideBodyWidth: 0.84

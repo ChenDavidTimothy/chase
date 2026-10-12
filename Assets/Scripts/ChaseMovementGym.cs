@@ -149,7 +149,7 @@ namespace Chase
                 motor.Velocity.y.ToString("F2"));
             GUI.Label(new Rect(24,130,330,25),"GROUNDED: "+motor.Grounded+
                 "    BODY: "+(motor.SlideColliderActive ? "LOW TACKLE BOX" :
-                    motor.DiveColliderActive ? "DIVE BOX" : "CAPSULE"));
+                    motor.DiveColliderActive ? "ROUNDED DIVE" : "CAPSULE"));
             GUI.Label(new Rect(24,152,330,25),"RECOVERY: "+
                 motor.RecoveryRemaining.ToString("F2")+" s");
             var d=motor.Body.position-motionStart;d.y=0f;

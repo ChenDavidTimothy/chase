@@ -1,0 +1,60 @@
+{
+  "url": "http://127.0.0.1:8766/?build=chase-v07-rounded-dive-shelf-wall",
+  "run": "fresh WebGL after v0.7 rounded-capsule release, G/H twice each, +7 seconds unassisted",
+  "state": {
+    "focus": "unity-canvas",
+    "scrollY": 0,
+    "keys": [
+      {
+        "key": "g",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "g",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "h",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "h",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      },
+      {
+        "key": "ArrowUp",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scrollY": 0
+      }
+    ]
+  },
+  "console_errors": [],
+  "screenshots": 16
+}

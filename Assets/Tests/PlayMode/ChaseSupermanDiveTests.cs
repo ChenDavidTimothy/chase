@@ -66,7 +66,7 @@ namespace Chase.Tests
             Physics.Simulate(Dt);clock+=Dt;
         }
         [UnityTest]
-        public IEnumerator FullBodyColliderFollowsSupermanHeadingAndNeverBecomesTrigger()
+        public IEnumerator OneRoundedCapsuleFollowsSupermanHeadingAndNeverBecomesTrigger()
         {
             Floor();
             var m=Actor(new Vector3(0,.9f,0));
@@ -79,15 +79,12 @@ namespace Chase.Tests
             for(int i=0;i<120;i++)
             {
                 Step(m,Vector2.left,false,true,true);
-                bool capsule=m.Capsule.enabled,box=m.DiveBox.enabled;
-                Assert.IsTrue(capsule||box,"At least one solid Collider must remain enabled");
-                if (capsule&&box)
-                    Assert.AreEqual(ChaseMovementState.LeapRecovery,m.State,
-                        "Only the get-up animation may use the conservative collider union");
+                bool horizontal=m.DiveColliderActive;
+                Assert.IsTrue(m.Capsule.enabled,
+                    "The same solid capsule must remain enabled throughout");
                 Assert.IsFalse(m.Capsule.isTrigger);
-                Assert.IsFalse(m.DiveBox.isTrigger);
                 Assert.IsFalse(m.Body.isKinematic);
-                if(box)
+                if(horizontal)
                 {
                     sawBox=true;
                     Assert.IsTrue(m.State==ChaseMovementState.Leaping ||
@@ -95,8 +92,10 @@ namespace Chase.Tests
                         m.State==ChaseMovementState.LeapRecovery);
                     Vector3 longAxis=m.Body.rotation*Vector3.forward;
                     Assert.That(Vector3.Dot(longAxis,Vector3.right),Is.GreaterThan(.99f));
-                    Assert.That(m.DiveBox.size.x,Is.GreaterThan(1f));
-                    Assert.That(m.DiveBox.size.z,Is.GreaterThan(2f));
+                    Assert.That(m.Capsule.radius,Is.GreaterThan(.40f));
+                    Assert.That(m.Capsule.height,Is.GreaterThan(1.8f));
+                    Assert.AreEqual(2,m.Capsule.direction,
+                        "Horizontal capsule must lie along the dive heading");
                 }
                 sawImpact|=m.State==ChaseMovementState.DiveProne;
                 sawGetup|=m.State==ChaseMovementState.LeapRecovery;
@@ -107,6 +106,51 @@ namespace Chase.Tests
             Assert.IsFalse(m.DiveColliderActive);
             yield return null;
         }
+        [UnityTest]
+        public IEnumerator RoundedDiveUsesOneAlwaysSolidCapsuleWithoutExtraDiveCollider()
+        {
+            Floor();
+            var m=Actor(new Vector3(0,.9f,0));
+            Assert.AreEqual(1,m.GetComponents<CapsuleCollider>().Length,
+                "Do not introduce another capsule for recovery");
+            Assert.AreEqual(1,m.GetComponents<BoxCollider>().Length,
+                "The only box belongs to the independent football slide");
+            Step(m,Vector2.up,false,true);
+            Assert.IsTrue(m.DiveColliderActive);
+            Assert.AreEqual(2,m.Capsule.direction);
+            Assert.That(m.Capsule.height,Is.EqualTo(1.95f).Within(.001f));
+            Assert.That(m.Capsule.radius,Is.EqualTo(.43f).Within(.001f));
+            bool sawImpact=false,sawRecovery=false;
+            for(int frame=0;frame<160;frame++)
+            {
+                Step(m);
+                Assert.IsTrue(m.Capsule.enabled,
+                    "Dive never disables the only solid capsule");
+                Assert.IsFalse(m.Capsule.isTrigger);
+                Assert.IsFalse(m.SlideBox.enabled,
+                    "Football slide must not be used as a hidden dive body");
+                Assert.AreEqual(1,
+                    (m.Capsule.enabled?1:0)+(m.SlideBox.enabled?1:0),
+                    "No union, no gap, and no extra collision body");
+                sawImpact|=m.State==ChaseMovementState.DiveProne;
+                sawRecovery|=m.State==ChaseMovementState.LeapRecovery;
+                if(m.State==ChaseMovementState.LeapRecovery)
+                {
+                    Assert.AreEqual(1,m.Capsule.direction,
+                        "The only collider becomes crouched before get-up");
+                    Assert.That(m.Capsule.height,
+                        Is.EqualTo(m.Settings.crouchingHeight).Within(.001f));
+                }
+            }
+            Assert.IsTrue(sawImpact && sawRecovery);
+            Assert.AreEqual(ChaseMovementState.Standing,m.State);
+            Assert.IsFalse(m.DiveColliderActive);
+            Assert.AreEqual(1,m.Capsule.direction);
+            Assert.That(m.Capsule.height,
+                Is.EqualTo(m.Settings.standingHeight).Within(.001f));
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator SupermanShelfSlotCanBeTraversedOnTimedTakeoff()
         {
@@ -125,7 +169,7 @@ namespace Chase.Tests
                 everProne|=m.State==ChaseMovementState.DiveProne;
             }
             Assert.IsTrue(entered,"Actual horizontal collider must enter shelf slot");
-            Assert.IsTrue(cleared,"A correctly timed dive must reach the far side; actor="+m.Body.position+" state="+m.State+" box="+m.DiveBox.enabled);
+            Assert.IsTrue(cleared,"A correctly timed dive must reach the far side; actor="+m.Body.position+" state="+m.State+" box="+m.DiveColliderActive);
             Assert.IsTrue(everProne,"Landing must occur through real ground collision");
             Assert.AreEqual(ChaseMovementState.Standing,m.State);
             yield return null;
@@ -232,7 +276,7 @@ namespace Chase.Tests
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
             Assert.IsTrue(m.DiveColliderActive,
                 "The full-body solid collider must already be active on the launch frame");
-            Assert.IsFalse(m.Capsule.enabled);
+            Assert.AreEqual(2,m.Capsule.direction);
             Assert.That(m.Velocity.z,Is.EqualTo(9f).Within(.01f));
             Assert.That(m.Velocity.y,Is.GreaterThan(4.4f));
             Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.forward),
@@ -262,7 +306,7 @@ namespace Chase.Tests
                 Assert.That(m.HorizontalVelocity.x,Is.EqualTo(launch.x).Within(.0005f));
                 Assert.That(m.HorizontalVelocity.z,Is.EqualTo(launch.z).Within(.0005f));
                 Assert.IsTrue(m.DiveColliderActive);
-                Assert.IsFalse(m.Capsule.enabled);
+                Assert.AreEqual(2,m.Capsule.direction);
                 Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.forward),
                     Is.GreaterThan(.999f));
                 Assert.That(m.Velocity.y,Is.LessThan(5.2f-i*.15f));
@@ -341,9 +385,9 @@ namespace Chase.Tests
                     Step(m,Vector2.left,false,i%5==0,i%4==0,true);
                 else Step(m);
                 maxForward=Mathf.Max(maxForward,m.Body.position.z);
-                Assert.IsTrue(m.Capsule.enabled || m.DiveBox.enabled);
+                Assert.IsTrue(m.Capsule.enabled);
                 Assert.IsFalse(m.Capsule.isTrigger);
-                Assert.IsFalse(m.DiveBox.isTrigger);
+                Assert.IsFalse(m.Capsule.isTrigger);
                 Assert.IsFalse(m.DiveColliderActive,
                     "Do not expand the horizontal box through nearby wall");
                 if(i==4)
@@ -402,18 +446,18 @@ namespace Chase.Tests
                     }
                     prone |= m.State==ChaseMovementState.DiveProne;
                     getup |= m.State==ChaseMovementState.LeapRecovery;
-                    Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
+                    Assert.IsTrue(m.Capsule.enabled);
                 }
                 Assert.IsTrue(hit,"Wall contact should end both collider flights");
                 Assert.IsTrue(prone && getup,
                     "wallZ="+wallZ+" compact="+compact+
                     " hit="+hit+" prone="+prone+" getup="+getup+
                     " state="+m.State+" pos="+m.Body.position+
-                    " vel="+m.Velocity+" box="+m.DiveBox.enabled);
+                    " vel="+m.Velocity+" box="+m.DiveColliderActive);
                 Assert.AreEqual(ChaseMovementState.Standing,m.State,
                     "wallZ="+wallZ+" position="+m.Body.position+
                     " grounded="+m.Grounded+" velocity="+m.Velocity+
-                    " box="+m.DiveBox.enabled+" capsule="+m.Capsule.enabled);
+                    " box="+m.DiveColliderActive+" capsule="+m.Capsule.enabled);
                 Assert.Less(maxForward,wallZ,
                     "Never cross the solid wall on either approach");
                 // Clean only the objects made by this sub-case before making
@@ -430,7 +474,7 @@ namespace Chase.Tests
         {
             Floor();
             Cube("side guard that blocks extended shoulders",
-                new Vector3(.82f,1.15f,1.5f),new Vector3(.52f,2.3f,8f));
+                new Vector3(.57f,1.15f,1.5f),new Vector3(.35f,2.3f,8f));
             var m=Actor(new Vector3(0,.9f,0));
             Step(m,Vector2.zero,false,true);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
@@ -516,7 +560,7 @@ namespace Chase.Tests
                 Step(m,Vector2.up);
                 furthest=Mathf.Max(furthest,m.Body.position.z);
                 if(i>15)postHitMax=Mathf.Max(postHitMax,m.Velocity.z);
-                Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
+                Assert.IsTrue(m.Capsule.enabled);
             }
             Assert.Less(furthest,2.04f,
                 "No solid body can pass a wall: after get-up the normal " +
@@ -541,10 +585,14 @@ namespace Chase.Tests
                     trappedLow=true;
                 if(m.Body.position.z>8.9f && !m.DiveColliderActive)
                     escapedLow=true;
-                Assert.IsTrue(m.Capsule.enabled||m.DiveBox.enabled);
+                Assert.IsTrue(m.Capsule.enabled);
             }
             Assert.IsTrue(trappedLow,"Under a low roof, character stays prone");
-            Assert.IsTrue(escapedLow,"After crawling out, character rises physically");
+            Assert.IsTrue(escapedLow,"After crawling out, character rises physically. " +
+                "state="+m.State+" z="+m.Body.position.z+
+                " y="+m.Body.position.y+" vy="+m.Velocity.y+
+                " grounded="+m.Grounded+" prone="+m.DiveColliderActive+
+                " recoveryLeft="+m.RecoveryRemaining);
             yield return null;
         }
     }

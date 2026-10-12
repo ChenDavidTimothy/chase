@@ -106,7 +106,7 @@ namespace Chase.Tests
                 largestZ=Mathf.Max(largestZ,m.Body.position.z);
                 if(i>9)postHitMax=Mathf.Max(postHitMax,m.Velocity.z);
             }
-            Assert.That(largestZ,Is.LessThan(1.13f),"Long solid projectile body must stop at wall");
+            Assert.That(largestZ,Is.LessThan(1.31f),"The real rounded solid projectile must stop before wall");
             Assert.That(postHitMax,Is.LessThan(initial*.7f),"No impulse replenishment");
             Assert.IsFalse(m.Body.isKinematic);
             Assert.IsFalse(m.Capsule.isTrigger);

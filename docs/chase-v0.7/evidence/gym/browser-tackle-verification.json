@@ -1,0 +1,68 @@
+{
+  "url": "http://127.0.0.1:8766/?build=chase-v07-rounded-dive-shelf-wall",
+  "rendered_scene": {
+    "frame": 0,
+    "scene_contrast": 41.699,
+    "size": [
+      1920,
+      961
+    ]
+  },
+  "keys_and_focus": {
+    "focus": "unity-canvas",
+    "x": 0,
+    "y": 0,
+    "keys": [
+      {
+        "key": "v",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "j",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "w",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "ArrowDown",
+        "prevented": true,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "a",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      },
+      {
+        "key": "d",
+        "prevented": false,
+        "focus": "unity-canvas",
+        "scroll": 0
+      }
+    ],
+    "loader": "none"
+  },
+  "console_errors": [],
+  "changed_pixels_gt35": {
+    "01-tackle-launch": 73936,
+    "02-reclined-low-slide": 77396,
+    "03-feet-first-under-canopy": 76946,
+    "04-slide-end": 65249,
+    "05-protected-getup": 147303,
+    "06-rising": 283541,
+    "07-running-again": 321561,
+    "08-standing-idle": 273654
+  },
+  "proof": "real Chrome WebGL with J staging, W + Down takeoff, A/D directional spam during slide, no special motor",
+  "not_proven_by_screenshots": "Exact pose/collision safety is proven separately by PhysX and skinned-mesh tests"
+}
