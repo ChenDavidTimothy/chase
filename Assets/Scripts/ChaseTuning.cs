@@ -11,7 +11,7 @@ namespace Chase
         public float jumpSpeed = 6.3f, gravity = 22f, mass = 70f;
         public float jumpBuffer = .08f, coyoteTime = .08f;
         [Header("Explicit committed moves")]
-        public float leapHorizontalSpeed = 9f, leapVerticalSpeed = 5.2f;
+        public float leapHorizontalSpeed = 9f, leapVerticalSpeed = 6.8f;
         public float leapRecovery = .35f, diveImpactRecovery = .40f, recoverySpeed = 2f;
         [Header("One rounded solid dive collider (same standing capsule)")]
         public float diveCapsuleLength = 1.95f;

@@ -352,8 +352,10 @@ namespace Chase.Tests
             foreach(var line in lines)Debug.Log("CHASE_V04_CALIBRATION "+line);
             Assert.That(top,Is.EqualTo(6f).Within(.02f));
             Assert.That(apex,Is.InRange(.72f,.95f));
-            Assert.That(lapex,Is.InRange(.51f,.61f),
-                "Superman dive is a higher, committed head-first launch");
+            float predictedRise=leap.Settings.leapVerticalSpeed *
+                leap.Settings.leapVerticalSpeed / (2f*leap.Settings.gravity);
+            Assert.That(lapex,Is.EqualTo(predictedRise).Within(.14f),
+                "Measured ballistic rise should track launch speed and gravity");
             Assert.That(leap.HorizontalVelocity.magnitude,Is.LessThanOrEqualTo(9.01f));
             yield return null;
         }

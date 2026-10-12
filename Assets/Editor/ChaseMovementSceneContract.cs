@@ -14,7 +14,8 @@ public static class ChaseMovementSceneContract
     const string Gym="Assets/Scenes/MovementGym.unity";
 
     static bool Correct(ChaseTuning t) =>
-        t!=null && Mathf.Abs(t.slideBodyLength-1.98f)<.002f &&
+        t!=null && Mathf.Abs(t.leapVerticalSpeed-6.8f)<.002f &&
+        Mathf.Abs(t.slideBodyLength-1.98f)<.002f &&
         Mathf.Abs(t.slideBodyWidth-.84f)<.002f &&
         Mathf.Abs(t.slideBodyHeight-.82f)<.002f &&
         Mathf.Abs(t.slideBodyCenterY+.48f)<.002f &&
@@ -30,6 +31,7 @@ public static class ChaseMovementSceneContract
 
     static void Apply(ChaseTuning t)
     {
+        t.leapVerticalSpeed=6.8f;
         t.slideBodyLength=1.98f;
         t.slideBodyWidth=.84f;
         t.slideBodyHeight=.82f;
@@ -79,7 +81,7 @@ public static class ChaseMovementSceneContract
                 if(repair)
                 {
                     foreach(var field in new[]{
-                        ("slideBodyLength",1.98f),("slideBodyWidth",.84f),
+                        ("leapVerticalSpeed",6.8f),("slideBodyLength",1.98f),("slideBodyWidth",.84f),
                         ("slideBodyHeight",.82f),("slideBodyCenterY",-.48f),
                         ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",1.10f),
                         ("slideDuration",.45f),("slideDeceleration",8f),
@@ -98,7 +100,7 @@ public static class ChaseMovementSceneContract
                 // The values read back from serialized scene content are the
                 // actual values a standalone WebGL Player will deserialize.
                 foreach(var field in new[]{
-                    ("slideBodyLength",1.98f),("slideBodyWidth",.84f),
+                    ("leapVerticalSpeed",6.8f),("slideBodyLength",1.98f),("slideBodyWidth",.84f),
                     ("slideBodyHeight",.82f),("slideBodyCenterY",-.48f),
                     ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",1.10f),
                     ("slideDuration",.45f),("slideDeceleration",8f),

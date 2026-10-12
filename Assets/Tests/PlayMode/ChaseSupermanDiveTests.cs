@@ -656,6 +656,7 @@ namespace Chase.Tests
             Assert.IsTrue(m.DiveColliderActive);
             Vector3 launch=m.HorizontalVelocity;
             float previousHeight=m.Body.position.y;
+            float previousVerticalSpeed=m.Velocity.y;
             float maxHeight=previousHeight;
             int airFrames=0;
             for(int i=0;i<17;i++)
@@ -671,7 +672,9 @@ namespace Chase.Tests
                 Assert.AreEqual(2,m.Capsule.direction);
                 Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.forward),
                     Is.GreaterThan(.999f));
-                Assert.That(m.Velocity.y,Is.LessThan(5.2f-i*.15f));
+                Assert.Less(m.Velocity.y,previousVerticalSpeed-.3f,
+                    "Gravity must reduce vertical speed; buttons cannot repower a dive");
+                previousVerticalSpeed=m.Velocity.y;
                 maxHeight=Mathf.Max(maxHeight,m.Body.position.y);
                 airFrames++;
             }
@@ -936,7 +939,11 @@ namespace Chase.Tests
             Floor();
             var roof=Cube("low overhead after dive",new Vector3(0,1.45f,6.6f),
                 new Vector3(2.6f,.22f,2.8f));
-            var m=Actor(new Vector3(0,.9f,0));
+            // A lower-arc takeoff is still a physically reachable trajectory
+            // after a wall/ledge hit. Verify the universal low-roof recovery
+            // invariant independently of the new high-route launch default.
+            var m=Actor(new Vector3(0,.9f,0),
+                new ChaseTuning { leapVerticalSpeed=5.2f });
             Step(m,Vector2.zero,false,true);
             bool trappedLow=false,escapedLow=false;
             for(int i=0;i<250;i++)

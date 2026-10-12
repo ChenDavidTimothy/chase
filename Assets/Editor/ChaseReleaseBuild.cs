@@ -15,6 +15,7 @@ public static class ChaseReleaseBuild
         // Source scenes must serialize these dimensions explicitly; build
         // must fail before exporting a browser player with old zero defaults.
         ChaseMovementSceneContract.ValidateScenes();
+        ChaseModularObstacleBuilder.Validate();
         var options = new BuildPlayerOptions
         {
             scenes = new[] { scene },

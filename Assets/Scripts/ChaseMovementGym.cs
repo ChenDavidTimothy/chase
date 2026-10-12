@@ -116,6 +116,24 @@ namespace Chase
                 keyboard.ResetSource();
                 return;
             }
+            // Two repeatable routes through the SAME portable physical rail.
+            // B stages the dive launch; N stages an ordinary run-up, at rest.
+            // Both actions and slide momentum remain completely player-driven.
+            if(k!=null && (k.bKey.wasPressedThisFrame || k.nKey.wasPressedThisFrame))
+            {
+                var rail=GameObject.Find("GYM under-over rail");
+                if(rail==null)throw new System.InvalidOperationException(
+                    "Reusable obstacle Gym rail is missing");
+                Vector3 forward=rail.transform.forward;
+                forward.y=0f;forward.Normalize();
+                bool slideApproach=k.nKey.wasPressedThisFrame;
+                Vector3 start=rail.transform.position-
+                    forward*(slideApproach?3.0f:2.7f);
+                start.y=tuning.standingHeight*.5f;
+                ResetActorAt(start);
+                keyboard.ResetSource();
+                return;
+            }
             if(fixedCamera!=null)keyboard.Poll(inputFrame);
         }
         void FixedUpdate()
@@ -149,7 +167,7 @@ namespace Chase
         void OnGUI()
         {
             if(motor==null)return;
-            GUI.Box(new Rect(12,12,370,270),"CHASE / PHYSICAL ATHLETIC MOVEMENT GYM");
+            GUI.Box(new Rect(12,12,370,295),"CHASE / PHYSICAL ATHLETIC MOVEMENT GYM");
             GUI.Label(new Rect(24,39,340,25),"WASD MOVE   SPACE JUMP   UP SUPERMAN");
             GUI.Label(new Rect(24,61,340,25),"DOWN SLIDE  J SLIDE  G OPEN DIVE  K SHELF CRAWL  V VIEW");
             GUI.Label(new Rect(24,86,330,25),"STATE: "+motor.State);
@@ -172,6 +190,8 @@ namespace Chase
             }
             if(motor.DiveCompactContact)
                 GUI.Label(new Rect(24,239,330,25),"DIVE CONTACT / SOLID COMPACT BODY");
+            GUI.Label(new Rect(24,259,340,25),
+                "B RAIL: W+UP OVER    N RAIL: RUN W, DOWN UNDER");
             if(headBone!=null && pelvisBone!=null)
             {
                 Vector3 axis=(headBone.position-pelvisBone.position).normalized;
