@@ -136,27 +136,33 @@ namespace Chase
         void Label(Rect r,string value,GUIStyle style) =>
             GUI.Label(r,value,style);
 
-        bool Button(Rect r,string label,Color fill,bool primary=false)
+        bool Button(Rect r,string label,Color fill,bool primary=false,int index=-1)
         {
             bool hover=r.Contains(Event.current.mousePosition);
             Tile(new Rect(r.x,r.y+3,r.width,r.height),new Color(0,.035f,.065f,.30f));
             Tile(r,hover?Color.Lerp(fill,Cream,.13f):fill);
-            if(primary)
-                Tile(new Rect(r.x+9,r.y+8,5,r.height-16),Cream);
-            return GUI.Button(r,label,primary?buttonPrimaryText:buttonText);
+            if(primary || match.IsMenuSelection(index))
+                Tile(new Rect(r.x+9,r.y+8,5,r.height-16),
+                    match.IsMenuSelection(index)?Gold:Cream);
+            bool clicked=GUI.Button(r,label,primary?buttonPrimaryText:buttonText);
+            if(clicked)match.MenuPointerInput();
+            return clicked;
         }
 
-        void SmallButton(Rect r,string label,Color fill,System.Action action)
+        void SmallButton(Rect r,string label,Color fill,System.Action action,int index=-1)
         {
             bool hover=r.Contains(Event.current.mousePosition);
             Tile(r,hover?Color.Lerp(fill,Cream,.13f):fill);
-            if(GUI.Button(r,label,buttonSmall))action();
+            if(match.IsMenuSelection(index))
+                Tile(new Rect(r.x+5,r.y+6,4,r.height-12),Gold);
+            if(GUI.Button(r,label,buttonSmall))
+            {match.MenuPointerInput();action();}
         }
 
         void Back(float x,float y)
         {
             SmallButton(new Rect(x,y,102,42),"<  BACK",
-                new Color(.18f,.29f,.36f,.95f),match.MenuBack);
+                new Color(.18f,.29f,.36f,.95f),match.MenuBack,0);
         }
 
         void Brand(float x,float y)
@@ -197,17 +203,17 @@ namespace Chase
                         "ONE TAG. YOUR ROUTE.",Text(29,Cream,FontStyle.Bold));
                     Label(new Rect(x+35,y+253,430,35),
                         "20 seconds to outplay the chase.",body);
-                    if(Button(new Rect(x+34,y+329,451,62),"PLAY  >",Mint,true))
+                    if(Button(new Rect(x+34,y+329,451,62),"PLAY  >",Mint,true,0))
                         match.OpenPlay();
                     if(Button(new Rect(x+34,y+402,218,53),"HOW TO PLAY",
-                        new Color(.10f,.22f,.30f)))
+                        new Color(.10f,.22f,.30f),false,1))
                         match.OpenHowTo();
                     if(Button(new Rect(x+266,y+402,219,53),"SETTINGS",
-                        new Color(.10f,.22f,.30f)))
+                        new Color(.10f,.22f,.30f),false,2))
                         match.OpenSettings();
                     if(Application.platform!=RuntimePlatform.WebGLPlayer)
                         SmallButton(new Rect(x+34,y+469,142,40),"QUIT",
-                            new Color(.16f,.28f,.36f),match.QuitGame);
+                            new Color(.16f,.28f,.36f),match.QuitGame,3);
                     Label(new Rect(x+36,y+ph-40,455,20),
                         "ARENA 01   /   MASTERED ROUTES",micro);
                     break;
@@ -235,7 +241,7 @@ namespace Chase
                         Text(16,Cream));
                     Label(new Rect(x+57,y+410,390,25),
                         "One arena. Countless lines.",small);
-                    if(Button(new Rect(x+34,y+481,452,64),"PLAY ARENA  >",Mint,true))
+                    if(Button(new Rect(x+34,y+481,452,64),"PLAY ARENA  >",Mint,true,1))
                         match.StartSelectedArena();
                     break;
                 case ChaseMenuPage.HowTo:
@@ -254,11 +260,11 @@ namespace Chase
                         Text(29,Cream,FontStyle.Bold));
                     if(Button(new Rect(x+34,y+310,452,65),
                         "CONTROL KEYS     "+(match.ShowKeyHints?"ON":"OFF"),
-                        new Color(.10f,.22f,.30f)))
+                        new Color(.10f,.22f,.30f),false,1))
                         match.SetKeyHints(!match.ShowKeyHints);
                     if(Button(new Rect(x+34,y+389,452,65),
                         "KEY HIGHLIGHTS     "+(match.HighlightKeys?"ON":"OFF"),
-                        new Color(.10f,.22f,.30f)))
+                        new Color(.10f,.22f,.30f),false,2))
                         match.SetKeyHighlight(!match.HighlightKeys);
                     Label(new Rect(x+37,y+482,437,44),
                         "Changes apply immediately.",small);
@@ -272,11 +278,13 @@ namespace Chase
             Rect card=new Rect(x,y,219,90);
             bool hover=card.Contains(Event.current.mousePosition);
             Tile(card,hover?new Color(.14f,.29f,.38f):new Color(.09f,.20f,.27f));
+            if(match.IsMenuSelection(1+(int)choice))
+                Tile(new Rect(x+7,y+9,5,72),Gold);
             Label(new Rect(x+19,y+12,182,31),name,
                 Text(21,Cream,FontStyle.Bold));
             Label(new Rect(x+19,y+49,188,22),info,Text(13,Muted));
             if(GUI.Button(card,GUIContent.none,GUIStyle.none))
-                match.SelectDifficulty(choice);
+            {match.MenuPointerInput();match.SelectDifficulty(choice);}
         }
 
         bool IsDown(string key)
@@ -345,32 +353,35 @@ namespace Chase
             const float width=600,height=77;
             float x=(w-width)*.5f,y=17;
             Tile(new Rect(x,y,width,height),PanelColor);
+            bool playingChaser=match.HumanRole==ChaseRole.Chaser;
             Tile(new Rect(x+6,y+6,178,height-12),
-                new Color(.38f,.12f,.19f,.87f));
+                playingChaser?new Color(.38f,.12f,.19f,.87f):
+                    new Color(.11f,.31f,.50f,.87f));
             Tile(new Rect(x+width-184,y+6,178,height-12),
-                new Color(.11f,.31f,.50f,.87f));
-            Label(new Rect(x+22,y+12,128,20),"CHASER",Text(13,Coral,FontStyle.Bold));
+                playingChaser?new Color(.11f,.31f,.50f,.87f):
+                    new Color(.38f,.12f,.19f,.87f));
+            // Competition score belongs to the PEOPLE, never to roles:
+            // a mid-session role switch must not reverse who's winning.
+            Label(new Rect(x+22,y+12,139,20),"YOU",
+                Text(13,Mint,FontStyle.Bold));
             Label(new Rect(x+22,y+31,142,34),
-                match.ChaserWins.ToString("00"),Text(28,Cream,FontStyle.Bold));
+                match.PlayerWins.ToString("00"),Text(28,Cream,FontStyle.Bold));
             Label(new Rect(x+width-162,y+12,142,20),
-                "EVADER",Text(13,Blue,FontStyle.Bold,TextAnchor.MiddleRight));
+                "RIVAL",Text(13,Gold,FontStyle.Bold,TextAnchor.MiddleRight));
             Label(new Rect(x+width-161,y+31,140,34),
-                match.EvaderWins.ToString("00"),
+                match.BotWins.ToString("00"),
                 Text(28,Cream,FontStyle.Bold,TextAnchor.MiddleRight));
-            Label(new Rect(x+195,y+5,211,22),
+            Label(new Rect(x+194,y+4,212,20),
                 "ROUND "+match.RoundNumber.ToString("00"),
                 Text(12,Muted,FontStyle.Bold,TextAnchor.MiddleCenter));
             Label(new Rect(x+195,y+25,211,44),
                 match.Remaining.ToString("00.0"),
                 Text(38,match.Remaining<=5f?Gold:Cream,
                     FontStyle.Bold,TextAnchor.MiddleCenter));
-            // A single unobtrusive marker identifies which role the local
-            // player controls, without duplicating the broadcast scoreboard.
-            bool chaser=match.HumanRole==ChaseRole.Chaser;
-            Label(new Rect(chaser?x+136:x+width-180,y+12,43,18),"YOU",
-                Text(11,Mint,FontStyle.Bold,
-                    chaser?TextAnchor.MiddleRight:TextAnchor.MiddleLeft));
-            Tile(new Rect(chaser?x+140:x+width-182,y+61,34,5),Mint);
+            Label(new Rect(x+194,y+65,212,15),
+                "YOU: "+(match.HumanRole==ChaseRole.Chaser?"CHASER":"EVADER"),
+                Text(11,match.HumanRole==ChaseRole.Chaser?Coral:Blue,
+                    FontStyle.Bold,TextAnchor.MiddleCenter));
         }
 
         void Overlay(float w,float h,Color shade)
@@ -414,12 +425,13 @@ namespace Chase
             Overlay(w,h,new Color(.015f,.04f,.07f,.54f));
             OverlayCard(w,h,"ARENA 01","PAUSED","Your next move can wait.");
             float x=(w-510)*.5f,y=(h-352)*.5f;
-            if(Button(new Rect(x+44,y+221,422,47),"RESUME",Mint,true))
+            if(Button(new Rect(x+44,y+221,422,47),"RESUME",Mint,true,0))
                 match.ResumeMatch();
             SmallButton(new Rect(x+44,y+280,202,45),"RESTART",
-                new Color(.22f,.37f,.45f),match.Rematch);
+                new Color(.22f,.37f,.45f),match.Rematch,
+                1);
             SmallButton(new Rect(x+264,y+280,202,45),"MAIN MENU",
-                new Color(.22f,.37f,.45f),match.ReturnToMenu);
+                new Color(.22f,.37f,.45f),match.ReturnToMenu,2);
         }
 
         void Result(float w,float h)
@@ -428,16 +440,17 @@ namespace Chase
             bool caught=match.Winner==ChaseRole.Chaser;
             OverlayCard(w,h,"ROUND "+match.RoundNumber.ToString("00"),
                 caught?"TAGGED!":"ESCAPED!",
-                caught?"Chaser takes the point.":"Evader survived the clock.");
+                match.Winner==match.HumanRole?"POINT FOR YOU":"POINT FOR RIVAL");
             float x=(w-510)*.5f,y=(h-352)*.5f;
-            if(Button(new Rect(x+44,y+221,422,47),"NEXT ROUND",Mint,true))
+            if(Button(new Rect(x+44,y+221,422,47),"NEXT ROUND",Mint,true,0))
                 match.NextRound();
             SmallButton(new Rect(x+44,y+280,132,45),"REMATCH",
-                new Color(.22f,.37f,.45f),match.Rematch);
+                new Color(.22f,.37f,.45f),match.Rematch,
+                1);
             SmallButton(new Rect(x+188,y+280,133,45),"SWAP ROLE",
-                new Color(.22f,.37f,.45f),match.SwitchRole);
+                new Color(.22f,.37f,.45f),match.SwitchRole,2);
             SmallButton(new Rect(x+333,y+280,133,45),"MENU",
-                new Color(.22f,.37f,.45f),match.ReturnToMenu);
+                new Color(.22f,.37f,.45f),match.ReturnToMenu,3);
         }
 
         void OnGUI()

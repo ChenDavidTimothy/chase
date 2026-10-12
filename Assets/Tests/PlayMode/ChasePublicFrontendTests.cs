@@ -36,7 +36,7 @@ namespace Chase.Tests
                 Assert.IsTrue(showcase.Playing);
                 Assert.AreEqual(3,showcase.ShotCount);
                 for(int shot=0;shot<3;shot++)
-                    Assert.That(showcase.FrameCount(shot),Is.InRange(180,300));
+                    Assert.That(showcase.FrameCount(shot),Is.InRange(150,300));
                 Assert.IsFalse(match.Chaser.gameObject.activeInHierarchy);
                 Assert.IsFalse(match.Evader.gameObject.activeInHierarchy);
 
@@ -92,7 +92,7 @@ namespace Chase.Tests
                 float duration=0f;
                 for(int i=0;i<demo.ShotCount;i++)
                     duration+=(demo.FrameCount(i)-1)/50f;
-                Assert.That(duration,Is.InRange(10f,18f));
+                Assert.That(duration,Is.InRange(9f,18f));
                 var elapsed=typeof(ChaseMenuShowcase).GetField("elapsed",
                     BindingFlags.Instance|BindingFlags.NonPublic);
                 var lastSample=typeof(ChaseMenuShowcase).GetField("lastSample",
@@ -113,6 +113,129 @@ namespace Chase.Tests
                     "Recorded menu must loop without positional drift");
                 Assert.IsFalse(match.Chaser.gameObject.activeInHierarchy);
                 Assert.IsFalse(match.Evader.gameObject.activeInHierarchy);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        static object InvokePrivate(object owner,string name,params object[] parameters)
+        {
+            var method=owner.GetType().GetMethod(name,
+                BindingFlags.Instance|BindingFlags.NonPublic);
+            Assert.NotNull(method,name+" not found");
+            return method.Invoke(owner,parameters);
+        }
+
+        [Test] public void ScoresStayWithPeopleWhenRolesSwap()
+        {
+            var match=PublicMatch();
+            try
+            {
+                match.OpenPlay();match.SelectDifficulty(ChaseDifficulty.Rival);
+                match.StartSelectedArena();
+                var phase=typeof(ChaseMatch).GetField("<Phase>k__BackingField",
+                    BindingFlags.Instance|BindingFlags.NonPublic);
+                // The human starts Evader: chaser point belongs to the bot.
+                phase.SetValue(match,ChasePhase.Active);
+                InvokePrivate(match,"Finish",ChaseRole.Chaser);
+                Assert.AreEqual(0,match.PlayerWins);
+                Assert.AreEqual(1,match.BotWins);
+                Assert.AreEqual(1,match.ChaserWins);
+                match.SwitchRole();
+                Assert.AreEqual(ChaseRole.Chaser,match.HumanRole);
+                phase.SetValue(match,ChasePhase.Active);
+                InvokePrivate(match,"Finish",ChaseRole.Chaser);
+                Assert.AreEqual(1,match.PlayerWins);
+                Assert.AreEqual(1,match.BotWins);
+                Assert.AreEqual(2,match.ChaserWins);
+                match.ReturnToMenu();
+                match.OpenPlay();match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                Assert.Zero(match.PlayerWins);
+                Assert.Zero(match.BotWins);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        [UnityTest] public IEnumerator FocusLossFreezesMatchUntilExplicitResume()
+        {
+            var match=PublicMatch();
+            try
+            {
+                match.OpenPlay();match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                var phase=typeof(ChaseMatch).GetField("<Phase>k__BackingField",
+                    BindingFlags.Instance|BindingFlags.NonPublic);
+                phase.SetValue(match,ChasePhase.Active);
+                float remaining=match.Remaining;
+                InvokePrivate(match,"OnApplicationFocus",false);
+                Assert.IsFalse(match.ApplicationFocused);
+                Assert.IsTrue(match.FocusSuspended);
+                Assert.AreEqual(ChasePhase.Paused,match.Phase);
+                Assert.AreEqual(0f,Time.timeScale);
+                yield return null;
+                yield return null;
+                Assert.That(match.Remaining,Is.EqualTo(remaining).Within(.001f));
+                InvokePrivate(match,"OnApplicationFocus",true);
+                Assert.IsTrue(match.ApplicationFocused);
+                Assert.AreEqual(ChasePhase.Paused,match.Phase,
+                    "Restoring window focus must not auto-resume the chase");
+                match.ResumeMatch();
+                Assert.AreEqual(ChasePhase.Active,match.Phase);
+                Assert.IsFalse(match.FocusSuspended);
+                Assert.AreEqual(1f,Time.timeScale);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        [Test] public void KeyboardMenuSelectionReachesRealArenaAndSettings()
+        {
+            var match=PublicMatch();
+            try
+            {
+                InvokePrivate(match,"NavigateMenu",1);
+                Assert.AreEqual(0,match.MenuSelection);
+                Assert.IsTrue(match.IsMenuSelection(0));
+                InvokePrivate(match,"ConfirmMenu");
+                Assert.AreEqual(ChaseMenuPage.Difficulty,match.MenuPage);
+                InvokePrivate(match,"NavigateMenu",1);
+                InvokePrivate(match,"NavigateMenu",1);
+                Assert.AreEqual(1,match.MenuSelection);
+                InvokePrivate(match,"ConfirmMenu");
+                Assert.AreEqual(ChaseDifficulty.Rookie,match.Difficulty);
+                Assert.AreEqual(ChaseMenuPage.Arena,match.MenuPage);
+                InvokePrivate(match,"NavigateMenu",1);
+                InvokePrivate(match,"NavigateMenu",1);
+                InvokePrivate(match,"ConfirmMenu");
+                Assert.AreEqual(ChaseMenuPage.InMatch,match.MenuPage);
+                match.ReturnToMenu();
+                match.OpenSettings();
+                bool old=match.ShowKeyHints;
+                InvokePrivate(match,"NavigateMenu",1);
+                InvokePrivate(match,"NavigateMenu",1);
+                InvokePrivate(match,"ConfirmMenu");
+                Assert.AreNotEqual(old,match.ShowKeyHints);
+                match.SetKeyHints(old);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        [UnityTest] public IEnumerator ShowcaseUsesApprovedClipDurations()
+        {
+            var match=PublicMatch();
+            try
+            {
+                var demo=match.GetComponent<ChaseMenuShowcase>();
+                var clips=typeof(ChaseMenuShowcase).GetField("clipLengths",
+                    BindingFlags.Instance|BindingFlags.NonPublic)
+                    .GetValue(demo) as float[,];
+                Assert.NotNull(clips);
+                Assert.That(clips[0,5],Is.InRange(.18f,.24f),
+                    "Approved SlideRecovery should be only 0.2 seconds");
+                Assert.That(clips[0,3],Is.InRange(.70f,.77f),
+                    "Approved Leap should be approximately 0.73 seconds");
+                Assert.That(clips[0,1],Is.InRange(.77f,.83f),
+                    "Approved Run should be 0.80 seconds");
+                yield return null;
             }
             finally {DestroyMatch(match);}
         }

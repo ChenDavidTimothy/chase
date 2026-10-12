@@ -15,7 +15,7 @@ public static class ChaseMenuReplayBaker
     const int Hz=50;
     const float Dt=1f/Hz;
     const int Magic=0x43485231; // CHR1
-    const int Frames=250;
+    const int Frames=170;
     const int Shots=3;
 
     struct Athlete
@@ -89,7 +89,7 @@ public static class ChaseMenuReplayBaker
         var root2=default(GameObject);
         var previousGravity=Physics.gravity;
         float clock=31f;
-        int[][] events = new int[Shots][];
+
         try
         {
             Physics.simulationMode=SimulationMode.Script;
@@ -106,15 +106,15 @@ public static class ChaseMenuReplayBaker
                     {
                         case 0: // Central Superman crossing.
                             evader=new Vector3(0,.9f,-2.7f);
-                            chaser=new Vector3(2.5f,.9f,-2.4f);
+                            chaser=new Vector3(3.1f,.9f,-2.4f);
                             break;
                         case 1: // West bench feet-first slide.
                             evader=new Vector3(-3.55f,.9f,-.60f);
-                            chaser=new Vector3(-1.2f,.9f,-1.0f);
+                            chaser=new Vector3(.2f,.9f,-1.0f);
                             break;
                         default: // Near-miss routes around the switching frame.
                             evader=new Vector3(-3.6f,.9f,-3.55f);
-                            chaser=new Vector3(-.35f,.9f,-3.65f);
+                            chaser=new Vector3(-4.95f,.9f,-3.30f);
                             break;
                     }
                     var e=Spawn(evader);
@@ -124,6 +124,8 @@ public static class ChaseMenuReplayBaker
                         e.motor.Body.linearVelocity=Vector3.forward*6f;
                     writer.Write(Frames);
                     int leapTicks=0,slideTicks=0,runTicks=0,contacts=0;
+                    float minimumSeparation=float.PositiveInfinity;
+                    int minimumFrame=-1;
                     for(int i=0;i<Frames;i++)
                     {
                         bool evaderDive=sceneIndex==0&&i==0;
@@ -133,28 +135,29 @@ public static class ChaseMenuReplayBaker
                         {
                             eMove=i<140?Vector2.up:
                                 new Vector2(-.5f,.8f).normalized;
-                            cMove=i<88?new Vector2(-.50f,.95f).normalized:
-                                new Vector2(-.75f,.5f).normalized;
+                            cMove=i<80?new Vector2(-.50f,.95f).normalized:
+                                new Vector2(.95f,-.40f).normalized;
                         }
                         else if(sceneIndex==1)
                         {
                             eMove=i<110?Vector2.up:
                                 new Vector2(.75f,.65f).normalized;
-                            cMove=i<100?new Vector2(-.55f,.85f).normalized:
-                                new Vector2(.45f,.85f).normalized;
+                            cMove=i<50?new Vector2(-.55f,.85f).normalized:
+                                new Vector2(.82f,.45f).normalized;
                         }
                         else
                         {
                             eMove=i<70?new Vector2(.8f,.45f).normalized:
                                 i<144?new Vector2(.55f,-.75f).normalized:
                                 new Vector2(-.85f,-.35f).normalized;
-                            cMove=i<62?new Vector2(-.6f,.5f).normalized:
-                                i<138?new Vector2(-.1f,.99f).normalized:
-                                new Vector2(-.7f,-.6f).normalized;
+                            cMove=i<70?new Vector2(.8f,.45f).normalized:
+                                i<144?new Vector2(.55f,-.75f).normalized:
+                                new Vector2(-.85f,-.35f).normalized;
                         }
                         e.motor.Simulate(new ChaseAction(eMove,
                             false,evaderDive,evaderSlide,false),Dt,clock);
-                        c.motor.Simulate(new ChaseAction(cMove,
+                        c.motor.Simulate(new ChaseAction(
+                            sceneIndex==2?cMove*.70f:cMove,
                             false,false,false,false),Dt,clock);
                         Physics.Simulate(Dt);
                         clock+=Dt;
@@ -162,6 +165,10 @@ public static class ChaseMenuReplayBaker
                         if(e.motor.State==ChaseMovementState.Sliding)slideTicks++;
                         if(c.motor.HorizontalVelocity.magnitude>2)runTicks++;
                         if(e.motor.DiveCompactContact)contacts++;
+                        float separation=Vector3.Distance(e.motor.Body.position,
+                            c.motor.Body.position);
+                        if(separation<minimumSeparation)
+                        {minimumSeparation=separation;minimumFrame=i;}
                         Write(writer,ref e);
                         Write(writer,ref c);
                     }
@@ -171,10 +178,16 @@ public static class ChaseMenuReplayBaker
                         throw new InvalidOperationException("Showcase recorded no authentic slide");
                     if(runTicks<25)
                         throw new InvalidOperationException("Showcase lacks chasing motion");
+                    if(minimumSeparation<.76f)
+                        throw new InvalidOperationException(
+                            "Recorded chase would likely tag rather than narrowly evade "+
+                            "shot="+sceneIndex+" frame="+minimumFrame+
+                            " minimum="+minimumSeparation.ToString("F3"));
                     Debug.Log("CHASE_MENU_RECORDED shot="+sceneIndex+
                         " real_leap_ticks="+leapTicks+
                         " real_slide_ticks="+slideTicks+
                         " chaser_run_ticks="+runTicks+" contact_ticks="+contacts+
+                        " minimum_athlete_separation="+minimumSeparation.ToString("F3")+
                         " evader_finish="+e.motor.Body.position);
                     UnityEngine.Object.DestroyImmediate(root1);
                     UnityEngine.Object.DestroyImmediate(root2);

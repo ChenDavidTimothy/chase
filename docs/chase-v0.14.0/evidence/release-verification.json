@@ -1,0 +1,66 @@
+{
+  "release": "v0.14.0",
+  "engine": "Unity 6000.3.26f1",
+  "tests": {
+    "playmode": {
+      "total": 95,
+      "passed": 95,
+      "failed": 0
+    },
+    "editmode": {
+      "total": 31,
+      "passed": 31,
+      "failed": 0
+    }
+  },
+  "builds": {
+    "WebGLProduction": {
+      "target": "WebGL",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "WebGLGym": {
+      "target": "WebGL",
+      "scene": "Assets/Scenes/MovementGym.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "LinuxProduction": {
+      "target": "StandaloneLinux64",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    }
+  },
+  "chrome": {
+    "page_title": "CHASE | Mastered Routes",
+    "recorded_motion_changed_pixels": 103296,
+    "static_arena_changed_pixels": 0,
+    "resumed_motion_changed_pixels": 75671,
+    "keyboard_navigation_passed": true,
+    "public_r_restart_blocked": true,
+    "saved_settings_reload_pixel_difference": 0,
+    "mobile_unsupported": {
+      "message": "CHASE\n\nCHASE currently needs a keyboard. Open it on a desktop or laptop to play.",
+      "canvas": false
+    },
+    "console_errors": [],
+    "exceptions": 0,
+    "pointer_clicks": 20
+  },
+  "native": {
+    "menu_rendered": true,
+    "moving_loop": true,
+    "runtime_errors": 0,
+    "synthetic_click": "inconclusive"
+  },
+  "art_source_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371",
+  "asset_bytes": {
+    "MenuChaseReplay.bytes": 21444,
+    "MenuArenaStill.jpg": 88964
+  }
+}

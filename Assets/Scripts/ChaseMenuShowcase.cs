@@ -30,7 +30,8 @@ namespace Chase
         Shot[] shots;
         Transform[] visuals;
         Animator[] animators;
-        Renderer[][] renderers;
+        float[,] clipLengths;
+        ChaseMatch match;
         Camera arenaCamera;
         Transform root;
         ChaseMenuPage lastPage;
@@ -59,6 +60,7 @@ namespace Chase
         public void Initialize(Camera camera)
         {
             arenaCamera=camera;
+            match=GetComponent<ChaseMatch>();
             var resource=Resources.Load<TextAsset>("MenuChaseReplay");
             if(resource==null)
                 throw new InvalidOperationException("CHASE missing validated menu physics recording");
@@ -96,7 +98,7 @@ namespace Chase
             root.localPosition=Vector3.zero;
             visuals=new Transform[2];
             animators=new Animator[2];
-            renderers=new Renderer[2][];
+            clipLengths=new float[2,States.Length];
             var prefab=Resources.Load<GameObject>("ChibiVisual");
             if(prefab==null)throw new InvalidOperationException("ChibiVisual missing");
             for(int i=0;i<2;i++)
@@ -117,12 +119,21 @@ namespace Chase
                 animator.speed=0f;
                 visuals[i]=visual.transform;
                 animators[i]=animator;
-                renderers[i]=visual.GetComponentsInChildren<Renderer>(true);
+                foreach(var clip in animator.runtimeAnimatorController.animationClips)
+                    for(int j=0;j<States.Length;j++)
+                        if(clip.name.EndsWith("CHASE_"+States[j],
+                           StringComparison.OrdinalIgnoreCase))
+                            clipLengths[i,j]=clip.length;
+                for(int j=0;j<States.Length;j++)
+                    if(clipLengths[i,j]<=0f && States[j]!="DiveProne")
+                        throw new InvalidOperationException(
+                            "Replay action missing official Blender clip "+States[j]);
+                var renderers=visual.GetComponentsInChildren<Renderer>(true);
                 // Match the real competitors' role tints, without touching
                 // the single approved Blender source or authored prefab.
                 var tint=i==0?new Color(.16f,.55f,1f):
                     new Color(.92f,.22f,.25f);
-                foreach(var r in renderers[i])
+                foreach(var r in renderers)
                 {
                     var color=r.name.StartsWith("face")?
                         new Color(.075f,.09f,.11f):
@@ -177,7 +188,8 @@ namespace Chase
 
         void LateUpdate()
         {
-            if(!initialized || !root.gameObject.activeSelf)return;
+            if(!initialized || !root.gameObject.activeSelf ||
+               (match!=null && !match.ApplicationFocused))return;
             elapsed+=Time.unscaledDeltaTime;
             int shotIndex=0;
             float remaining=elapsed;
@@ -227,9 +239,9 @@ namespace Chase
                 visuals[0].position-visuals[1].position,
                 arenaCamera.transform.right));
             float distance=Mathf.Clamp(
-                separation/(widthPerMetre*.21f),14.6f,25f);
+                separation/(widthPerMetre*.17f),14.6f,25f);
             float horizontalView=distance*widthPerMetre;
-            float sideTarget=currentShot==1?.83f:.17f;
+            float sideTarget=currentShot==1?.88f:.12f;
             Vector3 center=midpoint+arenaCamera.transform.right*
                 ((.5f-sideTarget)*horizontalView);
             arenaCamera.transform.position=center-
@@ -245,7 +257,14 @@ namespace Chase
                 Mathf.LerpAngle(a.yaw,b.yaw,fraction),0f);
             var anim=animators[actor];
             string state=AnimationName(a.action);
-            anim.Play(state,0,Mathf.Repeat(a.phase,1f));
+            float duration=clipLengths[actor,a.action];
+            // Baker stores seconds, Animator.Play expects normalized time.
+            // Wrap looped actions, clamp one-shot recoveries to their end.
+            float normalized=duration>0f?a.phase/duration:0f;
+            if(a.action==5 || a.action==7 || a.action==11)
+                normalized=Mathf.Clamp01(normalized);
+            else normalized=Mathf.Repeat(normalized,1f);
+            anim.Play(state,0,normalized);
             anim.Update(0f);
         }
 

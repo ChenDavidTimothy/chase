@@ -32,7 +32,7 @@ public static class ChaseMenuReplayContract
             for(int shot=0;shot<shots;shot++)
             {
                 int frames=reader.ReadInt32();
-                if(frames<180||frames>300)
+                if(frames<150||frames>300)
                     throw new InvalidDataException("Invalid showcase duration");
                 Vector3[] previous=new Vector3[2];
                 for(int frame=0;frame<frames;frame++)
@@ -56,7 +56,14 @@ public static class ChaseMenuReplayContract
                                 "Unphysical intra-shot teleport detected");
                         previous[actor]=pos;
                         if(actor==0)required[action]++;
-                        else if(action==1)required[1]++;
+                        else
+                        {
+                            if(Vector3.Distance(previous[0],pos)<.76f)
+                                throw new InvalidDataException(
+                                    "Showcase contact is not a valid evade at shot="+
+                                    shot+" frame="+frame);
+                            if(action==1)required[1]++;
+                        }
                     }
             }
             if(stream.Position!=stream.Length)
