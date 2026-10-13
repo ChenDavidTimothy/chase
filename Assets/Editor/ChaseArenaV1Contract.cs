@@ -217,6 +217,14 @@ public static class ChaseArenaV1Contract
             if(scene.GetRootGameObjects().SelectMany(
                 g=>g.GetComponentsInChildren<ChaseMatch>(true)).Count()!=1)
                 throw new InvalidOperationException("Missing single production Match");
+            // Grid-guide decals belong in technical measurement scenes,
+            // not the public competition arena. These are nonphysical art;
+            // keep the ground collider and both role-start plates intact.
+            if(arena.GetComponentsInChildren<Transform>(true).Any(t =>
+                t.name.StartsWith("Floor marker X ") ||
+                t.name.StartsWith("Floor marker Z ")))
+                throw new InvalidOperationException(
+                    "Legacy floor grid markers reintroduced into public Arena 01");
             // Non-colliding role start marks are part of the authored
             // competition presentation, never obstacle geometry.
             ChaseArenaStartPlates.Validate();
