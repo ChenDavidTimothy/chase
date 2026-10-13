@@ -1,0 +1,60 @@
+{
+  "real_pointer_clicks": [
+    [
+      "start-play",
+      [
+        602,
+        403
+      ]
+    ],
+    [
+      "select-runner",
+      [
+        713,
+        381
+      ]
+    ],
+    [
+      "launch-arena",
+      [
+        323,
+        551
+      ]
+    ],
+    [
+      "resume",
+      [
+        618,
+        425
+      ]
+    ],
+    [
+      "next-round",
+      [
+        618,
+        425
+      ]
+    ],
+    [
+      "swap-role-next-round",
+      [
+        512,
+        481
+      ]
+    ],
+    [
+      "main-menu",
+      [
+        618,
+        481
+      ]
+    ]
+  ],
+  "pause_no_restart_button": true,
+  "pause_r_ignored_changed_pixels": 0,
+  "result_next_round_only": true,
+  "swap_role_advances_round": true,
+  "main_menu_return": true,
+  "console_errors": [],
+  "javascript_exceptions": 0
+}

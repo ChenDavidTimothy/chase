@@ -82,7 +82,7 @@ namespace Chase
             Chaser = CreateCompetitor("CHASER", ChaseRole.Chaser, new Color(.92f,.22f,.25f));
             Evader = CreateCompetitor("EVADER", ChaseRole.Evader, new Color(.16f,.55f,1f));
             cameraRig.Initialize(this);
-            BeginRound(false);
+            BeginRound();
             if (showFrontEnd)
             {
                 SetActorsVisible(false);
@@ -180,7 +180,7 @@ namespace Chase
             return motor;
         }
 
-        void BeginRound(bool restart)
+        void BeginRound()
         {
             Winner = null;
             timeoutPending = false;
@@ -236,7 +236,7 @@ namespace Chase
             MenuKeyboardActive = false;
             SyncPresentation();
             SetActorsVisible(true);
-            BeginRound(false);
+            BeginRound();
         }
 
         public void OpenHowTo()
@@ -310,22 +310,20 @@ namespace Chase
             Time.timeScale = 1f;
             keyboard.Clear();
             FocusSuspended = false;
-        }
-
-        public void Rematch()
-        {
-            if (MenuPage != ChaseMenuPage.InMatch) return;
-            Time.timeScale = 1f;
-            FocusSuspended = false;
-            BeginRound(true);
+            ResetMenuSelection();
         }
 
         public void NextRound()
         {
             if (MenuPage != ChaseMenuPage.InMatch || Phase != ChasePhase.Ended)
                 return;
+            // A finished chase is final. Every transition starts a NEW
+            // numbered round, with previous scores preserved.
             RoundNumber++;
-            BeginRound(false);
+            FocusSuspended = false;
+            Time.timeScale = 1f;
+            ResetMenuSelection();
+            BeginRound();
         }
 
         public void SwitchRole()
@@ -333,8 +331,7 @@ namespace Chase
             if (MenuPage != ChaseMenuPage.InMatch || Phase != ChasePhase.Ended)
                 return;
             HumanRole = HumanRole == ChaseRole.Evader ? ChaseRole.Chaser : ChaseRole.Evader;
-            RoundNumber++;
-            BeginRound(false);
+            NextRound();
         }
 
         public void QuitGame()
@@ -353,8 +350,8 @@ namespace Chase
                 case ChaseMenuPage.Arena: return 2;
                 case ChaseMenuPage.HowTo: return 2;
                 case ChaseMenuPage.Settings: return 3;
-                default:return Phase==ChasePhase.Paused?3:
-                    Phase==ChasePhase.Ended?4:0;
+                default:return Phase==ChasePhase.Paused?2:
+                    Phase==ChasePhase.Ended?3:0;
             }
         }
         void ResetMenuSelection()
@@ -406,14 +403,12 @@ namespace Chase
                     if(Phase==ChasePhase.Paused)
                     {
                         if(MenuSelection==0) ResumeMatch();
-                        else if(MenuSelection==1) Rematch();
                         else ReturnToMenu();
                     }
                     else if(Phase==ChasePhase.Ended)
                     {
                         if(MenuSelection==0) NextRound();
-                        else if(MenuSelection==1) Rematch();
-                        else if(MenuSelection==2) SwitchRole();
+                        else if(MenuSelection==1) SwitchRole();
                         else ReturnToMenu();
                     }
                     break;
@@ -480,12 +475,6 @@ namespace Chase
                 keyboard.Clear();
                 ResetMenuSelection();
                 return;
-            }
-            // Legacy developer keyboard shortcuts remain available only
-            // in regression matches, never in the public presentation.
-            if(!showFrontEnd && keys!=null && keys.rKey.wasPressedThisFrame)
-            {
-                Time.timeScale=1f;BeginRound(true);return;
             }
             if (Phase == ChasePhase.Active)
                 keyboard.Poll(arenaCamera.transform);

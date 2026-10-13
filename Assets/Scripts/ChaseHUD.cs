@@ -430,11 +430,8 @@ namespace Chase
             float x=(w-510)*.5f,y=(h-352)*.5f;
             if(Button(new Rect(x+44,y+221,422,47),"RESUME",Mint,true,0))
                 match.ResumeMatch();
-            SmallButton(new Rect(x+44,y+280,202,45),"RESTART",
-                new Color(.22f,.37f,.45f),match.Rematch,
-                1);
-            SmallButton(new Rect(x+264,y+280,202,45),"MAIN MENU",
-                new Color(.22f,.37f,.45f),match.ReturnToMenu,2);
+            SmallButton(new Rect(x+44,y+280,422,45),"MAIN MENU",
+                new Color(.22f,.37f,.45f),match.ReturnToMenu,1);
         }
 
         void Result(float w,float h)
@@ -447,13 +444,10 @@ namespace Chase
             float x=(w-510)*.5f,y=(h-352)*.5f;
             if(Button(new Rect(x+44,y+221,422,47),"NEXT ROUND",Mint,true,0))
                 match.NextRound();
-            SmallButton(new Rect(x+44,y+280,132,45),"REMATCH",
-                new Color(.22f,.37f,.45f),match.Rematch,
-                1);
-            SmallButton(new Rect(x+188,y+280,133,45),"SWAP ROLE",
-                new Color(.22f,.37f,.45f),match.SwitchRole,2);
-            SmallButton(new Rect(x+333,y+280,133,45),"MENU",
-                new Color(.22f,.37f,.45f),match.ReturnToMenu,3);
+            SmallButton(new Rect(x+44,y+280,202,45),"SWAP ROLE",
+                new Color(.22f,.37f,.45f),match.SwitchRole,1);
+            SmallButton(new Rect(x+264,y+280,202,45),"MAIN MENU",
+                new Color(.22f,.37f,.45f),match.ReturnToMenu,2);
         }
 
         void OnGUI()

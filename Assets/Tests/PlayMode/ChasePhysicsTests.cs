@@ -304,7 +304,7 @@ namespace Chase.Tests
             for(int trial=0;trial<100;trial++)
             {
                 roundField.SetValue(match,trial+1);
-                begin.Invoke(match,new object[]{false});
+                begin.Invoke(match,null);
                 match.AssignActionSource(ChaseRole.Evader,stationary);
                 SetMatchActive(match);
                 Vector3 oldPosition=match.Chaser.Body.position;
@@ -466,7 +466,7 @@ namespace Chase.Tests
             for(int trial=0;trial<100;trial++)
             {
                 roundField.SetValue(match,trial+1);
-                begin.Invoke(match,new object[]{false});
+                begin.Invoke(match,null);
                 moving.Seed=trial;
                 match.AssignActionSource(ChaseRole.Evader,moving);
                 SetMatchActive(match);
@@ -578,7 +578,7 @@ namespace Chase.Tests
             for(int trial=0;trial<100;trial++)
             {
                 round.SetValue(match,trial+1);
-                begin.Invoke(match,new object[]{false});
+                begin.Invoke(match,null);
                 match.AssignActionSource(ChaseRole.Chaser,pursuer);
                 SetMatchActive(match);
                 Vector3 previous=match.Evader.Body.position;

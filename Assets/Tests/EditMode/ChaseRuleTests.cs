@@ -46,7 +46,7 @@ namespace Chase.Tests
             Assert.AreEqual(3f,settings.countdown);
         }
         [Test]
-        public void Countdown_RejectsTag_ActiveTagCountsOnce_RestartClearsWinner()
+        public void Countdown_RejectsTag_ActiveTagCountsOnce_NextRoundClearsWinner()
         {
             GameObject host=new GameObject("Test match");
             ChaseMatch match=null;
@@ -68,12 +68,13 @@ namespace Chase.Tests
                 Assert.AreEqual(1,match.ChaserWins);
                 Assert.IsFalse(match.TryTag(chaser,evader));
                 Assert.AreEqual(1,match.ChaserWins);
-                typeof(ChaseMatch).GetMethod("BeginRound",
-                    BindingFlags.NonPublic|BindingFlags.Instance).Invoke(match,new object[]{true});
+                match.NextRound();
+                Assert.AreEqual(2,match.RoundNumber);
                 Assert.IsFalse(match.Winner.HasValue);
                 Assert.AreEqual(ChasePhase.Countdown,match.Phase);
                 Assert.AreEqual(20f,match.Remaining);
                 Assert.AreEqual(1,match.ChaserWins);
+                Assert.AreEqual(1,match.BotWins);
             }
             finally
             {

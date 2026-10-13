@@ -1,0 +1,53 @@
+{
+  "release": "v0.16.1",
+  "unity": "6000.3.26f1",
+  "tests": {
+    "playmode": {
+      "total": 100,
+      "passed": 100,
+      "failed": 0
+    },
+    "editmode": {
+      "total": 33,
+      "passed": 33,
+      "failed": 0
+    }
+  },
+  "builds": {
+    "WebGLProduction": {
+      "platform": "WebGL",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "WebGLGym": {
+      "platform": "WebGL",
+      "scene": "Assets/Scenes/MovementGym.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "LinuxProduction": {
+      "platform": "StandaloneLinux64",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    }
+  },
+  "browser": {
+    "actual_pointer_clicks": 7,
+    "paused_r_changed_pixels": 0,
+    "next_round_advanced": true,
+    "swap_role_advanced": true,
+    "console_errors": [],
+    "javascript_exceptions": 0
+  },
+  "native": {
+    "menu_rendered": true,
+    "runtime_exceptions": 0,
+    "native_mouse": "not independently verified"
+  },
+  "authoritative_blender_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371"
+}

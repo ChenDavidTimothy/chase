@@ -240,7 +240,7 @@ namespace Chase.Tests
             finally {DestroyMatch(match);}
         }
 
-        [Test] public void FixedRoleGatesRemainStableThroughRematchAndRoleSwap()
+        [Test] public void FixedRoleGatesRemainStableThroughEachNextRoundAndRoleSwap()
         {
             var match=PublicMatch();
             try
@@ -253,13 +253,23 @@ namespace Chase.Tests
                     ChaseMatch.ChaserStart),.001f);
                 Assert.Less(Vector3.Distance(match.Evader.Body.position,
                     ChaseMatch.EvaderStart),.001f);
-                match.Rematch();
-                Assert.Less(Vector3.Distance(match.Chaser.Body.position,
-                    ChaseMatch.ChaserStart),.001f);
+                // A countdown cannot be abandoned to secretly reset a round.
+                match.NextRound();
+                match.SwitchRole();
+                Assert.AreEqual(1,match.RoundNumber);
+                Assert.AreEqual(ChaseRole.Evader,match.HumanRole);
                 var phase=typeof(ChaseMatch).GetField("<Phase>k__BackingField",
                     BindingFlags.Instance|BindingFlags.NonPublic);
                 phase.SetValue(match,ChasePhase.Ended);
+                match.NextRound();
+                Assert.AreEqual(2,match.RoundNumber);
+                Assert.Less(Vector3.Distance(match.Chaser.Body.position,
+                    ChaseMatch.ChaserStart),.001f);
+                Assert.Less(Vector3.Distance(match.Evader.Body.position,
+                    ChaseMatch.EvaderStart),.001f);
+                phase.SetValue(match,ChasePhase.Ended);
                 match.SwitchRole();
+                Assert.AreEqual(3,match.RoundNumber);
                 Assert.AreEqual(ChaseRole.Chaser,match.HumanRole);
                 Assert.AreEqual(match.Human,match.Chaser);
                 Assert.Less(Vector3.Distance(match.Human.Body.position,
@@ -268,6 +278,7 @@ namespace Chase.Tests
                     ChaseMatch.EvaderStart),.001f);
                 phase.SetValue(match,ChasePhase.Ended);
                 match.NextRound();
+                Assert.AreEqual(4,match.RoundNumber);
                 Assert.Less(Vector3.Distance(match.Chaser.Body.position,
                     ChaseMatch.ChaserStart),.001f);
                 Assert.Less(Vector3.Distance(match.Evader.Body.position,
@@ -429,7 +440,7 @@ namespace Chase.Tests
             finally {DestroyMatch(match);}
         }
 
-        [UnityTest] public IEnumerator RetryAndNextRoundRetainAndResetCorrectState()
+        [Test] public void EveryCompletedChaseAdvancesRoundWithoutReplayingIt()
         {
             var match=PublicMatch();
             try
@@ -437,21 +448,99 @@ namespace Chase.Tests
                 match.OpenPlay();
                 match.SelectDifficulty(ChaseDifficulty.Runner);
                 match.StartSelectedArena();
-                match.Rematch();
+                Assert.IsNull(typeof(ChaseMatch).GetMethod("Rematch"));
                 Assert.AreEqual(1,match.RoundNumber);
                 var phase=typeof(ChaseMatch).GetField("<Phase>k__BackingField",
                     BindingFlags.Instance|BindingFlags.NonPublic);
-                phase.SetValue(match,ChasePhase.Ended);
+
+                // Mid-round action cannot skip the final outcome.
+                phase.SetValue(match,ChasePhase.Active);
+                match.NextRound();
+                match.SwitchRole();
+                Assert.AreEqual(1,match.RoundNumber);
+                Assert.AreEqual(ChaseRole.Evader,match.HumanRole);
+
+                // Conclude a real scored chase. Winner and tally are final.
+                InvokePrivate(match,"Finish",ChaseRole.Chaser);
+                Assert.AreEqual(ChasePhase.Ended,match.Phase);
+                Assert.AreEqual(1,match.BotWins);
+                Assert.AreEqual(1,match.ChaserWins);
                 match.NextRound();
                 Assert.AreEqual(2,match.RoundNumber);
                 Assert.AreEqual(ChasePhase.Countdown,match.Phase);
-                phase.SetValue(match,ChasePhase.Ended);
-                ChaseRole previous=match.HumanRole;
+                Assert.IsFalse(match.Winner.HasValue);
+                Assert.AreEqual(1,match.BotWins);
+                Assert.That(match.Remaining,Is.EqualTo(match.Tuning.roundDuration));
+                Assert.That(match.CountdownRemaining,Is.EqualTo(match.Tuning.countdown));
+                Assert.Less(Vector3.Distance(match.Chaser.Body.position,
+                    ChaseMatch.ChaserStart),.001f);
+                Assert.Less(Vector3.Distance(match.Evader.Body.position,
+                    ChaseMatch.EvaderStart),.001f);
+
+                // A second completed chase can be followed by a *new* round
+                // with roles changed and both competitors' scores retained.
+                phase.SetValue(match,ChasePhase.Active);
+                InvokePrivate(match,"Finish",ChaseRole.Evader);
+                Assert.AreEqual(1,match.PlayerWins);
+                Assert.AreEqual(1,match.BotWins);
                 match.SwitchRole();
-                Assert.AreNotEqual(previous,match.HumanRole);
                 Assert.AreEqual(3,match.RoundNumber);
+                Assert.AreEqual(ChaseRole.Chaser,match.HumanRole);
                 Assert.AreEqual(ChasePhase.Countdown,match.Phase);
-                yield return null;
+                Assert.AreEqual(1,match.PlayerWins);
+                Assert.AreEqual(1,match.BotWins);
+
+                // Returning to the main menu means leaving the session.
+                match.ReturnToMenu();
+                match.OpenPlay();
+                match.SelectDifficulty(ChaseDifficulty.Rival);
+                match.StartSelectedArena();
+                Assert.AreEqual(1,match.RoundNumber);
+                Assert.Zero(match.PlayerWins);
+                Assert.Zero(match.BotWins);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        [Test] public void PauseAndResultsKeyboardMenusHaveNoReplayRoute()
+        {
+            var match=PublicMatch();
+            try
+            {
+                match.OpenPlay();
+                match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                var flags=BindingFlags.Instance|BindingFlags.NonPublic;
+                var phase=typeof(ChaseMatch).GetField("<Phase>k__BackingField",flags);
+                var before=typeof(ChaseMatch).GetField("beforePause",flags);
+                var optionCount=typeof(ChaseMatch).GetMethod("MenuOptionCount",flags);
+                Assert.NotNull(optionCount);
+                phase.SetValue(match,ChasePhase.Paused);
+                before.SetValue(match,ChasePhase.Countdown);
+                Assert.AreEqual(2,optionCount.Invoke(match,null),
+                    "Pause may only offer Resume and Main Menu");
+                InvokePrivate(match,"NavigateMenu",1); // Resume
+                InvokePrivate(match,"NavigateMenu",1); // Main Menu
+                Assert.IsTrue(match.IsMenuSelection(1));
+                InvokePrivate(match,"ConfirmMenu");
+                Assert.AreEqual(ChaseMenuPage.MainMenu,match.MenuPage);
+
+                match.OpenPlay();
+                match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                phase.SetValue(match,ChasePhase.Active);
+                InvokePrivate(match,"Finish",ChaseRole.Chaser);
+                Assert.AreEqual(3,optionCount.Invoke(match,null),
+                    "Results may only offer Next Round, Swap Role and Menu");
+                InvokePrivate(match,"NavigateMenu",1); // Next Round
+                InvokePrivate(match,"NavigateMenu",1); // Swap Role
+                Assert.IsTrue(match.IsMenuSelection(1));
+                InvokePrivate(match,"ConfirmMenu");
+                Assert.AreEqual(2,match.RoundNumber);
+                Assert.AreEqual(ChaseRole.Chaser,match.HumanRole);
+                Assert.AreEqual(ChasePhase.Countdown,match.Phase);
+                Assert.IsFalse(match.MenuKeyboardActive,
+                    "New rounds must clear stale menu selection");
             }
             finally {DestroyMatch(match);}
         }
