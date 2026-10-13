@@ -74,7 +74,7 @@ namespace Chase.Tests
             Assert.That(m.FacingDirection.x,Is.GreaterThan(.97f));
             Step(m,Vector2.right,false,true);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
-            Assert.That(m.HorizontalVelocity.x,Is.EqualTo(9f).Within(.15f));
+            Assert.That(m.HorizontalVelocity.x,Is.EqualTo(8.2f).Within(.15f));
             bool sawBox=false,sawImpact=false,sawGetup=false;
             for(int i=0;i<120;i++)
             {
@@ -154,7 +154,8 @@ namespace Chase.Tests
         [UnityTest]
         public IEnumerator SupermanShelfSlotCanBeTraversedOnTimedTakeoff()
         {
-            Floor();Shelf();
+            // Rebalanced, higher tier must fit the new genuinely taller dive.
+            Floor();Shelf(0f,.55f,2.35f);
             var m=Actor(new Vector3(0,.9f,-3.0f));
             Step(m,Vector2.zero,false,true);
             float furthest=m.Body.position.z;
@@ -422,8 +423,8 @@ namespace Chase.Tests
                         m.Body.rotation*visual.localPosition;
                     Quaternion newRotation=m.Body.rotation*
                         visual.localRotation;
-                    Assert.Less(Vector3.Distance(previousVisual,newVisual),.035f,
-                        "Prone-to-get-up under canopy must preserve body location");
+                    Assert.Less(Vector3.Distance(previousVisual,newVisual),.066f,
+                        "Crawling at 2.6m/s may move 5.2cm in 20ms but get-up must not teleport");
                     Assert.Less(Quaternion.Angle(previousRotation,newRotation),.5f,
                         "Prone-to-get-up under canopy must preserve heading");
                     Assert.AreEqual(1,m.Capsule.direction);
@@ -613,7 +614,7 @@ namespace Chase.Tests
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
             Assert.IsTrue(m.DiveColliderActive,
                 "There must be no upright jump frame even for same-frame input");
-            Assert.That(m.HorizontalVelocity.x,Is.EqualTo(9f).Within(.02f));
+            Assert.That(m.HorizontalVelocity.x,Is.EqualTo(8.2f).Within(.02f));
             Assert.That(Mathf.Abs(m.HorizontalVelocity.z),Is.LessThan(.01f));
             Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.right),
                 Is.GreaterThan(.999f),
@@ -622,7 +623,7 @@ namespace Chase.Tests
             for(int i=0;i<12;i++)
             {
                 Step(m,Vector2.left,false,false,true);
-                Assert.That(m.HorizontalVelocity.x,Is.EqualTo(9f).Within(.001f));
+                Assert.That(m.HorizontalVelocity.x,Is.EqualTo(8.2f).Within(.001f));
                 Assert.That(Mathf.Abs(m.HorizontalVelocity.z),Is.LessThan(.001f));
             }
             yield return null;
@@ -639,7 +640,7 @@ namespace Chase.Tests
             Assert.IsTrue(m.DiveColliderActive,
                 "The full-body solid collider must already be active on the launch frame");
             Assert.AreEqual(2,m.Capsule.direction);
-            Assert.That(m.Velocity.z,Is.EqualTo(9f).Within(.01f));
+            Assert.That(m.Velocity.z,Is.EqualTo(8.2f).Within(.01f));
             Assert.That(m.Velocity.y,Is.GreaterThan(4.4f));
             Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,Vector3.forward),
                 Is.GreaterThan(.999f));
@@ -736,7 +737,7 @@ namespace Chase.Tests
                 "When full body will not fit, preserve the existing solid capsule");
             Assert.IsTrue(m.Capsule.enabled);
             Assert.IsFalse(m.DiveColliderActive);
-            Assert.That(m.Velocity.z,Is.GreaterThan(8.5f));
+            Assert.That(m.Velocity.z,Is.GreaterThan(8.0f));
             Assert.That(m.Velocity.y,Is.GreaterThan(4f),
                 "Blocked forward motion must not suppress the attempted launch");
             float maxForward=m.Body.position.z;
@@ -943,7 +944,7 @@ namespace Chase.Tests
             // after a wall/ledge hit. Verify the universal low-roof recovery
             // invariant independently of the new high-route launch default.
             var m=Actor(new Vector3(0,.9f,0),
-                new ChaseTuning { leapVerticalSpeed=5.2f });
+                new ChaseTuning { leapVerticalSpeed=5.2f, leapHorizontalSpeed=9f });
             Step(m,Vector2.zero,false,true);
             bool trappedLow=false,escapedLow=false;
             for(int i=0;i<250;i++)

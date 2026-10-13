@@ -39,7 +39,7 @@ namespace Chase.Tests
             Assert.AreEqual(1.55f,settings.slideHeight);
             Assert.AreEqual(.82f,settings.slideBodyHeight);
             Assert.Greater(settings.slideBodyLength,1.8f);
-            Assert.AreEqual(9f,settings.leapHorizontalSpeed);
+            Assert.AreEqual(8.2f,settings.leapHorizontalSpeed);
             Assert.AreEqual(1.95f,settings.diveCapsuleLength);
             Assert.AreEqual(.43f,settings.diveCapsuleRadius);
             Assert.AreEqual(20f,settings.roundDuration);
@@ -131,7 +131,7 @@ namespace Chase.Tests
                 motor.Initialize(new ChaseTuning(),visuals.transform);
                 Physics.SyncTransforms();
                 motor.Simulate(new ChaseAction(new Vector2(1f,1f),false,false,false,false),.02f,1f);
-                Assert.LessOrEqual(motor.HorizontalVelocity.magnitude,.401f);
+                Assert.LessOrEqual(motor.HorizontalVelocity.magnitude,.721f);
                 Assert.That(motor.HorizontalVelocity.magnitude,Is.GreaterThan(0f));
                 Assert.AreEqual(70f,rigid.mass);
                 Assert.AreEqual(RigidbodyCollisionDetectionModeDummy(),(int)rigid.collisionDetectionMode);
@@ -169,7 +169,7 @@ namespace Chase.Tests
                 Assert.IsFalse(capsule.enabled);
                 Assert.IsFalse(motor.SlideBox.isTrigger);
                 Assert.AreEqual(.82f,motor.SlideBox.size.y,.001f);
-                Assert.AreEqual(3.84f,motor.HorizontalVelocity.magnitude,.02f);
+                Assert.AreEqual(3.88f,motor.HorizontalVelocity.magnitude,.02f);
                 motor.ResetMotor(new Vector3(0,.9f,0));
                 Physics.SyncTransforms();
                 motor.Simulate(new ChaseAction(Vector2.zero,false,false,false,true),.02f,2f);
@@ -232,7 +232,7 @@ namespace Chase.Tests
                 Physics.SyncTransforms();
                 motor.Simulate(new ChaseAction(Vector2.zero,false,true,false,false),.02f,1f);
                 Assert.AreEqual(ChaseMovementState.Leaping,motor.State);
-                Assert.AreEqual(9f,motor.HorizontalVelocity.magnitude,.001f);
+                Assert.AreEqual(8.2f,motor.HorizontalVelocity.magnitude,.001f);
                 Assert.IsFalse(motor.Capsule.isTrigger);
                 Assert.IsFalse(motor.Body.isKinematic);
             }finally{Object.DestroyImmediate(actor);Object.DestroyImmediate(floor);}

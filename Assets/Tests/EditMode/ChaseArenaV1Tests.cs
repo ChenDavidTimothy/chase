@@ -135,7 +135,7 @@ namespace Chase.Tests
                         clearance=Mathf.Min(clearance,low-top);
                         Assert.Greater(low,top+.003f,
                             "Long solid Superman body must stay ABOVE the beam");
-                        Assert.Greater(sign*leap.Body.linearVelocity.z,8.8f,
+                        Assert.Greater(sign*leap.Body.linearVelocity.z,7.95f,
                             "No PhysX collision boost or movement mode cheating");
                     }
                 }
@@ -479,7 +479,7 @@ namespace Chase.Tests
                                         m.Capsule.center.y-m.Capsule.radius;
                                     minBottom=Mathf.Min(minBottom,bottom);
                                     if(bottom<route.top+.003f||
-                                        sign*m.Body.linearVelocity.z<8.8f)
+                                        sign*m.Body.linearVelocity.z<7.95f)
                                         clean=false;
                                 }
                             }

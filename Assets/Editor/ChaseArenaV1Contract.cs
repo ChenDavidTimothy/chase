@@ -65,7 +65,7 @@ public static class ChaseArenaV1Contract
             case "AerialSlot":
                 CheckPart(asset,"Ground sill / solid",new Vector3(0,.275f,0),
                     new Vector3(2.2f,.55f,.6f));
-                CheckPart(asset,"Overhead tier / solid",new Vector3(0,2.025f,0),
+                CheckPart(asset,"Overhead tier / solid",new Vector3(0,2.525f,0),
                     new Vector3(2.2f,.35f,.6f));
                 break;
             case "LowCanopy":

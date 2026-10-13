@@ -59,6 +59,7 @@ namespace Chase
             State != ChaseMovementState.SlideRecovery;
 
         float lastGrounded = -100f, lastTakeoff = -100f, jumpQueuedUntil = -100f;
+        float leapQueuedUntil = -100f, slideQueuedUntil = -100f;
         float slideLeft, recoveryLeft;
         // Recovery offsets ONLY affect the same already-solid capsule and its
         // visual child. The physical capsule's feet remain on their original
@@ -133,6 +134,7 @@ namespace Chase
             Body.angularVelocity = Vector3.zero;
             slideLeft = recoveryLeft = 0f;
             lastGrounded = lastTakeoff = jumpQueuedUntil = -100f;
+            leapQueuedUntil = slideQueuedUntil = -100f;
             previousJump = previousLeap = previousSlide = false;
             committedDirection = Vector3.zero;
             compactDive = forwardContact = smoothingProneGetup = false;
@@ -181,10 +183,13 @@ namespace Chase
             previousJump = action.Jump;
             previousLeap = action.Leap;
             previousSlide = action.Slide;
-            if (jumpPressed && !action.Crouch && !Recovering &&
-                State != ChaseMovementState.Leaping &&
-                State != ChaseMovementState.Crouching && State != ChaseMovementState.Sliding)
+            // A single press can be held briefly across landing/get-up.
+            // These are bounded timestamps, not queued automatic combos:
+            // held buttons do not repeat and expired presses never fire.
+            if (jumpPressed && !action.Crouch)
                 jumpQueuedUntil = clock + Settings.jumpBuffer;
+            if (leapPressed) leapQueuedUntil = clock + Settings.actionBuffer;
+            if (slidePressed) slideQueuedUntil = clock + Settings.actionBuffer;
 
             if (State == ChaseMovementState.Leaping)
             {
@@ -213,7 +218,7 @@ namespace Chase
                     recoveryLeft = Settings.diveImpactRecovery;
                     // Chest contact dissipates airborne projectile momentum.
                     // Enter the prone state at crawl speed or below so WASD
-                    // responds immediately rather than fighting 9m/s thrust.
+                    // responds immediately rather than fighting the committed launch speed.
                     planar = Vector3.ClampMagnitude(planar,
                         Settings.proneCrawlSpeed);
                     // The same solid capsule stays enabled throughout.
@@ -226,7 +231,7 @@ namespace Chase
                 // WASD crawling (including sideways/backwards), with no
                 // automatic recoil, no turning the prone collider and no
                 // context-specific shelf behavior. No input -> brake to rest.
-                // Impact must still pay its 0.40s commitment. The first tick
+                // Impact still pays its brief prone commitment. The first tick
                 // after it ends automatically attempts to stand if clear.
                 Vector3 crawlTarget = Grounded ?
                     direction * Settings.proneCrawlSpeed : Vector3.zero;
@@ -241,7 +246,9 @@ namespace Chase
                     // no prone toggle or ability to camp beneath open sky.
                     State=ChaseMovementState.LeapRecovery;
                     recoveryLeft=Settings.leapRecovery;
-                    planar=Vector3.zero;
+                    // Start getting up without deleting earned direction.
+                    // The real crouched capsule must still fit in the space.
+                    planar=Vector3.ClampMagnitude(planar,Settings.recoverySpeed);
                 }
             }
             else if (State == ChaseMovementState.Sliding)
@@ -271,8 +278,13 @@ namespace Chase
                         CanFitVerticalShape(Settings.crouchingHeight,Body.position)))
                     {
                         BeginSlideGetup();
-                        planar=Vector3.MoveTowards(planar,Vector3.zero,
-                            Settings.groundBraking*dt);
+                        // Keep a controlled exit stride rather than braking
+                        // every successful slide into a stationary get-up.
+                        // Never invent a launch impulse from a stationary slide.
+                        // A moving slide keeps its earned exit velocity.
+                        planar=Vector3.MoveTowards(planar,
+                            direction*Mathf.Min(Settings.recoverySpeed,planar.magnitude),
+                            Settings.groundAcceleration*dt);
                         slideRising = true;
                         recoveryLeft = Settings.slideRecovery;
                     }
@@ -290,8 +302,9 @@ namespace Chase
                 }
                 else
                 {
-                    planar=Vector3.MoveTowards(planar,Vector3.zero,
-                        Settings.groundBraking*dt);
+                    planar=Vector3.MoveTowards(planar,
+                        direction*Mathf.Min(Settings.recoverySpeed,planar.magnitude),
+                        Settings.groundAcceleration*dt);
                     recoveryLeft = Mathf.Max(0f,recoveryLeft-dt);
                     if (recoveryLeft<=0f)
                     {
@@ -316,15 +329,13 @@ namespace Chase
                 if (State == ChaseMovementState.LeapRecovery &&
                     smoothingProneGetup)
                     AdvanceProneGetup();
-                // Braking must respect acceleration, not snap velocity to 2 m/s.
-                float top = Settings.recoverySpeed;
-                // A dive get-up is still a commitment. Holding W/A/S/D
-                // cannot move the full-body collider until the athlete stands.
-                Vector3 target = State == ChaseMovementState.LeapRecovery ?
-                    Vector3.zero : direction * top;
-                float rate = planar.magnitude > top + .01f ? Settings.groundBraking :
-                    Settings.groundAcceleration * .5f;
-                planar = Vector3.MoveTowards(planar, target, rate * dt);
+                // Safe get-up uses the existing, collision-tested crouch
+                // capsule. Give back partial locomotion immediately instead
+                // of forcing every successful dive to stop dead.
+                Vector3 target = direction * Settings.recoverySpeed;
+                planar = Vector3.MoveTowards(planar,target,
+                    (direction.sqrMagnitude<.001f ? Settings.groundBraking :
+                        Settings.groundAcceleration)*dt);
                 if (recoveryLeft <= 0f)
                 {
                     // The single capsule was already changed to crouch at
@@ -354,13 +365,14 @@ namespace Chase
                 bool coyote = clock - lastGrounded <= Settings.coyoteTime;
                 bool doJump = jumpRequested && coyote && canUpright &&
                     clock - lastTakeoff > .12f;
-                bool doLeap = !doJump && !jumpPressed && leapPressed && Grounded &&
+                bool doLeap = !doJump && !jumpPressed &&
+                    clock <= leapQueuedUntil && Grounded &&
                     canUpright && clock - lastTakeoff > .12f;
                 bool doSlide = !doJump && !doLeap && !jumpPressed && !leapPressed &&
-                    slidePressed && Grounded;
+                    clock <= slideQueuedUntil && Grounded;
                 if (doJump)
                 {
-                    jumpQueuedUntil = -100f;
+                    jumpQueuedUntil = leapQueuedUntil = slideQueuedUntil = -100f;
                     State = ChaseMovementState.Jumping;
                     velocity.y = Settings.jumpSpeed;
                     lastTakeoff = clock;
@@ -368,7 +380,7 @@ namespace Chase
                 }
                 else if (doLeap)
                 {
-                    jumpQueuedUntil = -100f;
+                    jumpQueuedUntil = leapQueuedUntil = slideQueuedUntil = -100f;
                     // Input sets aim at takeoff, even when W and Up are
                     // pressed on the exact same frame from an idle start.
                     // Without WASD, dive in the character's facing direction.
@@ -403,7 +415,7 @@ namespace Chase
                 }
                 else if (doSlide)
                 {
-                    jumpQueuedUntil = -100f;
+                    jumpQueuedUntil = leapQueuedUntil = slideQueuedUntil = -100f;
                     committedDirection = planar.sqrMagnitude > .01f ?
                         planar.normalized : direction.sqrMagnitude > .001f ?
                         direction.normalized : FacingDirection;

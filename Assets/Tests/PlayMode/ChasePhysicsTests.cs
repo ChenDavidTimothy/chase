@@ -361,7 +361,7 @@ namespace Chase.Tests
             actor.Body.linearVelocity=new Vector3(3,0,0);
             Physics.SyncTransforms();
             Step(actor,Vector2.left);
-            Assert.Greater(actor.HorizontalVelocity.x,2.90f);
+            Assert.Greater(actor.HorizontalVelocity.x,2.88f);
             yield return null;
         }
 

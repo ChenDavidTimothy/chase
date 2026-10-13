@@ -80,7 +80,7 @@ namespace Chase.Tests
             m.ResetMotor(new Vector3(0,.9f,0));Physics.SyncTransforms();
             Step(m,Vector2.zero,false,true,true,false);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
-            Assert.That(m.HorizontalVelocity.magnitude,Is.EqualTo(9f).Within(.1f));
+            Assert.That(m.HorizontalVelocity.magnitude,Is.EqualTo(8.2f).Within(.1f));
             m.ResetMotor(new Vector3(0,.9f,0));Physics.SyncTransforms();
             Step(m,Vector2.zero,false,false,true,true);
             Assert.AreEqual(ChaseMovementState.Sliding,m.State);
@@ -119,10 +119,10 @@ namespace Chase.Tests
             Assert.That(m.FacingDirection.x,Is.GreaterThan(.97f));
             Step(m,Vector2.left,false,true);
             Assert.AreEqual(ChaseMovementState.Leaping,m.State);
-            Assert.That(m.HorizontalVelocity.x,Is.LessThan(-8.5f));
+            Assert.That(m.HorizontalVelocity.x,Is.LessThan(-8.0f));
             Assert.That(Mathf.Abs(m.HorizontalVelocity.z),Is.LessThan(.5f));
             Step(m,Vector2.right,false,false);
-            Assert.That(m.HorizontalVelocity.x,Is.LessThan(-8.5f),
+            Assert.That(m.HorizontalVelocity.x,Is.LessThan(-8.0f),
                 "Once launched, right input must not reverse the projectile");
             yield return null;
         }
@@ -141,13 +141,13 @@ namespace Chase.Tests
                 for(int i=0;i<23;i++)Step(m,Vector2.up,false,false,true);
                 float distance=m.Body.position.z-origin.z;
                 Assert.That(distance,Is.GreaterThanOrEqualTo(-.02f));
-                Assert.That(distance,Is.LessThanOrEqualTo(1.96f));
-                if(speed==0)Assert.Less(distance,.04f);
+                Assert.That(distance,Is.LessThanOrEqualTo(2.32f));
+                if(speed==0)Assert.Less(distance,.055f);
                 Assert.AreEqual(ChaseMovementState.SlideRecovery,m.State);
                 Assert.IsFalse(m.CanSlide);
-                for(int i=0;i<8;i++)Step(m,Vector2.zero,false,false,true);
+                for(int i=0;i<4;i++)Step(m,Vector2.zero,false,false,true);
                 Assert.IsFalse(m.CanSlide);
-                for(int i=0;i<4;i++)Step(m,Vector2.zero);
+                for(int i=0;i<7;i++)Step(m,Vector2.zero);
                 Assert.AreNotEqual(ChaseMovementState.SlideRecovery,m.State);
                 UnityEngine.Object.DestroyImmediate(m.gameObject);
             }
@@ -351,7 +351,7 @@ namespace Chase.Tests
             File.WriteAllLines("/tmp/chase-v04-calibration.tsv",lines);
             foreach(var line in lines)Debug.Log("CHASE_V04_CALIBRATION "+line);
             Assert.That(top,Is.EqualTo(6f).Within(.02f));
-            Assert.That(apex,Is.InRange(.72f,.95f));
+            Assert.That(apex,Is.InRange(.90f,1.16f));
             float predictedRise=leap.Settings.leapVerticalSpeed *
                 leap.Settings.leapVerticalSpeed / (2f*leap.Settings.gravity);
             Assert.That(lapex,Is.EqualTo(predictedRise).Within(.14f),

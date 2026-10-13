@@ -261,21 +261,21 @@ public static class ChaseArenaV1Builder
             new Vector3(width,.55f,depth),blocker:true,hurdle:true);
         BoxArt(r,"Ground sill / porcelain",new Vector3(0,.275f,0),
             new Vector3(width,.55f,depth),cream);
-        Solid(r,"Overhead tier / solid",new Vector3(0,2.025f,0),
+        Solid(r,"Overhead tier / solid",new Vector3(0,2.525f,0),
             new Vector3(width,.35f,depth),overhead:true);
-        BoxArt(r,"Overhead tier / slate",new Vector3(0,2.025f,0),
+        BoxArt(r,"Overhead tier / slate",new Vector3(0,2.525f,0),
             new Vector3(width,.35f,depth),slate);
         for(int side=-1;side<=1;side+=2)
         {
             float x=side*1.01f;
-            Solid(r,"Upright "+side+" / solid",new Vector3(x,1.10f,0),
-                new Vector3(.18f,2.20f,depth),blocker:true);
+            Solid(r,"Upright "+side+" / solid",new Vector3(x,1.35f,0),
+                new Vector3(.18f,2.70f,depth),blocker:true);
             BoxArt(r,"Upright "+side+" / seafoam",
-                new Vector3(x,1.1f,0),new Vector3(.18f,2.20f,depth),frame);
+                new Vector3(x,1.35f,0),new Vector3(.18f,2.70f,depth),frame);
         }
         BoxArt(r,"Bright lower tier face",new Vector3(0,.52f,-.312f),
             new Vector3(2.02f,.035f,.02f),coral);
-        BoxArt(r,"Pale upper face",new Vector3(0,1.86f,-.312f),
+        BoxArt(r,"Pale upper face",new Vector3(0,2.36f,-.312f),
             new Vector3(2.02f,.035f,.02f),mint);
     }
     static void MakeCanopy(Transform r)

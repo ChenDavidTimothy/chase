@@ -80,6 +80,15 @@ public static class ChaseMenuReplayBaker
     {
         if(EditorApplication.isPlayingOrWillChangePlaymode)
             throw new InvalidOperationException("Bake in Edit Mode only");
+        // Isolated release/baking CLI sessions do not necessarily open a
+        // scene. Only batch mode may resolve the production source itself;
+        // interactive authoring continues to require deliberate scene choice.
+        if(Application.isBatchMode &&
+           UnityEngine.SceneManagement.SceneManager.GetActiveScene().path!=
+               "Assets/Scenes/SampleScene.unity")
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                "Assets/Scenes/SampleScene.unity",
+                UnityEditor.SceneManagement.OpenSceneMode.Single);
         var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();
         if(scene.path!="Assets/Scenes/SampleScene.unity")
             throw new InvalidOperationException("Open the production Arena 01 first");

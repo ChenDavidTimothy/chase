@@ -58,12 +58,18 @@ public static class ChasePracticePlaygroundContract
             var tuning=serialized.FindProperty("tuning");
             foreach(var spec in new[]{
                 ("runSpeed",6f),("standingHeight",1.8f),
-                ("radius",.35f),("leapHorizontalSpeed",9f),
-                ("leapVerticalSpeed",6.8f),("slideBodyLength",1.98f),
+                ("groundAcceleration",36f),("groundBraking",44f),
+                ("airAcceleration",5f),("jumpSpeed",7f),
+                ("jumpBuffer",.13f),("coyoteTime",.12f),
+                ("actionBuffer",.11f),("recoverySpeed",3.4f),
+                ("leapRecovery",.27f),("diveImpactRecovery",.20f),
+                ("proneCrawlSpeed",2.6f),("slideDeceleration",6f),
+                ("radius",.35f),("leapHorizontalSpeed",8.2f),
+                ("leapVerticalSpeed",7.25f),("slideBodyLength",1.98f),
                 ("slideBodyWidth",.84f),("slideBodyHeight",.82f),
                 ("slideBodyCenterY",-.48f),("slideBodyCenterForward",-.24f),
-                ("slideDuration",.45f),("slideRecovery",.20f),
-                ("slideCrawlSpeed",1.10f),("diveCapsuleLength",1.95f),
+                ("slideDuration",.42f),("slideRecovery",.14f),
+                ("slideCrawlSpeed",2.7f),("diveCapsuleLength",1.95f),
                 ("diveCapsuleRadius",.43f),("diveCapsuleCenterY",-.29f),
                 ("diveCapsuleCenterForward",.16f)
             })

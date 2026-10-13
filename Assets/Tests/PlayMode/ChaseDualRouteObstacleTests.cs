@@ -63,10 +63,10 @@ namespace Chase.Tests
         void OriginalShelf()
         {
             Solid("lower sill",new Vector3(0,.275f,0),new Vector3(2.2f,.55f,.6f));
-            Solid("upper shelf",new Vector3(0,2.025f,0),new Vector3(2.2f,.35f,.6f));
+            Solid("upper shelf",new Vector3(0,2.525f,0),new Vector3(2.2f,.35f,.6f));
             Physics.SyncTransforms();
         }
-        ChaseMotor Actor(Vector3 position,float diveVertical = 6.8f)
+        ChaseMotor Actor(Vector3 position,float diveVertical = 7.25f)
         {
             var a = new GameObject("physics athlete");
             created.Add(a);
@@ -109,7 +109,7 @@ namespace Chase.Tests
                     minClearance = Mathf.Min(minClearance,bottom-.94f);
                     Assert.Greater(bottom,.943f,
                         "Full dive capsule must genuinely travel OVER the solid rail");
-                    Assert.Greater(m.Body.linearVelocity.z,8.8f,
+                    Assert.Greater(m.Body.linearVelocity.z,8.0f,
                         "Cannot use PhysX contact to launch upward or boost across");
                 }
                 if (m.Body.position.z > 1.5f) cleared = true;
@@ -165,7 +165,7 @@ namespace Chase.Tests
                     narrowMargin=Mathf.Min(narrowMargin,bottom-.92f);
                     Assert.Greater(bottom,.924f,
                         "Narrow bench cannot be crossed by a collision boost");
-                    Assert.Greater(diver.Body.linearVelocity.z,8.8f);
+                    Assert.Greater(diver.Body.linearVelocity.z,8.0f);
                 }
             }
             Assert.Greater(overlap,8);
@@ -231,7 +231,7 @@ namespace Chase.Tests
                 Step(m,Vector2.up);
                 maxZ=Mathf.Max(maxZ,m.Body.position.z);
             }
-            Assert.Less(maxZ,-.42f,"Uncrouched sprint cannot ghost through rail");
+            Assert.Less(maxZ,-.35f,"Uncrouched sprint cannot ghost through rail");
             yield return null;
         }
 

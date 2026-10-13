@@ -116,7 +116,7 @@ namespace Chase.Tests
                 Assert.IsEmpty(practice.GetComponentsInChildren<ChaseTagContact>());
                 Assert.IsTrue(practice.Motor.Capsule.enabled);
                 Assert.AreEqual(1.8f,practice.Motor.Settings.standingHeight,.001f);
-                Assert.AreEqual(6.8f,practice.Motor.Settings.leapVerticalSpeed,.001f);
+                Assert.AreEqual(7.25f,practice.Motor.Settings.leapVerticalSpeed,.001f);
                 var view=UnityEngine.Camera.main.transform;
                 Assert.That(view.eulerAngles.y,Is.EqualTo(0f).Within(.01f));
                 Vector3 front=view.forward;front.y=0;front.Normalize();

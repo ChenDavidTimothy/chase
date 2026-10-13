@@ -1196,33 +1196,34 @@ MonoBehaviour:
     radius: 0.35
     runSpeed: 6
     crouchSpeed: 2
-    groundAcceleration: 20
-    groundBraking: 24
-    airAcceleration: 4
-    jumpSpeed: 6.3
+    groundAcceleration: 36
+    groundBraking: 44
+    airAcceleration: 5
+    jumpSpeed: 7
     gravity: 22
     mass: 70
-    jumpBuffer: 0.08
-    coyoteTime: 0.08
-    leapHorizontalSpeed: 9
-    leapVerticalSpeed: 6.8
-    leapRecovery: 0.35
-    diveImpactRecovery: 0.4
-    recoverySpeed: 2
+    jumpBuffer: 0.13
+    coyoteTime: 0.12
+    actionBuffer: 0.11
+    leapHorizontalSpeed: 8.2
+    leapVerticalSpeed: 7.25
+    leapRecovery: 0.27
+    diveImpactRecovery: 0.2
+    recoverySpeed: 3.4
     diveCapsuleLength: 1.95
     diveCapsuleRadius: 0.43
     diveCapsuleCenterY: -0.29
     diveCapsuleCenterForward: 0.16
-    proneCrawlSpeed: 1.5
+    proneCrawlSpeed: 2.6
     slideBodyLength: 1.98
     slideBodyWidth: 0.84
     slideBodyHeight: 0.82
     slideBodyCenterY: -0.48
     slideBodyCenterForward: -0.24
-    slideCrawlSpeed: 1.1
-    slideDuration: 0.45
-    slideDeceleration: 8
-    slideRecovery: 0.2
+    slideCrawlSpeed: 2.7
+    slideDuration: 0.42
+    slideDeceleration: 6
+    slideRecovery: 0.14
     countdown: 3
     roundDuration: 20
 --- !u!1 &2111653718

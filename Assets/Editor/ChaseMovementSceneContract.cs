@@ -14,16 +14,29 @@ public static class ChaseMovementSceneContract
     const string Gym="Assets/Scenes/MovementGym.unity";
 
     static bool Correct(ChaseTuning t) =>
-        t!=null && Mathf.Abs(t.leapVerticalSpeed-6.8f)<.002f &&
+        t!=null && Mathf.Abs(t.runSpeed-6f)<.002f &&
+        Mathf.Abs(t.groundAcceleration-36f)<.002f &&
+        Mathf.Abs(t.groundBraking-44f)<.002f &&
+        Mathf.Abs(t.airAcceleration-5f)<.002f &&
+        Mathf.Abs(t.jumpSpeed-7f)<.002f &&
+        Mathf.Abs(t.jumpBuffer-.13f)<.002f &&
+        Mathf.Abs(t.coyoteTime-.12f)<.002f &&
+        Mathf.Abs(t.actionBuffer-.11f)<.002f &&
+        Mathf.Abs(t.leapHorizontalSpeed-8.2f)<.002f &&
+        Mathf.Abs(t.leapVerticalSpeed-7.25f)<.002f &&
+        Mathf.Abs(t.leapRecovery-.27f)<.002f &&
+        Mathf.Abs(t.diveImpactRecovery-.20f)<.002f &&
+        Mathf.Abs(t.recoverySpeed-3.4f)<.002f &&
+        Mathf.Abs(t.proneCrawlSpeed-2.6f)<.002f &&
         Mathf.Abs(t.slideBodyLength-1.98f)<.002f &&
         Mathf.Abs(t.slideBodyWidth-.84f)<.002f &&
         Mathf.Abs(t.slideBodyHeight-.82f)<.002f &&
         Mathf.Abs(t.slideBodyCenterY+.48f)<.002f &&
         Mathf.Abs(t.slideBodyCenterForward+.24f)<.002f &&
-        Mathf.Abs(t.slideCrawlSpeed-1.10f)<.002f &&
-        Mathf.Abs(t.slideDuration-.45f)<.002f &&
-        Mathf.Abs(t.slideDeceleration-8f)<.002f &&
-        Mathf.Abs(t.slideRecovery-.20f)<.002f &&
+        Mathf.Abs(t.slideCrawlSpeed-2.7f)<.002f &&
+        Mathf.Abs(t.slideDuration-.42f)<.002f &&
+        Mathf.Abs(t.slideDeceleration-6f)<.002f &&
+        Mathf.Abs(t.slideRecovery-.14f)<.002f &&
         Mathf.Abs(t.diveCapsuleLength-1.95f)<.002f &&
         Mathf.Abs(t.diveCapsuleRadius-.43f)<.002f &&
         Mathf.Abs(t.diveCapsuleCenterY+.29f)<.002f &&
@@ -31,16 +44,29 @@ public static class ChaseMovementSceneContract
 
     static void Apply(ChaseTuning t)
     {
-        t.leapVerticalSpeed=6.8f;
+        t.runSpeed=6f;
+        t.groundAcceleration=36f;
+        t.groundBraking=44f;
+        t.airAcceleration=5f;
+        t.jumpSpeed=7f;
+        t.jumpBuffer=.13f;
+        t.coyoteTime=.12f;
+        t.actionBuffer=.11f;
+        t.leapHorizontalSpeed=8.2f;
+        t.leapRecovery=.27f;
+        t.diveImpactRecovery=.20f;
+        t.recoverySpeed=3.4f;
+        t.proneCrawlSpeed=2.6f;
+        t.leapVerticalSpeed=7.25f;
         t.slideBodyLength=1.98f;
         t.slideBodyWidth=.84f;
         t.slideBodyHeight=.82f;
         t.slideBodyCenterY=-.48f;
         t.slideBodyCenterForward=-.24f;
-        t.slideCrawlSpeed=1.10f;
-        t.slideDuration=.45f;
-        t.slideDeceleration=8f;
-        t.slideRecovery=.20f;
+        t.slideCrawlSpeed=2.7f;
+        t.slideDuration=.42f;
+        t.slideDeceleration=6f;
+        t.slideRecovery=.14f;
         t.diveCapsuleLength=1.95f;
         t.diveCapsuleRadius=.43f;
         t.diveCapsuleCenterY=-.29f;
@@ -93,11 +119,18 @@ public static class ChaseMovementSceneContract
                 if(repair)
                 {
                     foreach(var field in new[]{
-                        ("leapVerticalSpeed",6.8f),("slideBodyLength",1.98f),("slideBodyWidth",.84f),
+                        ("runSpeed",6f),("groundAcceleration",36f),
+                        ("groundBraking",44f),("airAcceleration",5f),
+                        ("jumpSpeed",7f),("jumpBuffer",.13f),
+                        ("coyoteTime",.12f),("actionBuffer",.11f),
+                        ("leapHorizontalSpeed",8.2f),
+                        ("leapRecovery",.27f),("diveImpactRecovery",.20f),
+                        ("recoverySpeed",3.4f),("proneCrawlSpeed",2.6f),
+                    ("leapVerticalSpeed",7.25f),("slideBodyLength",1.98f),("slideBodyWidth",.84f),
                         ("slideBodyHeight",.82f),("slideBodyCenterY",-.48f),
-                        ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",1.10f),
-                        ("slideDuration",.45f),("slideDeceleration",8f),
-                        ("slideRecovery",.20f),
+                        ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",2.7f),
+                        ("slideDuration",.42f),("slideDeceleration",6f),
+                        ("slideRecovery",.14f),
                         ("diveCapsuleLength",1.95f),
                         ("diveCapsuleRadius",.43f),
                         ("diveCapsuleCenterY",-.29f),
@@ -112,11 +145,18 @@ public static class ChaseMovementSceneContract
                 // The values read back from serialized scene content are the
                 // actual values a standalone WebGL Player will deserialize.
                 foreach(var field in new[]{
-                    ("leapVerticalSpeed",6.8f),("slideBodyLength",1.98f),("slideBodyWidth",.84f),
+                    ("runSpeed",6f),("groundAcceleration",36f),
+                    ("groundBraking",44f),("airAcceleration",5f),
+                    ("jumpSpeed",7f),("jumpBuffer",.13f),
+                    ("coyoteTime",.12f),("actionBuffer",.11f),
+                    ("leapHorizontalSpeed",8.2f),
+                    ("leapRecovery",.27f),("diveImpactRecovery",.20f),
+                    ("recoverySpeed",3.4f),("proneCrawlSpeed",2.6f),
+                    ("leapVerticalSpeed",7.25f),("slideBodyLength",1.98f),("slideBodyWidth",.84f),
                     ("slideBodyHeight",.82f),("slideBodyCenterY",-.48f),
-                    ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",1.10f),
-                    ("slideDuration",.45f),("slideDeceleration",8f),
-                    ("slideRecovery",.20f),
+                    ("slideBodyCenterForward",-.24f),("slideCrawlSpeed",2.7f),
+                    ("slideDuration",.42f),("slideDeceleration",6f),
+                    ("slideRecovery",.14f),
                         ("diveCapsuleLength",1.95f),
                         ("diveCapsuleRadius",.43f),
                         ("diveCapsuleCenterY",-.29f),

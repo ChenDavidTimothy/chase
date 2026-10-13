@@ -1,0 +1,51 @@
+{
+  "pointer_clicks": [
+    [
+      "how-to",
+      [
+        489,
+        470
+      ]
+    ],
+    [
+      "enter-practice",
+      [
+        602,
+        591
+      ]
+    ],
+    [
+      "practice-direct-exit",
+      [
+        1124,
+        42
+      ]
+    ],
+    [
+      "start-match",
+      [
+        602,
+        403
+      ]
+    ],
+    [
+      "select-runner",
+      [
+        713,
+        381
+      ]
+    ],
+    [
+      "launch",
+      [
+        323,
+        551
+      ]
+    ]
+  ],
+  "real_keyboard_movement": true,
+  "practice_jump_dive_slide": true,
+  "normal_competitive_match_started": true,
+  "runtime_console_errors": [],
+  "javascript_exceptions": 0
+}

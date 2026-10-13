@@ -72,7 +72,7 @@ namespace Chase.Tests
             Assert.That(Vector3.Dot(m.Body.rotation*Vector3.forward,
                 Vector3.forward),Is.GreaterThan(.99f));
             float initial=m.Velocity.z;
-            for(int i=0;i<21;i++)
+            for(int i=0;i<20;i++)
             {
                 var adversary=i%2==0?Vector2.left:Vector2.right;
                 Step(m,adversary,i%4==0,i%3==0,i%5==0);
