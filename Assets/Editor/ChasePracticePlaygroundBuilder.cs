@@ -96,7 +96,7 @@ public static class ChasePracticePlaygroundBuilder
             camera.fieldOfView=53f;
             camera.clearFlags=CameraClearFlags.SolidColor;
             camera.backgroundColor=new Color(.057f,.14f,.18f);
-            camera.transform.rotation=Quaternion.Euler(53f,45f,0f);
+            camera.transform.rotation=Quaternion.Euler(53f,0f,0f);
             camera.transform.position=spawn.position-camera.transform.forward*9.7f;
             camera.gameObject.AddComponent<AudioListener>();
             var light=new GameObject("Directional Light").AddComponent<Light>();

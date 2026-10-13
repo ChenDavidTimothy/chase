@@ -60,7 +60,7 @@ namespace Chase
             var driver=instance.GetComponent<ChibiVisualDriver>();
             if(driver!=null)driver.BindMotor(motor);
             showControls=PlayerPrefs.GetInt("CHASE_Hints",1)!=0;
-            viewRotation=Quaternion.Euler(53f,45f,0f);
+            viewRotation=Quaternion.Euler(53f,0f,0f);
             practiceCamera.fieldOfView=53f;
             practiceCamera.transform.rotation=viewRotation;
             RestoreAtStart();

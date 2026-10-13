@@ -9,6 +9,8 @@ namespace Chase
     {
         const float Smoothing = 0.2f;
         const float MaxOffset = 1.5f;
+        public const float ArenaPitch = 55f;
+        public const float ArenaYaw = 0f;
         ChaseMatch match;
         Camera attachedCamera;
         Vector3 basePosition;
@@ -31,7 +33,7 @@ namespace Chase
             attachedCamera = GetComponent<Camera>();
             attachedCamera.orthographic = false;
             attachedCamera.fieldOfView = 40f;
-            transform.rotation = Quaternion.Euler(55f,45f,0f);
+            transform.rotation = Quaternion.Euler(ArenaPitch,ArenaYaw,0f);
             lastAspect = -1f;
             RecalculateFraming();
             IndexOcclusionSurfaces();
@@ -87,6 +89,9 @@ namespace Chase
         public void ResetView()
         {
             if (match == null) return;
+            // Menu cameras are cinematic and may have rotated away. Always
+            // restore the actual world-axis-aligned competition viewpoint.
+            transform.rotation=Quaternion.Euler(ArenaPitch,ArenaYaw,0f);
             RecalculateFraming();
             followOffset = Vector3.zero;
             smoothVelocity = Vector3.zero;

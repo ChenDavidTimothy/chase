@@ -117,6 +117,11 @@ namespace Chase.Tests
                 Assert.IsTrue(practice.Motor.Capsule.enabled);
                 Assert.AreEqual(1.8f,practice.Motor.Settings.standingHeight,.001f);
                 Assert.AreEqual(6.8f,practice.Motor.Settings.leapVerticalSpeed,.001f);
+                var view=UnityEngine.Camera.main.transform;
+                Assert.That(view.eulerAngles.y,Is.EqualTo(0f).Within(.01f));
+                Vector3 front=view.forward;front.y=0;front.Normalize();
+                Assert.That(Vector3.Dot(front,Vector3.forward),
+                    Is.GreaterThan(.9999f));
 
                 // No station changes or rewind: the player remains wherever
                 // they navigate until physically moving or leaving practice.

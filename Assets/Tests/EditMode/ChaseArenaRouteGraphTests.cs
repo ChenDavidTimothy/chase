@@ -119,12 +119,7 @@ namespace Chase.Tests
             try
             {
                 Scan(.345f);
-                var pairs=new[]{
-                    (new Vector3(-4.6f,.9f,-1.4f),new Vector3(4.6f,.9f,3.9f)),
-                    (new Vector3(4.6f,.9f,1.4f),new Vector3(-4.6f,.9f,-3.8f)),
-                    (new Vector3(-1.2f,.9f,4.6f),new Vector3(3.8f,.9f,-4.4f)),
-                    (new Vector3(-1.5f,.9f,-4.7f),new Vector3(3.2f,.9f,4.4f))
-                };
+                var pairs=new[]{(ChaseMatch.ChaserStart,ChaseMatch.EvaderStart)};
                 foreach(var pair in pairs)
                 {
                     int steps=Length(pair.Item1,pair.Item2,_=>true);

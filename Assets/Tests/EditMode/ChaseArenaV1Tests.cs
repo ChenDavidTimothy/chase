@@ -375,12 +375,7 @@ namespace Chase.Tests
             var scene=open?existing:EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
             try
             {
-                var pairs=new[]{
-                    (new Vector3(-4.6f,.9f,-1.4f),new Vector3(4.6f,.9f,3.9f)),
-                    (new Vector3(4.6f,.9f,1.4f),new Vector3(-4.6f,.9f,-3.8f)),
-                    (new Vector3(-1.2f,.9f,4.6f),new Vector3(3.8f,.9f,-4.4f)),
-                    (new Vector3(-1.5f,.9f,-4.7f),new Vector3(3.2f,.9f,4.4f))
-                };
+                var pairs=new[]{(ChaseMatch.ChaserStart,ChaseMatch.EvaderStart)};
                 for(int pair=0;pair<pairs.Length;pair++)
                     for(int reverse=0;reverse<2;reverse++)
                     {

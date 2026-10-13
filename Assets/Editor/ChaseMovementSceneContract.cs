@@ -72,6 +72,16 @@ public static class ChaseMovementSceneContract
                     throw new InvalidOperationException("CHASE mismatched movement collider config in "+path);
                 if(!match.FrontEndEnabled)
                     throw new InvalidOperationException("Production must open at public main menu");
+                // The authored match intentionally discovers the tagged Main
+                // Camera during Awake, so the serialized field can be null
+                // when validation runs in Edit Mode before Awake is called.
+                var cam=match.ArenaCamera ?? scene.GetRootGameObjects()
+                    .SelectMany(g=>g.GetComponentsInChildren<Camera>(true))
+                    .SingleOrDefault(c=>c.CompareTag("MainCamera"));
+                if(cam==null || Mathf.Abs(Mathf.DeltaAngle(
+                    cam.transform.eulerAngles.y,ChaseCameraRig.ArenaYaw))>.1f)
+                    throw new InvalidOperationException(
+                        "Production camera must use fixed arena-aligned yaw");
             }
             else
             {

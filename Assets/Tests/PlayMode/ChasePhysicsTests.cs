@@ -335,8 +335,7 @@ namespace Chase.Tests
             }
             Debug.Log("CHASE_STRESS_100 matches=100 tags="+tags+" timeouts="+timeouts+
                 " avgSeconds="+(duration/100f).ToString("F2")+
-                " stalled2secWindows="+stalls+" nonFinite="+nonFinite+
-                " seedBase="+match.Tuning.spawnSeed);
+                " stalled2secWindows="+stalls+" nonFinite="+nonFinite);
             Assert.AreEqual(100,tags+timeouts);
             Assert.AreEqual(0,nonFinite);
             // Some timeouts are legitimate; a nonmoving bot is not.
@@ -422,7 +421,7 @@ namespace Chase.Tests
                             Assert.That(viewport.x,Is.InRange(0f,1f),"aspect="+aspect);
                             Assert.That(viewport.y,Is.InRange(0f,1f),"aspect="+aspect);
                         }
-                Assert.AreEqual(45f,cam.transform.rotation.eulerAngles.y,.01f);
+                Assert.AreEqual(0f,cam.transform.rotation.eulerAngles.y,.01f);
                 Assert.AreEqual(55f,cam.transform.rotation.eulerAngles.x,.01f);
                 Assert.AreEqual(40f,cam.fieldOfView,.01f);
             }

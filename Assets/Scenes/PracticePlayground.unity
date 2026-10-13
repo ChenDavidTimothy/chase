@@ -1225,7 +1225,6 @@ MonoBehaviour:
     slideRecovery: 0.2
     countdown: 3
     roundDuration: 20
-    spawnSeed: 2026
 --- !u!1 &2111653718
 GameObject:
   m_ObjectHideFlags: 0
@@ -1423,7 +1422,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2139942502}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.41223302, y: 0.3424766, z: -0.17075254, w: 0.82681155}
+  m_LocalRotation: {x: 0.4461978, y: 0, z: 0, w: 0.89493436}
   m_LocalPosition: {x: -4.127811, y: 8.646765, z: -12.62781}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

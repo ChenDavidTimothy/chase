@@ -178,7 +178,8 @@ namespace Chase
             {
                 // The card stays to the left; the arena is first shown
                 // clearly on the right as the actual arena choice.
-                arenaCamera.transform.rotation=Quaternion.Euler(55f,45f,0f);
+                arenaCamera.transform.rotation=Quaternion.Euler(
+                    ChaseCameraRig.ArenaPitch,ChaseCameraRig.ArenaYaw,0f);
                 var previewCenter=new Vector3(-.6f,1.15f,0f);
                 arenaCamera.transform.position=previewCenter-
                     arenaCamera.transform.forward*18.4f-

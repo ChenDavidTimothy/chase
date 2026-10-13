@@ -240,6 +240,73 @@ namespace Chase.Tests
             finally {DestroyMatch(match);}
         }
 
+        [Test] public void FixedRoleGatesRemainStableThroughRematchAndRoleSwap()
+        {
+            var match=PublicMatch();
+            try
+            {
+                match.OpenPlay();
+                match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                Assert.AreEqual(ChaseRole.Evader,match.HumanRole);
+                Assert.Less(Vector3.Distance(match.Chaser.Body.position,
+                    ChaseMatch.ChaserStart),.001f);
+                Assert.Less(Vector3.Distance(match.Evader.Body.position,
+                    ChaseMatch.EvaderStart),.001f);
+                match.Rematch();
+                Assert.Less(Vector3.Distance(match.Chaser.Body.position,
+                    ChaseMatch.ChaserStart),.001f);
+                var phase=typeof(ChaseMatch).GetField("<Phase>k__BackingField",
+                    BindingFlags.Instance|BindingFlags.NonPublic);
+                phase.SetValue(match,ChasePhase.Ended);
+                match.SwitchRole();
+                Assert.AreEqual(ChaseRole.Chaser,match.HumanRole);
+                Assert.AreEqual(match.Human,match.Chaser);
+                Assert.Less(Vector3.Distance(match.Human.Body.position,
+                    ChaseMatch.ChaserStart),.001f);
+                Assert.Less(Vector3.Distance(match.Opponent.Body.position,
+                    ChaseMatch.EvaderStart),.001f);
+                phase.SetValue(match,ChasePhase.Ended);
+                match.NextRound();
+                Assert.Less(Vector3.Distance(match.Chaser.Body.position,
+                    ChaseMatch.ChaserStart),.001f);
+                Assert.Less(Vector3.Distance(match.Evader.Body.position,
+                    ChaseMatch.EvaderStart),.001f);
+            }
+            finally {DestroyMatch(match);}
+        }
+
+        [Test] public void AlignedThirdPersonCameraPreservesWorldAxisDirections()
+        {
+            var match=PublicMatch();
+            try
+            {
+                match.OpenPlay();
+                match.SelectDifficulty(ChaseDifficulty.Rival);
+                match.StartSelectedArena();
+                var camera=match.ArenaCamera;
+                var rig=camera.GetComponent<ChaseCameraRig>();
+                rig.ResetView();
+                Assert.That(camera.transform.eulerAngles.y,
+                    Is.EqualTo(0f).Within(.001f));
+                Assert.That(camera.transform.eulerAngles.x,
+                    Is.EqualTo(55f).Within(.001f));
+                var forward=camera.transform.forward;forward.y=0;forward.Normalize();
+                var right=camera.transform.right;right.y=0;right.Normalize();
+                Assert.That(Vector3.Dot(forward,Vector3.forward),
+                    Is.GreaterThan(.9999f),"W must run along the arena Z axis");
+                Assert.That(Vector3.Dot(right,Vector3.right),
+                    Is.GreaterThan(.9999f),"D must run along the arena X axis");
+                match.ReturnToMenu();
+                match.OpenPlay();match.SelectDifficulty(ChaseDifficulty.Runner);
+                match.StartSelectedArena();
+                Assert.That(camera.transform.eulerAngles.y,
+                    Is.EqualTo(0f).Within(.001f),
+                    "Returning from a cinematic menu must restore the aligned view");
+            }
+            finally {DestroyMatch(match);}
+        }
+
         [UnityTest] public IEnumerator FrontEndWaitsForExplicitPlaySelection()
         {
             var match=PublicMatch();

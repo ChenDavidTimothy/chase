@@ -17,20 +17,15 @@ namespace Chase.Tests
         [Test]
         public void EveryMatchSpawnHasAtLeastEightMetersOfInitialSeparation()
         {
-            var field=typeof(ChaseMatch).GetField("SpawnPairs",
-                BindingFlags.NonPublic|BindingFlags.Static);
-            Assert.NotNull(field);
-            var pairs=(Vector3[,])field.GetValue(null);
-            for(int i=0;i<pairs.GetLength(0);i++)
-            {
-                Vector3 a=pairs[i,0],b=pairs[i,1];
-                a.y=b.y=0f;
-                Assert.That(Vector3.Distance(a,b),Is.GreaterThanOrEqualTo(8f));
-                Assert.LessOrEqual(Mathf.Abs(a.x),5.25f);
-                Assert.LessOrEqual(Mathf.Abs(a.z),5.25f);
-                Assert.LessOrEqual(Mathf.Abs(b.x),5.25f);
-                Assert.LessOrEqual(Mathf.Abs(b.z),5.25f);
-            }
+            Vector3 a=ChaseMatch.ChaserStart,b=ChaseMatch.EvaderStart;
+            Assert.Less(a.x,-4.8f);
+            Assert.Greater(b.x,4.8f);
+            a.y=b.y=0f;
+            Assert.That(Vector3.Distance(a,b),Is.GreaterThanOrEqualTo(8f));
+            Assert.LessOrEqual(Mathf.Abs(a.x),5.25f);
+            Assert.LessOrEqual(Mathf.Abs(a.z),5.25f);
+            Assert.LessOrEqual(Mathf.Abs(b.x),5.25f);
+            Assert.LessOrEqual(Mathf.Abs(b.z),5.25f);
         }
 
         [Test]

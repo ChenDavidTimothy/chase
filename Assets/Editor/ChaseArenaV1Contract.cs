@@ -217,16 +217,13 @@ public static class ChaseArenaV1Contract
             if(scene.GetRootGameObjects().SelectMany(
                 g=>g.GetComponentsInChildren<ChaseMatch>(true)).Count()!=1)
                 throw new InvalidOperationException("Missing single production Match");
+            // Non-colliding role start marks are part of the authored
+            // competition presentation, never obstacle geometry.
+            ChaseArenaStartPlates.Validate();
             // A layout cannot place a nonfloor collider through any spawn.
-            var match=scene.GetRootGameObjects().SelectMany(
-                g=>g.GetComponentsInChildren<ChaseMatch>(true)).Single();
-            var p=typeof(ChaseMatch).GetField("SpawnPairs",
-                System.Reflection.BindingFlags.Static|
-                System.Reflection.BindingFlags.NonPublic);
-            var starts=(Vector3[,])p.GetValue(null);
-            foreach(var start in starts)
+            foreach(var start in new[]{ChaseMatch.ChaserStart,ChaseMatch.EvaderStart})
             {
-                // MultiDimensional foreach iterates the eight spawn positions.
+                // Both permanently marked side entries must fit a full standing body.
                 var footprint=new Bounds(new Vector3(start.x,.9f,start.z),
                     new Vector3(.70f,1.8f,.70f));
                 foreach(var c in root.GetComponentsInChildren<Collider>(true))

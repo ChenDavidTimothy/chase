@@ -52,16 +52,11 @@ namespace Chase
         float activePhysicsClock;
         bool applicationFocused = true;
         public bool ApplicationFocused => applicationFocused;
-        int currentSpawn;
-
-        // Pair positions are separated by solid routes so the 3-second countdown
-        // is followed by genuine reaction time, not an immediate contact tag.
-        static readonly Vector3[,] SpawnPairs = {
-            { new Vector3(-4.6f, .9f, -1.4f), new Vector3(4.6f, .9f, 3.9f) },
-            { new Vector3(4.6f, .9f, 1.4f), new Vector3(-4.6f, .9f, -3.8f) },
-            { new Vector3(-1.2f, .9f, 4.6f), new Vector3(3.8f, .9f, -4.4f) },
-            { new Vector3(-1.5f, .9f, -4.7f), new Vector3(3.2f, .9f, 4.4f) }
-        };
+        // One authored, repeatable side entry per role, independent of
+        // which athlete the human controls. No hidden round-seeded spawn
+        // roulette. The east start avoids OffsetGates' actual solid pillars.
+        public static Vector3 ChaserStart => new Vector3(-5.1f,.9f,-2.1f);
+        public static Vector3 EvaderStart => new Vector3(5.1f,.9f,2.1f);
 
         void Awake()
         {
@@ -187,20 +182,15 @@ namespace Chase
 
         void BeginRound(bool restart)
         {
-            if (!restart)
-            {
-                System.Random rng = new System.Random(tuning.spawnSeed + (RoundNumber - 1) * 17);
-                currentSpawn = rng.Next(0, SpawnPairs.GetLength(0));
-            }
             Winner = null;
             timeoutPending = false;
             activePhysicsClock = 0f;
             Remaining = tuning.roundDuration;
             CountdownRemaining = tuning.countdown;
             Phase = ChasePhase.Countdown;
-            Vector3 first = SpawnPairs[currentSpawn,0], second = SpawnPairs[currentSpawn,1];
-            Chaser.ResetMotor(HumanRole == ChaseRole.Chaser ? first : second);
-            Evader.ResetMotor(HumanRole == ChaseRole.Evader ? first : second);
+            // Fixed competition gates belong to roles, never human/bot.
+            Chaser.ResetMotor(ChaserStart);
+            Evader.ResetMotor(EvaderStart);
             bot.Configure(Difficulty);
             bot.Initialize(Opponent, Human, HumanRole == ChaseRole.Evader ?
                 ChaseRole.Chaser : ChaseRole.Evader);

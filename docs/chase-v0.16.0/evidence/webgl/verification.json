@@ -1,0 +1,67 @@
+{
+  "physical_pointer_clicks": [
+    [
+      "how-to",
+      [
+        489,
+        470
+      ]
+    ],
+    [
+      "enter-practice",
+      [
+        602,
+        591
+      ]
+    ],
+    [
+      "direct-main-menu",
+      [
+        1124,
+        42
+      ]
+    ],
+    [
+      "how-to-again",
+      [
+        489,
+        470
+      ]
+    ],
+    [
+      "enter-practice-again",
+      [
+        602,
+        591
+      ]
+    ],
+    [
+      "match-play",
+      [
+        602,
+        403
+      ]
+    ],
+    [
+      "runner-difficulty",
+      [
+        713,
+        381
+      ]
+    ],
+    [
+      "normal-match",
+      [
+        323,
+        551
+      ]
+    ]
+  ],
+  "removed_retry_r_changed_pixels": 3434,
+  "removed_next_tab_changed_pixels": 0,
+  "direct_main_menu_passed": true,
+  "keyboard_pause_exit_passed": true,
+  "normal_match_still_playable": true,
+  "browser_errors": [],
+  "javascript_exceptions": 0
+}

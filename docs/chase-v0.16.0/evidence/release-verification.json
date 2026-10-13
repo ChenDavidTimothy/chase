@@ -1,0 +1,74 @@
+{
+  "release": "v0.16.0",
+  "unity": "6000.3.26f1",
+  "tests": {
+    "playmode": {
+      "total": 99,
+      "passed": 99,
+      "failed": 0
+    },
+    "editmode": {
+      "total": 33,
+      "passed": 33,
+      "failed": 0
+    }
+  },
+  "builds": {
+    "WebGLProduction": {
+      "platform": "WebGL",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "WebGLGym": {
+      "platform": "WebGL",
+      "scene": "Assets/Scenes/MovementGym.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "LinuxProduction": {
+      "platform": "StandaloneLinux64",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    }
+  },
+  "browser": {
+    "mouse_clicks": 8,
+    "practice_move_verified": true,
+    "match_start_after_practice": true,
+    "browser_errors": [],
+    "javascript_exceptions": 0
+  },
+  "camera": {
+    "competition": {
+      "yaw": 0,
+      "pitch": 55
+    },
+    "practice": {
+      "yaw": 0,
+      "pitch": 53
+    }
+  },
+  "starts": {
+    "chaser": [
+      -5.1,
+      0.9,
+      -2.1
+    ],
+    "evader": [
+      5.1,
+      0.9,
+      2.1
+    ]
+  },
+  "native": {
+    "menu_rendered": true,
+    "runtime_exceptions": 0,
+    "synthetic_mouse": "not independently checked"
+  },
+  "blender_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371"
+}

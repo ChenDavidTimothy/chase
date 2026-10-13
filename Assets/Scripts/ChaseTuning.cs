@@ -27,6 +27,5 @@ namespace Chase
         public float slideDuration = .45f, slideDeceleration = 8f, slideRecovery = .20f;
         [Header("Match")]
         public float countdown = 3f, roundDuration = 20f;
-        public int spawnSeed = 2026;
     }
 }

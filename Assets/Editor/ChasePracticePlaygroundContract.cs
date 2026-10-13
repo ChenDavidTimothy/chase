@@ -74,7 +74,11 @@ public static class ChasePracticePlaygroundContract
             }
             var cam=serialized.FindProperty("practiceCamera").objectReferenceValue as Camera;
             var spawn=serialized.FindProperty("start").objectReferenceValue as Transform;
-            if(cam==null || spawn==null ||
+            if(cam==null || Mathf.Abs(Mathf.DeltaAngle(
+                   cam.transform.eulerAngles.y,ChaseCameraRig.ArenaYaw))>.1f)
+                throw new InvalidOperationException(
+                    "Practice camera must be aligned with competition controls");
+            if(spawn==null ||
                Vector3.Distance(spawn.position,new Vector3(0,.9f,-8.5f))>.001f)
                 throw new InvalidOperationException("Public practice spawn/camera missing");
             Debug.Log("CHASE_PUBLIC_PRACTICE_CONTRACT_PASS modules="+obstacles.childCount);
