@@ -57,11 +57,8 @@ public static class ChasePracticePlaygroundBuilder
         {
             var root=Node(Group,null,Vector3.zero);
             var groundMat=Mat("A-Deep-Slate");
-            var cream=Mat("D-Porcelain");
-            var mint=Mat("E-Seafoam");
-            var gold=Mat("F-Soft-Gold");
             var frame=Mat("B-Soft-Steel");
-            foreach(var material in new[]{groundMat,cream,mint,gold,frame})
+            foreach(var material in new[]{groundMat,frame})
                 if(material==null)throw new InvalidOperationException(
                     "Missing authoritative Arena V1 material. Build production library first.");
 
@@ -90,30 +87,8 @@ public static class ChasePracticePlaygroundBuilder
                 instance.name="PRACTICE / "+placement.prefab;
             }
 
-            // Decorative floor labels and colored runways, without collider
-            // bumps, ghost interaction zones, or one-solution instructions.
-            foreach(var spec in new [] {
-                (name:"START / WARM UP",x:0f,z:-8.5f,color:mint),
-                (name:"OVER OR UNDER / RAIL",x:-5f,z:-4.8f,color:gold),
-                (name:"OVER OR UNDER / BENCH",x:5f,z:-4.8f,color:gold),
-                (name:"CONNECT YOUR ROUTES",x:0f,z:1.7f,color:mint)
-            })
-            {
-                var pad=Node("PRACTICE PAD / "+spec.name,root,
-                    new Vector3(spec.x,0,spec.z));
-                // Four painted corner marks indicate a safe, resettable start.
-                foreach(int x in new[]{-1,1})
-                    foreach(int z in new[]{-1,1})
-                        Cube("Painted pad corner",pad,new Vector3(x*.55f,.008f,z*.55f),
-                            new Vector3(.21f,.012f,.21f),spec.color,false);
-            }
-            Cube("Center aisle / decorative approach line",root,
-                new Vector3(0,.004f,-4.5f),new Vector3(.04f,.008f,5.2f),
-                cream,false);
-            foreach(int side in new[]{-1,1})
-                Cube("Warm approach lane / "+side,root,
-                    new Vector3(side*5f,.004f,-3.4f),
-                    new Vector3(.045f,.008f,2.8f),gold,false);
+            // Unmarked continuous free-roam floor. Obstacles, not staged
+            // arrows or teleport pads, suggest whatever route players invent.
 
             var spawn=Node("PRACTICE / FREE START",root,new Vector3(0,.9f,-8.5f));
             var camera=new GameObject("Main Camera").AddComponent<Camera>();

@@ -1,0 +1,53 @@
+{
+  "release": "v0.15.1",
+  "tests": {
+    "playmode": {
+      "total": 97,
+      "passed": 97,
+      "failed": 0
+    },
+    "editmode": {
+      "total": 33,
+      "passed": 33,
+      "failed": 0
+    }
+  },
+  "builds": {
+    "WebGLProduction": {
+      "platform": "WebGL",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "WebGLGym": {
+      "platform": "WebGL",
+      "scene": "Assets/Scenes/MovementGym.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    },
+    "LinuxProduction": {
+      "platform": "StandaloneLinux64",
+      "scene": "Assets/Scenes/SampleScene.unity",
+      "result": "Succeeded",
+      "errors": "0",
+      "warnings": "1"
+    }
+  },
+  "browser": {
+    "removed_retry_r_changed_pixels": 2908,
+    "removed_next_tab_changed_pixels": 0,
+    "direct_main_menu_passed": true,
+    "keyboard_pause_exit_passed": true,
+    "normal_match_still_playable": true,
+    "browser_errors": [],
+    "javascript_exceptions": 0,
+    "physical_pointer_click_count": 8
+  },
+  "native": {
+    "main_menu_rendered": true,
+    "log_exception_count": 0
+  },
+  "blender_sha256": "59c735e5f835596acdc0329082d936a3d0f34f5c35c5c4710ef80dc0a5eeb371"
+}

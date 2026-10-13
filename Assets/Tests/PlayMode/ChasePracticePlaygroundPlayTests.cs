@@ -95,7 +95,7 @@ namespace Chase.Tests
                 yield return SceneManager.UnloadSceneAsync(scene);
         }
 
-        [UnityTest] public IEnumerator PracticeStationRetryAndPauseUseRealProductionMotor()
+        [UnityTest] public IEnumerator FreeRoamPreservesPositionAndPauseHasSafeExit()
         {
             var old=Time.timeScale;
             var scene=SceneManager.GetSceneByPath("Assets/Scenes/PracticePlayground.unity");
@@ -112,28 +112,29 @@ namespace Chase.Tests
                     .GetComponentInChildren<ChasePracticePlayground>(true);
                 Assert.NotNull(practice);
                 Assert.NotNull(practice.Motor);
-                Assert.AreEqual(4,practice.StationCount);
                 Assert.IsEmpty(practice.GetComponentsInChildren<ChaseBot>());
                 Assert.IsEmpty(practice.GetComponentsInChildren<ChaseTagContact>());
                 Assert.IsTrue(practice.Motor.Capsule.enabled);
                 Assert.AreEqual(1.8f,practice.Motor.Settings.standingHeight,.001f);
                 Assert.AreEqual(6.8f,practice.Motor.Settings.leapVerticalSpeed,.001f);
 
-                practice.SelectStation(1);
-                Assert.AreEqual(1,practice.StationIndex);
-                Assert.Less(Vector3.Distance(practice.Motor.Body.position,
-                    new Vector3(-5,.9f,-4.8f)),.01f);
+                // No station changes or rewind: the player remains wherever
+                // they navigate until physically moving or leaving practice.
+                var body=practice.Motor.Body;
+                body.position=new Vector3(2.3f,.9f,1.1f);
+                body.linearVelocity=new Vector3(3f,0f,0f);
+                Physics.SyncTransforms();
                 practice.TogglePause();
                 Assert.IsTrue(practice.Paused);
-                Assert.AreEqual(0,Time.timeScale);
-                practice.NextStation(); // station changes reset without penalty
+                Assert.AreEqual(0f,Time.timeScale);
+                Assert.Less(Vector3.Distance(body.position,
+                    new Vector3(2.3f,.9f,1.1f)),.001f);
+                practice.TogglePause();
                 Assert.IsFalse(practice.Paused);
-                Assert.AreEqual(1,Time.timeScale);
-                Assert.AreEqual(2,practice.StationIndex);
-                practice.Motor.Body.position+=new Vector3(1,0,0);
-                practice.ResetStation();
-                Assert.Less(Vector3.Distance(practice.Motor.Body.position,
-                    practice.CurrentStation),.01f);
+                Assert.AreEqual(1f,Time.timeScale);
+                Assert.Less(Vector3.Distance(body.position,
+                    new Vector3(2.3f,.9f,1.1f)),.001f);
+                Assert.AreEqual(3f,body.linearVelocity.x,.01f);
                 yield return null;
             }
             finally

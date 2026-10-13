@@ -42,7 +42,7 @@ namespace Chase.Tests
             finally {if(!open)EditorSceneManager.CloseScene(scene,true);}
         }
 
-        [Test] public void PracticeStartPadsAvoidSolidProductionObstacleEnvelopes()
+        [Test] public void FreeRoamSpawnHasClearanceAndNoPrescribedRoutes()
         {
             const string path="Assets/Scenes/PracticePlayground.unity";
             var existing=SceneManager.GetSceneByPath(path);
@@ -55,12 +55,13 @@ namespace Chase.Tests
                     .GetComponentsInChildren<Transform>(true)
                     .Single(t=>t.name=="PRACTICE / certified production obstacles");
                 var solids=obstacleRoot.GetComponentsInChildren<Collider>(true);
-                var positions=new[]{
-                    new Vector3(0,.9f,-8.5f),
-                    new Vector3(-5,.9f,-4.8f),
-                    new Vector3(5,.9f,-4.8f),
-                    new Vector3(0,.9f,1.7f)
-                };
+                Assert.IsFalse(scene.GetRootGameObjects()
+                    .SelectMany(r=>r.GetComponentsInChildren<Transform>(true))
+                    .Any(t=>t.name.StartsWith("PRACTICE PAD /") ||
+                        t.name.Contains("approach line") ||
+                        t.name.StartsWith("Warm approach lane /")),
+                    "Free practice must not suggest station tasks or retry pads");
+                var positions=new[]{ new Vector3(0,.9f,-8.5f) };
                 foreach(var position in positions)
                     foreach(var col in solids)
                     {

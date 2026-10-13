@@ -42,6 +42,14 @@ public static class ChasePracticePlaygroundContract
                    Mathf.Abs(Mathf.DeltaAngle(instance.localEulerAngles.y,reference.yaw))>.1f)
                     throw new InvalidOperationException("Scaled or relocated public obstacle "+reference.prefab);
             }
+            // Do not accidentally reintroduce tutorial stations, painted
+            // approach lanes or reset checkpoints into the public free space.
+            if(root.GetComponentsInChildren<Transform>(true).Any(t=>
+                   t.name.StartsWith("PRACTICE PAD /") ||
+                   t.name.Contains("approach line") ||
+                   t.name.StartsWith("Warm approach lane /")))
+                throw new InvalidOperationException(
+                    "Public playground must remain free-roam, without staged routes");
             var floor=root.transform.Cast<Transform>().SingleOrDefault(t=>t.name=="SOLID FLOOR / 24 x 24");
             if(floor==null || floor.GetComponent<BoxCollider>()==null ||
                Vector3.Distance(floor.localScale,new Vector3(24f,.32f,24f))>.002f)

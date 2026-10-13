@@ -14,21 +14,9 @@ namespace Chase
         [SerializeField] Camera practiceCamera;
         [SerializeField] ChaseTuning tuning = new ChaseTuning();
 
-        static readonly Vector3[] Stations = {
-            new Vector3(0f,.9f,-8.5f),
-            new Vector3(-5f,.9f,-4.8f),
-            new Vector3(5f,.9f,-4.8f),
-            new Vector3(0f,.9f,1.7f)
-        };
-        static readonly string[] Names = {
-            "OPEN FLOOR", "OVER OR UNDER?", "BENCH ROUTES", "LINK YOUR MOVES"
-        };
-
         ChaseMotor motor;
         ChaseKeyboard keyboard;
-        Transform visual;
         float clock;
-        int station;
         bool paused, hasFocus = true;
         int pauseChoice;
         Vector3 cameraVelocity;
@@ -36,10 +24,6 @@ namespace Chase
         bool showControls;
         public ChaseMotor Motor => motor;
         public bool Paused => paused;
-        public int StationIndex => station;
-        public string StationName => Names[station];
-        public int StationCount => Stations.Length;
-        public Vector3 CurrentStation => Stations[station];
 
         void Awake()
         {
@@ -50,7 +34,7 @@ namespace Chase
             keyboard=gameObject.AddComponent<ChaseKeyboard>();
             var body=new GameObject("PRACTICE / real Chibi motor");
             body.transform.SetParent(transform,true);
-            body.transform.position=start!=null?start.position:Stations[0];
+            body.transform.position=StartPosition;
             body.AddComponent<Rigidbody>();
             body.AddComponent<CapsuleCollider>();
             var asset=Resources.Load<GameObject>("ChibiVisual");
@@ -58,7 +42,6 @@ namespace Chase
             var instance=Instantiate(asset,body.transform,false);
             instance.name="PRACTICE / approved Blender visual";
             instance.transform.localPosition=Vector3.down*(tuning.standingHeight*.5f);
-            visual=instance.transform;
             // Practice retains the visible evader's identity.
             foreach(var renderer in instance.GetComponentsInChildren<Renderer>(true))
             {
@@ -80,29 +63,23 @@ namespace Chase
             viewRotation=Quaternion.Euler(53f,45f,0f);
             practiceCamera.fieldOfView=53f;
             practiceCamera.transform.rotation=viewRotation;
-            ResetStation();
+            RestoreAtStart();
         }
 
-        public void ResetStation()
+        // No station progression or reset shortcut. Free play retains the
+        // athlete's actual position, velocity and committed move until the
+        // player chooses to leave. Only a true out-of-world fall recovers.
+        Vector3 StartPosition => start!=null?start.position:
+            new Vector3(0f,tuning.standingHeight*.5f,-8.5f);
+
+        void RestoreAtStart()
         {
-            Time.timeScale=1f;
-            paused=false;
-            clock=0f;
             keyboard.ResetSource();
-            motor.ResetMotor(Stations[station]);
+            motor.ResetMotor(StartPosition);
             cameraVelocity=Vector3.zero;
             SnapCamera();
             Physics.SyncTransforms();
         }
-
-        public void SelectStation(int index)
-        {
-            if(index<0||index>=Stations.Length) return;
-            station=index;
-            ResetStation();
-        }
-
-        public void NextStation() => SelectStation((station+1)%Stations.Length);
 
         public void TogglePause()
         {
@@ -136,7 +113,7 @@ namespace Chase
         {
             Keyboard kb=Keyboard.current;
             if(kb==null)return;
-            if(kb.escapeKey.wasPressedThisFrame)
+            if(kb.escapeKey.wasPressedThisFrame && hasFocus)
             {TogglePause();return;}
             if(paused||!hasFocus)
             {
@@ -145,21 +122,18 @@ namespace Chase
                 {
                     if(kb.downArrowKey.wasPressedThisFrame ||
                        kb.tabKey.wasPressedThisFrame)
-                        pauseChoice=(pauseChoice+1)%3;
+                        pauseChoice=(pauseChoice+1)%2;
                     if(kb.upArrowKey.wasPressedThisFrame)
-                        pauseChoice=(pauseChoice+2)%3;
+                        pauseChoice=(pauseChoice+1)%2;
                     if(kb.enterKey.wasPressedThisFrame ||
                        kb.spaceKey.wasPressedThisFrame)
                     {
                         if(pauseChoice==0)TogglePause();
-                        else if(pauseChoice==1)ResetStation();
                         else Exit();
                     }
                 }
                 return;
             }
-            if(kb.rKey.wasPressedThisFrame){ResetStation();return;}
-            if(kb.tabKey.wasPressedThisFrame){NextStation();return;}
             keyboard.Poll(practiceCamera.transform);
         }
 
@@ -169,7 +143,7 @@ namespace Chase
             clock+=Time.fixedDeltaTime;
             motor.Simulate(keyboard.ReadAction(clock),Time.fixedDeltaTime,clock);
             // Ordinary recovery if the player falls off the practice floor.
-            if(motor.Body.position.y<-3f)ResetStation();
+            if(motor.Body.position.y<-3f)RestoreAtStart();
         }
 
         Vector3 DesiredCamera() =>
@@ -249,14 +223,14 @@ namespace Chase
             float w=Screen.width/factor,h=Screen.height/factor;
             Panel(new Rect(20,18,510,80),Slate);
             Panel(new Rect(20,18,6,80),Mint);
-            GUI.Label(new Rect(38,23,450,31),"PRACTICE  /  "+StationName,
+            GUI.Label(new Rect(38,23,450,31),"PRACTICE  /  FREE PLAY",
                 Style(22,TextAnchor.MiddleLeft,Cream));
             GUI.Label(new Rect(39,61,480,25),
                 "Explore freely. Every route is your choice.",
                 Style(14,TextAnchor.MiddleLeft,new Color(.71f,.85f,.86f),false));
 
-            Choice(new Rect(w-182,20,158,47),"NEXT  [TAB]",NextStation);
-            Choice(new Rect(w-182,77,158,47),"RETRY  [R]",ResetStation);
+            if(!paused)
+                Choice(new Rect(w-207,20,183,47),"MAIN MENU  >",Exit);
 
             if(showControls)
             {
@@ -279,22 +253,20 @@ namespace Chase
                 KeyLabel(340,y+32,"SHIFT","CROUCH",65,
                     pressed&&kb.leftShiftKey.isPressed);
                 GUI.Label(new Rect(33,y+94,454,19),
-                    "ESC  PAUSE                 R  RETRY                 TAB  NEXT",
+                    "ESC  PAUSE",
                     Style(12,TextAnchor.MiddleLeft,new Color(.67f,.79f,.82f)));
             }
             if(paused)
             {
                 Panel(new Rect(0,0,w,h),new Color(.01f,.03f,.05f,.62f));
-                float x=(w-460)*.5f,y=(h-300)*.5f;
-                Panel(new Rect(x,y,460,300),Slate);
-                GUI.Label(new Rect(x+30,y+23,400,60),"PRACTICE PAUSED",
+                float x=(w-460)*.5f,y=(h-242)*.5f;
+                Panel(new Rect(x,y,460,242),Slate);
+                GUI.Label(new Rect(x+30,y+18,400,60),"PRACTICE PAUSED",
                     Style(33,TextAnchor.MiddleCenter,Cream));
-                if(pauseChoice==0)Panel(new Rect(x+53,y+102,5,52),Mint);
-                Choice(new Rect(x+58,y+102,344,52),"RESUME",TogglePause);
-                if(pauseChoice==1)Panel(new Rect(x+53,y+166,5,52),Mint);
-                Choice(new Rect(x+58,y+166,344,52),"RETRY",ResetStation);
-                if(pauseChoice==2)Panel(new Rect(x+53,y+230,5,52),Mint);
-                Choice(new Rect(x+58,y+230,344,52),"MAIN MENU",Exit);
+                if(pauseChoice==0)Panel(new Rect(x+53,y+92,5,52),Mint);
+                Choice(new Rect(x+58,y+92,344,52),"RESUME",TogglePause);
+                if(pauseChoice==1)Panel(new Rect(x+53,y+156,5,52),Mint);
+                Choice(new Rect(x+58,y+156,344,52),"MAIN MENU",Exit);
             }
             GUI.matrix=previous;
         }
