@@ -54,6 +54,135 @@ namespace Chase.Tests
             Physics.Simulate(Dt);
             clock+=Dt;
         }
+        [TestCase(-1,-.12f)]
+        [TestCase(-1,0f)]
+        [TestCase(-1,.12f)]
+        [TestCase(1,-.12f)]
+        [TestCase(1,0f)]
+        [TestCase(1,.12f)]
+        public void ReducedArenaSouthRackHasRealSlideApproachAndExit(
+            int direction,float lateralOffset)
+        {
+            const string scenePath="Assets/Scenes/ArenaWCTTrial.unity";
+            var arena=UnityEngine.SceneManagement.SceneManager.GetSceneByPath(scenePath);
+            bool already=arena.IsValid()&&arena.isLoaded;
+            if(!already)
+                arena=UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                    scenePath,UnityEditor.SceneManagement.OpenSceneMode.Additive);
+            try
+            {
+                // Full assembled course, not an isolated prefab. Slide
+                // from the open lane across BOTH physical rack beams,
+                // leave enough room for a real recovery and exit.
+                var motor=Actor(0f);
+                Vector3 center=new Vector3(.06f,0f,-3.13f);
+                Vector3 forward=direction*Vector3.right;
+                motor.Body.position=new Vector3(
+                    center.x-forward.x*1.77f,.9f,
+                    center.z+lateralOffset);
+                motor.Body.linearVelocity=forward*6f;
+                Physics.SyncTransforms();
+                bool madeIt=false;
+                float peak=0f;
+                string trace="";
+                for(int tick=0;tick<190;tick++)
+                {
+                    motor.Simulate(new ChaseAction(
+                        new Vector2(forward.x,forward.z),false,false,
+                        tick==0,false),Dt,clock);
+                    Physics.Simulate(Dt);clock+=Dt;
+                    var p=motor.Body.position;
+                    peak=Mathf.Max(peak,direction*(p.x-center.x));
+                    if(tick<30 && tick%3==0)
+                        trace+=tick+":"+p.ToString("F2")+
+                            "/"+motor.State+
+                            "/slide="+motor.SlideColliderActive+"; ";
+                    if(direction*(p.x-center.x)>1.75f &&
+                        Mathf.Abs(p.z-center.z)<.54f &&
+                        motor.Grounded)
+                    {madeIt=true;break;}
+                }
+                Assert.IsTrue(madeIt,
+                    "Full course blocks rack slide with direction "+
+                    direction+", offset "+lateralOffset+
+                    "; progress "+peak+
+                    "; final "+motor.Body.position+
+                    "; motor "+motor.State+"; "+trace);
+            }
+            finally
+            {
+                if(!already)
+                    UnityEditor.SceneManagement.EditorSceneManager.CloseScene(arena,true);
+            }
+        }
+
+        [TestCase("WallSwitchWestNorth",-1)]
+        [TestCase("WallSwitchWestNorth",1)]
+        [TestCase("WallSwitchWestSouth",-1)]
+        [TestCase("WallSwitchWestSouth",1)]
+        [TestCase("WallSwitchEastNorth",-1)]
+        [TestCase("WallSwitchEastNorth",1)]
+        [TestCase("WallSwitchEastSouth",-1)]
+        [TestCase("WallSwitchEastSouth",1)]
+        public void ReducedArenaOtherCrossingsHaveRoomForActualSlides(
+            string name,int sign)
+        {
+            const string path="Assets/Scenes/ArenaWCTTrial.unity";
+            var scene=UnityEngine.SceneManagement.SceneManager.GetSceneByPath(path);
+            bool already=scene.IsValid()&&scene.isLoaded;
+            if(!already)
+                scene=UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                    path,UnityEditor.SceneManagement.OpenSceneMode.Additive);
+            try
+            {
+                var root=scene.GetRootGameObjects().Single(o=>o.name.StartsWith("ARENA  /"));
+                var group=root.GetComponentsInChildren<Transform>(true)
+                    .Single(t=>t.name=="CHASE / WCT REFERENCE TRIAL");
+                var assembly=group.Cast<Transform>()
+                    .Single(t=>t.name=="REFERENCE / "+name);
+                // Each perimeter skill beam crosses world Z.
+                // The linked southern rack has its own full-scene tests.
+                Vector3 advance=sign*Vector3.forward;
+                Vector3 sideways=Vector3.Cross(Vector3.up,advance);
+                foreach(float offset in new[]{-.12f,0f,.12f})
+                {
+                    var m=Actor(0f);
+                    var center=assembly.position;
+                    var start=center-advance*1.64f+
+                        sideways*offset+Vector3.up*.9f;
+                    m.Body.position=start;
+                    m.Body.linearVelocity=advance*6f;
+                    Physics.SyncTransforms();
+                    bool crossed=false,compact=false;
+                    float progress=-100f;
+                    for(int tick=0;tick<165;tick++)
+                    {
+                        m.Simulate(new ChaseAction(
+                            new Vector2(advance.x,advance.z),false,false,
+                            tick==0,false),Dt,clock);
+                        Physics.Simulate(Dt);clock+=Dt;
+                        compact|=m.SlideColliderActive;
+                        progress=Mathf.Max(progress,
+                            Vector3.Dot(m.Body.position-center,advance));
+                        if(progress>1.25f && m.Grounded)
+                        {crossed=true;break;}
+                    }
+                    Assert.IsTrue(crossed&&compact,
+                        name+" full-scene approach fails sign "+sign+
+                        ", lateral "+offset+", progress "+progress+
+                        ", compact="+compact+
+                        ", motor="+m.State+" final="+m.Body.position);
+                    spawned.Remove(m.gameObject);
+                    Object.DestroyImmediate(m.gameObject);
+                }
+            }
+            finally
+            {
+                if(!already)
+                    UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene,true);
+            }
+        }
+
         [TestCase("SouthWestRails",1.00f)]
         [TestCase("EastCrossbar",1.00f)]
         [TestCase("NorthInnerRail",1.00f)]
@@ -234,7 +363,7 @@ namespace Chase.Tests
             var t=Object.Instantiate(crown);
             e.transform.position=new Vector3(X,0,.4f);
             e.transform.rotation=Quaternion.Euler(0,270,0);
-            t.transform.position=new Vector3(X-2.25f,0,4.74f);
+            t.transform.position=new Vector3(X-1.30f,0,4.74f);
             spawned.Add(e);spawned.Add(t);
             var runner=Actor(3.10f);
             runner.Body.position=new Vector3(X-2.25f,2.19f,3.10f);

@@ -27,41 +27,33 @@ public static class ChaseReferenceArenaBuilder
         { this.prefab=prefab; position=new Vector3(x,0,z); this.yaw=yaw; }
     }
 
-    // Strict 0/90 degree orthogonal course: parallel X/Z sightlines,
-    // WCT-style joined frames and physically executable under/over
-    // choices. No diagonal placements or uncontrolled scatter.
-    // Distances are hand-authored, NOT surveyed reference dimensions.
-    // Spawns retain their fixed certified side-entry positions.
+    // Focused 13-module Quad, down from 24: preserve connected
+    // north gallery / eastern elevation, western turn, southern double
+    // timed rack and the central choice. Remove duplicate one-off
+    // frames, tables and low bars that clogged slide approaches.
+    // Four well-spaced wall controls still discourage a free wall loop.
+    // Only orthogonal (X/Z) headings, never random diagonal scatter.
     public static readonly LayoutPart[] Layout = {
-        new LayoutPart("WestPortal",-4.05f,3.82f),
+        // NORTH GALLERY: one truly connected elevated line.
         new LayoutPart("NorthLinks",-2.34f,4.35f,90f),
-        new LayoutPart("BackBench",-.51f,4.74f),
-        // Real 70cm walking link between NorthLinks gallery and BackBench.
         new LayoutPart("NorthGallerySpan",-1.61f,4.71f),
-        new LayoutPart("CrownTower",1.60f,4.74f),
-        new LayoutPart("NorthEastTruss",4.13f,4.78f,90f),
-        new LayoutPart("EastRamp",3.85f,.40f,270f),
-        new LayoutPart("EastDeck",3.63f,-1.25f,90f),
-        new LayoutPart("SouthEastTower",3.70f,-3.62f),
-        new LayoutPart("EastCrossbar",-1.55f,.95f,90f),
-        new LayoutPart("CenterDeck",-.96f,-.78f),
-        new LayoutPart("FrontGrid",.06f,-3.13f,90f),
-        new LayoutPart("FrontBench",1.64f,-4.51f),
+        new LayoutPart("BackBench",-.51f,4.74f),
+        new LayoutPart("CrownTower",1.45f,4.74f),
+        // EAST ELEVATION: ramp to flat turn to jump shelf to crown.
+        new LayoutPart("EastRamp",2.75f,.40f,270f),
+        // EAST SOUTH: reachable under/over platform, not another loose table.
+        new LayoutPart("SouthEastTower",2.70f,-4.48f),
+        // WEST SWITCHBACK: credible corner-versus-slide choice.
         new LayoutPart("WestBridge",-2.71f,.31f,90f),
-        new LayoutPart("WestSnake",-3.39f,-3.59f),
-        new LayoutPart("SouthWestRails",-1.41f,-4.40f,90f),
-        new LayoutPart("NorthInnerRail",-1.41f,2.35f),
-        new LayoutPart("UnderOverRail",-.06f,-1.79f),
         new LayoutPart("UnderOverBench",-3.39f,-2.16f,90f),
-        // Edge controls cross the long wall run, instead of adding random
-        // obstructions deep in the middle. Both ends allow a standing detour.
+        // SOUTH DOUBLE GATE. No duplicate loose rail alongside it;
+        // the 1.98m long physical slide needs a real entry AND exit.
+        new LayoutPart("FrontGrid",.06f,-3.13f,90f),
+        // PERIMETER: four choices instead of four empty wall circuits.
         new LayoutPart("WallSwitchWestNorth",-4.65f,1.30f),
         new LayoutPart("WallSwitchWestSouth",-4.65f,-.65f),
-        new LayoutPart("WallSwitchEastNorth",4.65f,3.22f),
-        new LayoutPart("WallSwitchEastSouth",4.65f,-2.40f),
-        // The former central open runway becomes a two-way choice:
-        // slow lateral bypass or timed physical crossing.
-        new LayoutPart("CrossFork",-.45f,1.35f,90f)
+        new LayoutPart("WallSwitchEastNorth",4.65f,2.82f),
+        new LayoutPart("WallSwitchEastSouth",4.65f,-2.40f)
     };
     static readonly HashSet<string> Certified = new HashSet<string> {
         "UnderOverRail","UnderOverBench"

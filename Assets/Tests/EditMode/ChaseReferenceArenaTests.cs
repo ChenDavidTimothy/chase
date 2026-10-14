@@ -30,7 +30,7 @@ namespace Chase.Tests
                 var root=s.GetRootGameObjects().Single(o=>o.name.StartsWith("ARENA  /"));
                 var group=root.GetComponentsInChildren<Transform>(true)
                     .Single(t=>t.name=="CHASE / WCT REFERENCE TRIAL");
-                Assert.AreEqual(24,group.childCount);
+                Assert.AreEqual(13,group.childCount);
                 foreach(Transform t in group)
                 {
                     Assert.IsTrue(UnityEditor.PrefabUtility.IsPartOfPrefabInstance(t.gameObject),
@@ -45,7 +45,7 @@ namespace Chase.Tests
             finally {if(!already)EditorSceneManager.CloseScene(s,true);}
         }
 
-        [Test] public void GroundOnlyCircuitsMustUseAthleticConnectionsBetweenStarts()
+        [Test] public void StandingCounterRouteIsClearlyLongerThanAthleticDirectLine()
         {
             string path="Assets/Scenes/ArenaWCTTrial.unity";
             var s=SceneManager.GetSceneByPath(path);
@@ -91,13 +91,20 @@ namespace Chase.Tests
                 }
                 var a=Chase.ChaseMatch.ChaserStart;
                 var b=Chase.ChaseMatch.EvaderStart;
-                // This intentionally ELEVATED layout divides the
-                // standing-only ground graph. Athletes must use a real
-                // low-passage skill link OR run up the physical ramp to
-                // connect zones. That is the opposite of an effortless
-                // walk-only path. Local grounded counterplay must remain.
-                Assert.AreEqual(-1,PathLength(a,b),
-                    "Whole-arena flat running bypasses every athletic route");
+                // The simplified arena deliberately leaves a long
+                // grounded COUNTER-ROUTE. It must not reintroduce a
+                // direct low-skill sprint between both role starts.
+                // The timed slide, dive, and elevation shortcuts are
+                // physically tested separately from this conservative
+                // capsule navigation graph.
+                int standingSteps=PathLength(a,b);
+                Assert.Greater(standingSteps,0,
+                    "No standing counter-route through the reduced arena");
+                float detour=standingSteps*Step;
+                float direct=Vector2.Distance(new Vector2(a.x,a.z),
+                    new Vector2(b.x,b.z));
+                Assert.Greater(detour,direct*1.48f,
+                    "The course lets standing-only running take a trivial direct line");
                 Assert.Greater(PathLength(a,new Vector3(-3f,.9f,-4.8f)),0,
                     "Chaser lacks a grounded local counter-route");
                 Assert.Greater(PathLength(b,new Vector3(3f,.9f,3f)),0,
@@ -215,10 +222,10 @@ namespace Chase.Tests
                     if(Mathf.Abs(yaw-90f)<.05f) xAligned++;
                     else zAligned++;
                 }
-                Assert.GreaterOrEqual(zAligned,7,"No usable Z-axis structure");
-                Assert.GreaterOrEqual(xAligned,7,"No usable X-axis structure");
+                Assert.GreaterOrEqual(zAligned,6,"No usable Z-axis structure");
+                Assert.GreaterOrEqual(xAligned,4,"No usable X-axis structure");
                 foreach(string side in new[]{"WallSwitchWestNorth","WallSwitchWestSouth",
-                    "WallSwitchEastNorth","WallSwitchEastSouth","CrossFork"})
+                    "WallSwitchEastNorth","WallSwitchEastSouth"})
                 {
                     var t=group.Cast<Transform>().Single(x=>x.name=="REFERENCE / "+side);
                     var beam=t.GetComponentsInChildren<BoxCollider>(true)

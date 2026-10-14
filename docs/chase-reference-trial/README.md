@@ -11,17 +11,17 @@ This is an authored reconstruction of the uploaded chase-tag obstacle reference,
 - Playable comparison scene: Assets/Scenes/ArenaWCTTrial.unity, cloned from the real production Arena 01 match scene.
 - Source-of-truth layout/build command: Assets/Editor/ChaseReferenceArenaBuilder.cs, Unity menu **Chase > Arena > Build Reference Trial**.
 - Separate geometry guard: Assets/Editor/ChaseReferenceArenaContract.cs, Unity menu **Chase > Arena > Validate Reference Trial**.
-- Reusable source-linked prefabs: Assets/Obstacles/WCTTrial/, **22 trial landmark prefabs**, plus two certified original UnderOverRail/UnderOverBench crossings. **24 modules total**.
-- Geometry features the image's rear metal frame spans, two open-sided high piers, reoriented east-west incline, raised passable tables, crossing beams, a foreground lattice, and four side-wall interruption points. All **24 placed assemblies** are constrained to 0°/90°/180°/270° cardinal yaw. Both world-axis directions are used; no diagonal obstacle orientation is allowed by the authoring contract.
+- Reusable source-linked prefabs: Assets/Obstacles/WCTTrial/, **12 active trial landmark prefabs** plus one unchanged certified **UnderOverBench**, for **13 source-linked assemblies total**. Unused trial prefab sources are retained but NOT placed.
+- Current geometry is intentionally sparse: connected north gallery and Crown, one east ramp-to-platform chain, the open southeast podium, western switchback and certified crossing, the southern two-bay slide/dive rack, and four widely separated side-wall controls. All **13 placed assemblies** use exact X/Z cardinal alignment.
 - Physics uses ordinary solid classified BoxColliders, with non-colliding rounded decorative meshwork and preexisting CHASE materials.
 - Trial uses a static view of its own arena in menus instead of the old physical menu recording, which would conflict with the new geometry. CHASE movement, collisions and animations are unchanged. The 21-cell production bot planner has a **trial-only** allowance for real passable under-deck/under-rail skill links and uses the original physical slide to attempt them. No scripted traversal or bot-only motion.
 - Production Arena 01, its nine-prefab placement authority, public Practice, the technical Gym, and the sole Blender character source are preserved.
 
 ## Verification
 
-The trial validator checks source prefab links, deterministic placement, floor and match retention, original scene separation, renderer/solid separation, bounds, role spawn safety, and zero inter-module penetrations. Twenty-three dedicated EditMode tests check source-linked geometry, strict cardinal alignment, three genuine joined obstacle assemblies, open podium interiors, interrupted side-wall running, ground-only disconnection between role starts with safe local counter-routes, bot navigation via genuine low passages, and both slide and dive over/under crossings using the actual motor in both directions. The existing PlayMode motor physics suite remains unchanged.
+The trial validator checks source prefab links, deterministic placement, floor and match retention, original scene separation, renderer/solid separation, bounds, role spawn safety, and zero inter-module penetrations. Thirty-seven dedicated EditMode tests check source-linked geometry, strict cardinal alignment, three genuine joined obstacle assemblies, open podium interiors, interrupted side-wall running, a measured nontrivial standing-body detour between the role starts, bot navigation via genuine low passages, and both slide and dive over/under crossings using the actual motor in both directions. The existing PlayMode motor physics suite remains unchanged.
 
-**Limitations:** Exact reproduction is impossible from this one perspective image. The bot planner recognizes passage links, but a real Editor Runner match against a stationary Evader confirmed that the bot can still **stall in SlideRecovery under WestBridge** after crossing the first west-side rail. This issue is unresolved; it is not competitively acceptable and is a blocker to replacing production Arena 01. Human-versus-human balance, exhaustive approach windows, and measured shortcut-vs-detour times also remain unproven. These are reasons to keep this as a trial.
+**Limitations:** Exact reproduction is impossible from this one perspective image. Prior, denser trial iterations exposed bot stalls during slide recovery. In the current sparse iteration, two successive Runner rounds against a stationary Evader ended in legitimate tags, each with 17.58 seconds remaining. The repeated deterministic result does not establish bot reliability across all routes, difficulty settings, or matchups. Human-versus-human balance, exhaustive approach windows, and measured shortcut-vs-detour times also remain unproven. These are reasons to keep this as a trial.
 
 ## How to play
 
@@ -35,7 +35,7 @@ User-provided perspective render of an open, scaffold-heavy chase-tag quad, supp
 
 ## Evidence from this implementation
 
-- Current EditMode suite: **56/56 passed** (33 pre-existing + 23 trial-specific).
+- Current EditMode suite: **70/70 passed** (33 pre-existing + 37 trial-specific).
 - Current PlayMode suite: **103/103 passed**, without modifying the production motor.
 - Trial and production Editor scene contracts: **both passed**.
 - Unity Editor trial round: menu, arena selection, countdown, physical tag, and results observed.
@@ -45,7 +45,11 @@ User-provided perspective render of an open, scaffold-heavy chase-tag quad, supp
 
 The previous production WebGL output and public Cloudflare Pages deployment were not touched. The comparison player is local and requires the user's approval before any public deployment.
 
-## Iteration 2: competitive circulation rationale
+## Historical development notes (iterations 2–5)
+
+These dated implementation accounts describe **earlier layouts**, not the currently active 13-assembly version. Current measurements and limitations are in Iteration 6 below.
+
+### Iteration 2: competitive circulation rationale
 
 The first comparison was visually aligned but had nearly parallel frames, an opaque-looking low podium, and clear side-wall jogging loops. This revision rotates key landmark modules to several axes, removes the decorative podium skirt, increases under-deck clearance for the actual slide body, and inserts four low under/over wall baffles. The central cross-fork acts as a skill gate while grounded counter-routes remain locally available. Distinct choices are physical dives OVER, slides/crawls UNDER, or longer spatial detours around an end. The skill-aware trial bot can plan through the genuine low-passage links, while the ground-only route between the role starts is measurably longer than their straight-line separation. This is not a substitute for measuring human route selection or bot completion reliability over entire matches.
 
@@ -83,11 +87,11 @@ This fixes platform ingress. It is not evidence that every platform approach is 
 
 The current implementation is a new, measured course revision. See **INTENTIONAL_ROUTE_PLAN.md** for the source envelope, deliberate route families, dimensions, tolerance matrices, and acceptance gates. Rather than add arbitrary obstacles, this iteration builds a single *eastern elevated course* from genuine ramp to flat runout to 90-degree turn to higher landing, with a separate lower Crown exit; joins NorthLinks, NorthGallerySpan, and BackBench into a walking link; leaves WestBridge recovery space under an outside-supported tabletop; and converts the east/north/south timed crossings into open-topped physically honest slide-or-dive choices.
 
-**Important change in route topology:** the latest ground-only standing-body graph cannot connect the fixed competitor starts, while trial skill-aware bot navigation can and physical player crossing fixtures demonstrate real options. This supersedes the earlier historical discussion above of a longer standing-only route in iteration 3. Local bypasses at each start remain available. This is a design experiment, not proof every chase will involve a particular skill.
+**Historical iteration-5 route topology:** that version's ground-only standing-body graph could not connect the fixed competitor starts, while trial skill-aware bot navigation can and physical player crossing fixtures demonstrate real options. This supersedes the earlier historical discussion above of a longer standing-only route in iteration 3. Local bypasses at each start remain available. This is a design experiment, not proof every chase will involve a particular skill.
 
 **Passability measured with ChaseMotor, not assumed from geometry:** The test fixtures vary lateral approach position on low passages, launching direction for slides and dives, and two distinct dive takeoff distances. The three ramp trials use different starting lanes. The joined gallery and southern two-bay rack are tested end to end with the real solid motor. Unsupported phasing, teleports, nonphysical traversal zones, and altered production movement tuning remain excluded.
 
-**Current remaining risk:** the trial AI can still stall in real Runner matches even when the isolated movement fixtures and its grid connectivity tests pass. In this revision the Chaser stalled near (-4.24, 0.85) and failed to tag a stationary Evader before the time limit. This is an explicitly open gameplay issue. Actual human playtest timing and matchup balance are not proven by this work. The original production Arena 01 and Blender source remain unmodified.
+**Iteration-5 observed risk:** the trial AI could stall in real Runner matches even when the isolated movement fixtures and its grid connectivity tests pass. In this revision the Chaser stalled near (-4.24, 0.85) and failed to tag a stationary Evader before the time limit. This is an explicitly open gameplay issue. Actual human playtest timing and matchup balance are not proven by this work. The original production Arena 01 and Blender source remain unmodified.
 
 
 ### Latest verification package
@@ -96,8 +100,25 @@ The current implementation is a new, measured course revision. See **INTENTIONAL
 - Connected ramp, elevated landing, and Crown: [linked-elevation-route.png](evidence/editor/linked-elevation-route.png)
 - Real browser clickthrough and console check: [verification.json](evidence/webgl/verification.json)
 - Measurement and design rationale: [INTENTIONAL_ROUTE_PLAN.md](INTENTIONAL_ROUTE_PLAN.md)
-- Full automated suites: **56/56 EditMode** and **103/103 PlayMode**.
-- Editor inspection: actual trial menu, countdown, live Chaser movement and end-of-round observed. Chaser stall remains an explicit trial issue.
+- Iteration-5 regression suites: **56/56 EditMode** and **103/103 PlayMode**.
+- Iteration-5 Editor inspection observed the live Chaser stall that motivated the current simplification.
 - Separate WebGL player succeeded, **0 build errors**, optional Pipeline runtime-configuration warning only. Real Chrome smoke entered the new round and reported **0 JavaScript exceptions, 0 browser errors**.
 
 The trial is usable for hands-on layout and movement review. It has **not** passed sustained AI-versus-stationary-Evader pursuit or human-versus-human balance testing, and must not replace the approved Arena 01 or be deployed as production without another decision.
+
+
+## Iteration 6: purposeful breathing room, 13-assembly version
+
+The 24-assembly course was physically crowded, particularly around the southern double rack and the long east ramp. Eleven placed pieces are now removed: WestPortal, NorthEastTruss, EastDeck, EastCrossbar, CenterDeck, FrontBench, WestSnake, SouthWestRails, NorthInnerRail, CrossFork, and the duplicate certified UnderOverRail. They remain optional saved prefab sources, NOT placed objects. This is a **45.8% reduction** in positioned assemblies.
+
+**Route families retained:** north two-portal gallery joined by NorthGallerySpan to BackBench and Crown; the east incline/flat turn/high jump landing; south and east physical podium; west switchback + certified UnderOverBench; southern two-bay rack; and four genuine perimeter under/over gates. No movement, collider sizes, animations, AI source, production scene, original prefab, or character rig were modified. The remaining objects all face world X or Z, not arbitrary diagonals.
+
+**Collision discoveries that determined the actual layout:**
+- The old SoutheastTower physically prevented activation of the 1.98 m-long slide body on the *eastern* approach to FrontGrid. Moving it south and west cleared the approach without changing motor physics.
+- The east ramp blocked slide-body deployment near both east-wall crossings, even where visuals looked open. Moving the whole connected ramp inward allowed the same real horizontal SlideBox to deploy.
+- An extra center fork and a duplicate UnderOverRail could each fit visually but interfered with the neighboring rack's trajectory. Both were deliberately removed rather than hiding or phasing their colliders.
+- The final trial and production arena contracts validate **zero inter-assembly PhysX penetrations**, safe fixed spawns and unchanged authoritative source references.
+
+**Quantitative tests**: A conservative upright-capsule route between fixed starts is **17.64 m** on a 0.245 m sampled grid, versus **11.03 m** direct, a **1.60×** detour. This retains a meaningful running counter-route instead of forcing scripted skill use at every location. The *assembled scene* now passes **six** complete-rack slide traversals (both directions, three lateral offsets each) and **24** complete perimeter-gate slide traversals (four gates, both directions, three offsets each). Every case uses the actual ChaseMotor and non-trigger PhysX solids. Connected ramp, gallery, isolated over/under and podium jump tests also remain. Numerical clearance is not itself proof of human-controlled timing fairness, and these results do not certify all imaginable angles.
+
+**AI result**: The Runner Chaser tagged a stationary Evader in **two consecutive rounds**, each with **17.58 seconds still on the clock**. Older course versions could produce a long stall. The result is encouraging but must not be treated as comprehensive balance or AI certification.
