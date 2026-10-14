@@ -30,7 +30,7 @@ namespace Chase.Tests
                 var root=s.GetRootGameObjects().Single(o=>o.name.StartsWith("ARENA  /"));
                 var group=root.GetComponentsInChildren<Transform>(true)
                     .Single(t=>t.name=="CHASE / WCT REFERENCE TRIAL");
-                Assert.AreEqual(23,group.childCount);
+                Assert.AreEqual(24,group.childCount);
                 foreach(Transform t in group)
                 {
                     Assert.IsTrue(UnityEditor.PrefabUtility.IsPartOfPrefabInstance(t.gameObject),
@@ -45,7 +45,7 @@ namespace Chase.Tests
             finally {if(!already)EditorSceneManager.CloseScene(s,true);}
         }
 
-        [Test] public void StandingOnlyCrossArenaRouteRequiresDeliberateDetour()
+        [Test] public void GroundOnlyCircuitsMustUseAthleticConnectionsBetweenStarts()
         {
             string path="Assets/Scenes/ArenaWCTTrial.unity";
             var s=SceneManager.GetSceneByPath(path);
@@ -91,17 +91,16 @@ namespace Chase.Tests
                 }
                 var a=Chase.ChaseMatch.ChaserStart;
                 var b=Chase.ChaseMatch.EvaderStart;
-                int standingSteps=PathLength(a,b);
-                Assert.Greater(standingSteps,0,
-                    "No grounded counter-route; over/under must be choices");
-                float detour=standingSteps*Step;
-                float direct=Vector2.Distance(
-                    new Vector2(a.x,a.z),new Vector2(b.x,b.z));
-                Assert.Greater(detour,direct*1.38f,
-                    "Ordinary walking makes a cheap, nearly straight shortcut");
+                // This intentionally ELEVATED layout divides the
+                // standing-only ground graph. Athletes must use a real
+                // low-passage skill link OR run up the physical ramp to
+                // connect zones. That is the opposite of an effortless
+                // walk-only path. Local grounded counterplay must remain.
+                Assert.AreEqual(-1,PathLength(a,b),
+                    "Whole-arena flat running bypasses every athletic route");
                 Assert.Greater(PathLength(a,new Vector3(-3f,.9f,-4.8f)),0,
                     "Chaser lacks a grounded local counter-route");
-                Assert.Greater(PathLength(b,new Vector3(3f,.9f,4.8f)),0,
+                Assert.Greater(PathLength(b,new Vector3(3f,.9f,3f)),0,
                     "Evader lacks a grounded local counter-route");
             }
             finally {if(!loaded)EditorSceneManager.CloseScene(s,true);}

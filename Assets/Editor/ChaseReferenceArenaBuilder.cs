@@ -36,13 +36,15 @@ public static class ChaseReferenceArenaBuilder
         new LayoutPart("WestPortal",-4.05f,3.82f),
         new LayoutPart("NorthLinks",-2.34f,4.35f,90f),
         new LayoutPart("BackBench",-.51f,4.74f),
-        new LayoutPart("CrownTower",1.60f,3.68f),
+        // Real 70cm walking link between NorthLinks gallery and BackBench.
+        new LayoutPart("NorthGallerySpan",-1.61f,4.71f),
+        new LayoutPart("CrownTower",1.60f,4.74f),
         new LayoutPart("NorthEastTruss",4.13f,4.78f,90f),
-        new LayoutPart("EastRamp",4.40f,.40f,270f),
+        new LayoutPart("EastRamp",3.85f,.40f,270f),
         new LayoutPart("EastDeck",3.63f,-1.25f,90f),
         new LayoutPart("SouthEastTower",3.70f,-3.62f),
-        new LayoutPart("EastCrossbar",1.72f,.95f,90f),
-        new LayoutPart("CenterDeck",.10f,-.24f),
+        new LayoutPart("EastCrossbar",-1.55f,.95f,90f),
+        new LayoutPart("CenterDeck",-.96f,-.78f),
         new LayoutPart("FrontGrid",.06f,-3.13f,90f),
         new LayoutPart("FrontBench",1.64f,-4.51f),
         new LayoutPart("WestBridge",-2.71f,.31f,90f),
@@ -59,7 +61,7 @@ public static class ChaseReferenceArenaBuilder
         new LayoutPart("WallSwitchEastSouth",4.65f,-2.40f),
         // The former central open runway becomes a two-way choice:
         // slow lateral bypass or timed physical crossing.
-        new LayoutPart("CrossFork",.15f,1.95f,90f)
+        new LayoutPart("CrossFork",-.45f,1.35f,90f)
     };
     static readonly HashSet<string> Certified = new HashSet<string> {
         "UnderOverRail","UnderOverBench"
@@ -122,8 +124,9 @@ public static class ChaseReferenceArenaBuilder
     static void Deck(Transform p,string name,float w,float d,float y,
         bool legs=true,bool edge=true)
     {
-        // Flat real solid panel; physical underpass whenever y >= .90.
-        Block(p,name,new Vector3(0,y-.065f,0),new Vector3(w,.13f,d),
+        // Thin, real solid deck. A 0.10m panel provides 3cm more low
+        // clearance at the SAME top height than the old 0.13m platform.
+        Block(p,name,new Vector3(0,y-.05f,0),new Vector3(w,.10f,d),
             slate,true,true,true);
         Art(p,name+" / walking enamel",new Vector3(0,y+.009f,0),
             new Vector3(w-.04f,.025f,d-.04f),ivory);
@@ -137,7 +140,7 @@ public static class ChaseReferenceArenaBuilder
         if(legs)
             foreach(float x in new[]{-w*.5f+.09f,w*.5f-.09f})
                 foreach(float z in new[]{-d*.5f+.09f,d*.5f-.09f})
-                    Post(p,name+" / support "+x+"/"+z,x,z,y-.13f,.10f);
+                    Post(p,name+" / support "+x+"/"+z,x,z,y-.10f,.10f);
     }
     static void Portal(Transform p,float width,float topY,bool mid=true)
     {
@@ -149,14 +152,16 @@ public static class ChaseReferenceArenaBuilder
             Rail(p,"eye-line bar",new Vector3(0,1.42f,0),
                 new Vector3(width+.1f,.085f,.09f),steel,true,true);
     }
-    static void LowCross(Transform p,float width,float beamY=.95f)
+    static void LowCross(Transform p,float width,float beamY=1.0f)
     {
-        foreach(float x in new[]{-width*.5f,width*.5f})
-            Post(p,"low-cross leg "+x,x,0,1.4f,.11f);
-        Rail(p,"dual-choice crossing",new Vector3(0,beamY,0),
-            new Vector3(width,.09f,.20f),gold,true,true);
-        Rail(p,"top sightline",new Vector3(0,1.36f,0),
-            new Vector3(width+.08f,.07f,.09f),steel,true,true);
+        // This is an OVER/UNDER SKILL crossing. The old 1.36m
+        // horizontal bar was an unintended ceiling for a jump or dive.
+        // Keep real solid posts and a single low beam: body contact
+        // decides success, without an impossible roof overhead.
+        foreach(float x in new[]{-width*.5f-.065f,width*.5f+.065f})
+            Post(p,"open crossing terminal "+x,x,0,1.26f,.10f);
+        Block(p,"dual-choice crossing",new Vector3(0,beamY,0),
+            new Vector3(width,.09f,.18f),gold,false,true,true);
     }
     static void Tower(Transform p,float w,float d,bool tall)
     {
@@ -197,23 +202,50 @@ public static class ChaseReferenceArenaBuilder
     }
     static void Ramp(Transform p)
     {
-        // Genuine 13-degree solid walking ramp. The front lip is at floor height.
-        var t=Node(p,"connected angled run",new Vector3(0,.30f,0));
-        t.localRotation=Quaternion.Euler(-13f,0,0);
-        Block(t,"inclined walking surface",Vector3.zero,
+        // EAST ELEVATION ROUTE (one source-linked solid assembly):
+        // ground -> inclined walk -> genuinely flush flat runout ->
+        // perpendicular flat turn -> 0.67m jump onto high landing.
+        // Opponents may instead cut UNDER the final high shelf or
+        // stay on the ground and intercept the far end. Nothing snaps,
+        // vaults automatically, or replaces contact with an animation.
+        var slope=Node(p,"connected angled run",new Vector3(0,.30f,0));
+        slope.localRotation=Quaternion.Euler(-13f,0,0);
+        Block(slope,"inclined walking surface",Vector3.zero,
             new Vector3(1.16f,.13f,2.26f),ivory,true,false,true);
         foreach(float x in new[]{-.56f,.56f})
-            Art(t,"long aqua edge",new Vector3(x,.071f,0),
+            Art(slope,"long aqua edge",new Vector3(x,.071f,0),
                 new Vector3(.038f,.027f,2.18f),mint);
-        Art(t,"leading coral stripe",new Vector3(0,.076f,-1.09f),
+        Art(slope,"leading coral stripe",new Vector3(0,.076f,-1.09f),
             new Vector3(1.08f,.022f,.035f),coral);
+        // Ramp upper end is approximately 0.62m at local z=+1.13.
+        // No upward step at the connection: the runout top is 0.62m.
+        Block(p,"level runout",new Vector3(0,.56f,2.35f),
+            new Vector3(1.16f,.12f,2.46f),ivory,true,false,true);
+        Art(p,"runout direction stripe",new Vector3(0,.638f,2.32f),
+            new Vector3(.054f,.024f,2.27f),mint);
+        // A same-height 90-degree corner arm. The intersecting top
+        // panels deliberately form ONE continuous surface.
+        Block(p,"flat corner turn",new Vector3(.57f,.56f,2.60f),
+            new Vector3(1.05f,.12f,1.90f),ivory,true,false,true);
+        Art(p,"corner visual cue",new Vector3(.97f,.634f,2.60f),
+            new Vector3(.035f,.025f,1.70f),coral);
+        // The roof can also be passed UNDER in a slide. Supports
+        // remain at the outer corners rather than the entry line.
+        Block(p,"jump landing",new Vector3(2.15f,1.24f,2.65f),
+            new Vector3(2.40f,.10f,2.25f),slate,true,true,true);
+        Art(p,"landing surface",new Vector3(2.15f,1.301f,2.65f),
+            new Vector3(2.35f,.024f,2.20f),ivory);
+        Art(p,"landing mint lip",new Vector3(2.15f,1.294f,1.49f),
+            new Vector3(2.30f,.020f,.024f),mint);
+        foreach(float z in new[]{1.60f,3.70f})
+            Post(p,"landing outer supports "+z,3.27f,z,1.19f,.095f);
     }
     static void WallChoice(Transform p,string label,float w=1.76f)
     {
         // Inspired by the perimeter links in the reference quad.
         // Frictionless standing wall-loop is physically interrupted here.
-        // A real .86m underside allows feet-first sliding (or committed
-        // dive-prone crawling); a ballistic dive can clear its .94m top.
+        // A real .94m underside gives the .82m slide body 12cm of
+        // vertical tolerance. A committed dive clears its 1.02m top.
         // Open ends leave a longer but still playable standing counter-line.
 
         foreach(float x in new[]{-(w*.5f+.06f),w*.5f+.06f})
@@ -223,10 +255,10 @@ public static class ChaseReferenceArenaBuilder
         // navigation blocker. Solid posts remain full blockers. The trial
         // bot can plan a skill crossing, then must perform it in PhysX.
         Block(p,label+" / genuine under-over",
-            new Vector3(0,.90f,0),new Vector3(w,.08f,.22f),
+            new Vector3(0,.98f,0),new Vector3(w,.08f,.20f),
             gold,false,true,true);
         Art(p,label+" / front lip",
-            new Vector3(0,.946f,-.10f),new Vector3(w-.10f,.020f,.022f),mint);
+            new Vector3(0,1.026f,-.10f),new Vector3(w-.10f,.020f,.022f),mint);
     }
 
     static void BuildPart(string id,Transform p)
@@ -240,7 +272,7 @@ public static class ChaseReferenceArenaBuilder
                 WallChoice(p,id);
                 break;
             case "CrossFork":
-                WallChoice(p,"angled central choice",1.46f);
+                WallChoice(p,"central timed crossing",1.46f);
                 // Visual track heading is supplied by authored prefab yaw.
                 break;
             case "WestPortal":
@@ -257,17 +289,31 @@ public static class ChaseReferenceArenaBuilder
                 {
                     var frame=Node(p,"gallery portal at "+z,
                         new Vector3(0,0,z));
-                    Portal(frame,1.28f,2.05f,false);
+                    Portal(frame,1.28f,3.10f,false);
                 }
                 foreach(float x in new[]{-.64f,.64f})
                     Rail(p,"gallery connecting spine "+x,
-                        new Vector3(x,2.0f,0),
+                        new Vector3(x,3.05f,0),
                         new Vector3(.09f,.09f,1.48f),slate);
                 var deck=Node(p,"gallery central high deck",Vector3.zero);
                 Deck(deck,"under-or-over table",1.36f,.76f,1.07f,false);
                 break;
             case "BackBench":
-                Deck(p,"rear long running bench",1.50f,.56f,1.07f);
+                // Cantilever from the adjoining NorthGallerySpan and
+                // its four grounded gallery frames. Standalone posts
+                // closed the coarse (and real player) corridor below.
+                // The linked 1.07m surface is solid with its underside
+                // accessible from either long side.
+                Deck(p,"rear long running bench",1.50f,.56f,1.07f,false);
+                break;
+            case "NorthGallerySpan":
+                // Bridges the real elevated edges of NorthLinks and
+                // BackBench across a ~0.70m opening. Its top is exactly
+                // the same as the two connected 1.07m surfaces.
+                Block(p,"continuous gallery span",new Vector3(0,1.02f,0),
+                    new Vector3(.68f,.10f,.40f),ivory,true,true,true);
+                Art(p,"gallery joint stripe",new Vector3(0,1.08f,0),
+                    new Vector3(.55f,.020f,.035f),mint);
                 break;
             case "CrownTower":
                 Tower(p,2.04f,1.65f,true);
@@ -287,9 +333,7 @@ public static class ChaseReferenceArenaBuilder
                 Tower(p,2.0f,1.32f,false);
                 break;
             case "EastCrossbar":
-                Portal(p,1.36f,2.04f,false);
-                Rail(p,"north connector",new Vector3(0,1.01f,.05f),
-                    new Vector3(1.35f,.09f,.19f),gold,true,true);
+                LowCross(p,1.36f,1.00f);
                 break;
             case "CenterDeck":
                 Deck(p,"central decision slab",1.40f,.92f,1.07f);
@@ -301,7 +345,7 @@ public static class ChaseReferenceArenaBuilder
                 foreach(float z in new[]{-.53f,.53f})
                 {
                     var gate=Node(p,"joined crossing bay "+z,new Vector3(0,0,z));
-                    LowCross(gate,1.78f,z<0?.93f:1.01f);
+                    LowCross(gate,1.78f,z<0?.98f:1.02f);
                 }
                 foreach(float x in new[]{-.89f,.89f})
                     Rail(p,"joined lateral spine "+x,
@@ -314,7 +358,13 @@ public static class ChaseReferenceArenaBuilder
                 Deck(p,"front small table",1.40f,.75f,1.08f);
                 break;
             case "WestBridge":
-                Deck(p,"west long switchback",1.89f,.70f,1.08f);
+                // Remove all four central support legs and instead
+                // support from the OUTSIDE corner. A 0.70m-deep slide
+                // roof must not leave the 1.98m-long body trapped
+                // between decorative feet and the linked turn.
+                Deck(p,"west long switchback",1.89f,.70f,1.09f,false);
+                foreach(float x in new[]{-.90f,.90f})
+                    Post(p,"outside west support "+x,x,.36f,.99f,.09f);
                 // Extend ONE side into a joined turning rail, making a
                 // choice between immediate slide/dive and looping around
                 // the end. The narrow rail touches the deck's end support.
@@ -330,12 +380,10 @@ public static class ChaseReferenceArenaBuilder
                     new Vector3(.11f,.10f,.78f),gold,true,true);
                 break;
             case "SouthWestRails":
-                LowCross(p,1.65f,.92f);
+                LowCross(p,1.65f,1.00f);
                 break;
             case "NorthInnerRail":
-                Portal(p,1.74f,2.10f,false);
-                Rail(p,"northern waist bar",new Vector3(0,.92f,0),
-                    new Vector3(1.70f,.09f,.21f),gold,true,true);
+                LowCross(p,1.74f,1.00f);
                 break;
             default:
                 throw new InvalidOperationException("Unknown reference module "+id);

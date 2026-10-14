@@ -11,15 +11,15 @@ This is an authored reconstruction of the uploaded chase-tag obstacle reference,
 - Playable comparison scene: Assets/Scenes/ArenaWCTTrial.unity, cloned from the real production Arena 01 match scene.
 - Source-of-truth layout/build command: Assets/Editor/ChaseReferenceArenaBuilder.cs, Unity menu **Chase > Arena > Build Reference Trial**.
 - Separate geometry guard: Assets/Editor/ChaseReferenceArenaContract.cs, Unity menu **Chase > Arena > Validate Reference Trial**.
-- Reusable source-linked prefabs: Assets/Obstacles/WCTTrial/, **21 trial landmark prefabs** (including five skill-crossing links), plus two certified original UnderOverRail/UnderOverBench crossings. **23 modules total**.
-- Geometry features the image's rear metal frame spans, two open-sided high piers, reoriented east-west incline, raised passable tables, crossing beams, a foreground lattice, and four side-wall interruption points. All **23 placed assemblies** are constrained to 0°/90°/180°/270° cardinal yaw. Both world-axis directions are used; no diagonal obstacle orientation is allowed by the authoring contract.
+- Reusable source-linked prefabs: Assets/Obstacles/WCTTrial/, **22 trial landmark prefabs**, plus two certified original UnderOverRail/UnderOverBench crossings. **24 modules total**.
+- Geometry features the image's rear metal frame spans, two open-sided high piers, reoriented east-west incline, raised passable tables, crossing beams, a foreground lattice, and four side-wall interruption points. All **24 placed assemblies** are constrained to 0°/90°/180°/270° cardinal yaw. Both world-axis directions are used; no diagonal obstacle orientation is allowed by the authoring contract.
 - Physics uses ordinary solid classified BoxColliders, with non-colliding rounded decorative meshwork and preexisting CHASE materials.
 - Trial uses a static view of its own arena in menus instead of the old physical menu recording, which would conflict with the new geometry. CHASE movement, collisions and animations are unchanged. The 21-cell production bot planner has a **trial-only** allowance for real passable under-deck/under-rail skill links and uses the original physical slide to attempt them. No scripted traversal or bot-only motion.
 - Production Arena 01, its nine-prefab placement authority, public Practice, the technical Gym, and the sole Blender character source are preserved.
 
 ## Verification
 
-The trial validator checks source prefab links, deterministic placement, floor and match retention, original scene separation, renderer/solid separation, bounds, role spawn safety, and zero inter-module penetrations. Eleven dedicated EditMode tests check source-linked geometry, strict cardinal alignment, three genuine joined obstacle assemblies, open podium interiors, interrupted side-wall running, a measurable standing-only detour versus direct travel, bot navigation via genuine low passages, and both slide and dive over/under crossings using the actual motor in both directions. The existing PlayMode motor physics suite remains unchanged.
+The trial validator checks source prefab links, deterministic placement, floor and match retention, original scene separation, renderer/solid separation, bounds, role spawn safety, and zero inter-module penetrations. Twenty-three dedicated EditMode tests check source-linked geometry, strict cardinal alignment, three genuine joined obstacle assemblies, open podium interiors, interrupted side-wall running, ground-only disconnection between role starts with safe local counter-routes, bot navigation via genuine low passages, and both slide and dive over/under crossings using the actual motor in both directions. The existing PlayMode motor physics suite remains unchanged.
 
 **Limitations:** Exact reproduction is impossible from this one perspective image. The bot planner recognizes passage links, but a real Editor Runner match against a stationary Evader confirmed that the bot can still **stall in SlideRecovery under WestBridge** after crossing the first west-side rail. This issue is unresolved; it is not competitively acceptable and is a blocker to replacing production Arena 01. Human-versus-human balance, exhaustive approach windows, and measured shortcut-vs-detour times also remain unproven. These are reasons to keep this as a trial.
 
@@ -35,7 +35,7 @@ User-provided perspective render of an open, scaffold-heavy chase-tag quad, supp
 
 ## Evidence from this implementation
 
-- Current EditMode suite: **44/44 passed** (33 pre-existing + 11 trial-specific).
+- Current EditMode suite: **56/56 passed** (33 pre-existing + 23 trial-specific).
 - Current PlayMode suite: **103/103 passed**, without modifying the production motor.
 - Trial and production Editor scene contracts: **both passed**.
 - Unity Editor trial round: menu, arena selection, countdown, physical tag, and results observed.
@@ -77,3 +77,27 @@ Both deck tops are now at **1.02 m**, reachable using the real 7 m/s jump (maxim
 Two new EditMode PhysX tests instantiate each saved tower prefab alongside the real ChaseMotor, run in at physical sprint speed, execute a genuine jump, and require the actor to become grounded *on* its deck. The existing underpass, source-link, layout and competition tests continue to pass. Editor evidence: evidence/editor/podium-crown-open.png and evidence/editor/podium-southeast-open.png. The isolated trial WebGL build and Chrome menu-to-round smoke were repeated successfully.
 
 This fixes platform ingress. It is not evidence that every platform approach is equally viable, or that the existing trial bot's independently documented WestBridge recovery stall is fixed.
+
+
+## Iteration 5: intentionally connected competitive routes and physical tolerance
+
+The current implementation is a new, measured course revision. See **INTENTIONAL_ROUTE_PLAN.md** for the source envelope, deliberate route families, dimensions, tolerance matrices, and acceptance gates. Rather than add arbitrary obstacles, this iteration builds a single *eastern elevated course* from genuine ramp to flat runout to 90-degree turn to higher landing, with a separate lower Crown exit; joins NorthLinks, NorthGallerySpan, and BackBench into a walking link; leaves WestBridge recovery space under an outside-supported tabletop; and converts the east/north/south timed crossings into open-topped physically honest slide-or-dive choices.
+
+**Important change in route topology:** the latest ground-only standing-body graph cannot connect the fixed competitor starts, while trial skill-aware bot navigation can and physical player crossing fixtures demonstrate real options. This supersedes the earlier historical discussion above of a longer standing-only route in iteration 3. Local bypasses at each start remain available. This is a design experiment, not proof every chase will involve a particular skill.
+
+**Passability measured with ChaseMotor, not assumed from geometry:** The test fixtures vary lateral approach position on low passages, launching direction for slides and dives, and two distinct dive takeoff distances. The three ramp trials use different starting lanes. The joined gallery and southern two-bay rack are tested end to end with the real solid motor. Unsupported phasing, teleports, nonphysical traversal zones, and altered production movement tuning remain excluded.
+
+**Current remaining risk:** the trial AI can still stall in real Runner matches even when the isolated movement fixtures and its grid connectivity tests pass. In this revision the Chaser stalled near (-4.24, 0.85) and failed to tag a stationary Evader before the time limit. This is an explicitly open gameplay issue. Actual human playtest timing and matchup balance are not proven by this work. The original production Arena 01 and Blender source remain unmodified.
+
+
+### Latest verification package
+
+- Overview: [arena-overview.png](evidence/editor/arena-overview.png)
+- Connected ramp, elevated landing, and Crown: [linked-elevation-route.png](evidence/editor/linked-elevation-route.png)
+- Real browser clickthrough and console check: [verification.json](evidence/webgl/verification.json)
+- Measurement and design rationale: [INTENTIONAL_ROUTE_PLAN.md](INTENTIONAL_ROUTE_PLAN.md)
+- Full automated suites: **56/56 EditMode** and **103/103 PlayMode**.
+- Editor inspection: actual trial menu, countdown, live Chaser movement and end-of-round observed. Chaser stall remains an explicit trial issue.
+- Separate WebGL player succeeded, **0 build errors**, optional Pipeline runtime-configuration warning only. Real Chrome smoke entered the new round and reported **0 JavaScript exceptions, 0 browser errors**.
+
+The trial is usable for hands-on layout and movement review. It has **not** passed sustained AI-versus-stationary-Evader pursuit or human-versus-human balance testing, and must not replace the approved Arena 01 or be deployed as production without another decision.
