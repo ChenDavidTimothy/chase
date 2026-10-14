@@ -23,6 +23,9 @@ namespace Chase
         float nextPlan;
         float nextChoice;
         float lastJumpTime = -10f;
+        float lastTrialSlideTime = -10f;
+        Vector3 trialSlideHeading;
+        bool skillAwareTrial;
         Vector3 escapeGoal;
         int waypointIndex;
         bool initialized;
@@ -47,10 +50,16 @@ namespace Chase
             motor = self;
             opponent = other;
             role = botRole;
+            // Trial-only low passage links. The certified production course
+            // preserves its original conservative AI routing.
+            skillAwareTrial=UnityEngine.SceneManagement.SceneManager
+                .GetActiveScene().name=="ArenaWCTTrial";
             ScanGrid();
             path.Clear();
             nextPlan = nextChoice = -1f;
             lastJumpTime = -10f;
+            lastTrialSlideTime = -10f;
+            trialSlideHeading = Vector3.zero;
             initialized = true;
         }
 
@@ -72,7 +81,13 @@ namespace Chase
                             .47f,scanHits,~0,QueryTriggerInteraction.Ignore);
                         if(hitCount==scanHits.Length) good=false;
                         for(int i=0;i<hitCount && good;i++)
-                            if(scanHits[i].GetComponent<ChaseBlocker>()!=null) good=false;
+                        {
+                            var candidate=scanHits[i];
+                            bool blocker=candidate.GetComponent<ChaseBlocker>()!=null;
+                            bool passableLowRoof=skillAwareTrial &&
+                                candidate.GetComponent<ChaseOverheadPassage>()!=null;
+                            if(blocker && !passableLowRoof)good=false;
+                        }
                     }
                     walkable[x, z] = good;
                 }
@@ -189,6 +204,8 @@ namespace Chase
             waypointIndex = 0;
             nextPlan = nextChoice = -1f;
             lastJumpTime = -10f;
+            lastTrialSlideTime = -10f;
+            trialSlideHeading = Vector3.zero;
         }
         public ChaseAction ReadAction(float clock) => Decide(clock);
         public ChaseAction Decide(float now)
@@ -215,8 +232,17 @@ namespace Chase
             Vector3 delta = target - motor.Body.position;
             delta.y = 0f;
             Vector3 direction = delta.sqrMagnitude > .001f ? delta.normalized : Vector3.zero;
+            // During a solid low passage, maintain the committed heading
+            // until the PhysX motor has actually finished crawling out.
+            // Path replanning is not permitted to steer a half-emerged
+            // athlete sideways, stop input, or request an unsafe get-up.
+            if (skillAwareTrial && trialSlideHeading.sqrMagnitude > .5f &&
+                (motor.State==ChaseMovementState.Sliding ||
+                 motor.State==ChaseMovementState.SlideRecovery))
+                direction=trialSlideHeading;
             bool crouch = !motor.CanStand;
             bool jump = false;
+            bool slide = false;
             if (direction.sqrMagnitude > .5f)
             {
                 // The bot only requests the same explicit, physical actions as the human.
@@ -232,10 +258,30 @@ namespace Chase
                     ~0, QueryTriggerInteraction.Ignore) &&
                     overhead.collider.GetComponent<ChaseOverheadPassage>() != null)
                     crouch = true;
+                if (skillAwareTrial && motor.CanSlide &&
+                    motor.HorizontalVelocity.magnitude > 2.0f &&
+                    now-lastTrialSlideTime > 1.0f)
+                {
+                    // Both the rail and raised-platform underside are solid.
+                    // The AI may enter the link ONLY by performing the same
+                    // committed feet-first physical slide as the player.
+                    // No teleport, collision phase, or bot-only impulse.
+                    foreach(float eye in new[]{0f,.11f})
+                    {
+                        if (!Physics.Raycast(motor.Body.position+
+                            Vector3.up*eye,direction,out RaycastHit passage,
+                            1.12f,~0,QueryTriggerInteraction.Ignore) ||
+                            passage.collider.GetComponent<ChaseOverheadPassage>()==null)
+                            continue;
+                        slide=true;
+                        trialSlideHeading=direction;
+                        lastTrialSlideTime=now;
+                        break;
+                    }
+                }
             }
-            // No bot-only movement authority and no automatic vaulting.
-            return new ChaseAction(new Vector2(direction.x,direction.z)*MoveFactor,jump,
-                false,false,crouch);
+            return new ChaseAction(new Vector2(direction.x,direction.z)*MoveFactor,
+                jump,false,slide,crouch);
         }
     }
 }
