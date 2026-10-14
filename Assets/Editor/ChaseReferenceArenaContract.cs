@@ -55,6 +55,10 @@ public static class ChaseReferenceArenaContract
                 if(t.localScale!=Vector3.one || Vector3.Distance(t.localPosition,spec.position)>.003f
                     || Mathf.Abs(Mathf.DeltaAngle(t.localEulerAngles.y,spec.yaw))>.05f)
                     throw new InvalidOperationException("Trial layout position drift: "+spec.prefab);
+                float yaw=Mathf.Repeat(t.localEulerAngles.y,90f);
+                if(Mathf.Min(yaw,90f-yaw)>.05f)
+                    throw new InvalidOperationException(
+                        "Trial layout has non-cardinal rotation: "+spec.prefab);
                 colliders[i]=t.GetComponentsInChildren<Collider>(true);
                 if(colliders[i].Length==0)
                     throw new InvalidOperationException("Nonphysical trial module: "+t.name);

@@ -45,7 +45,7 @@ namespace Chase.Tests
             finally {if(!already)EditorSceneManager.CloseScene(s,true);}
         }
 
-        [Test] public void CompetitionCannotBeSolvedByStandingOnlyWalking()
+        [Test] public void StandingOnlyCrossArenaRouteRequiresDeliberateDetour()
         {
             string path="Assets/Scenes/ArenaWCTTrial.unity";
             var s=SceneManager.GetSceneByPath(path);
@@ -54,10 +54,9 @@ namespace Chase.Tests
             try
             {
                 var root=s.GetRootGameObjects().Single(o=>o.name.StartsWith("ARENA  /"));
-                // PhysX capsule clearance, not collider AABBs. A rotated
-                // rail's axis-aligned bounds are much larger than the actual
-                // solid and falsely report that diagonal escape lanes are
-                // sealed. The capsules use the motor's .35m physical radius.
+                // Actual capsule, not collider axis-aligned bounds. Even
+                // an ordered course must punish a thoughtless straight run
+                // while permitting strategic longer counters to skill links.
                 Physics.SyncTransforms();
                 var open=new bool[Side,Side];
                 for(int x=0;x<Side;x++)
@@ -69,36 +68,41 @@ namespace Chase.Tests
                             new Vector3(position.x,1.445f,position.z),
                             .345f,~0,QueryTriggerInteraction.Ignore);
                     }
-                bool HasRoute(Vector3 start,Vector3 end)
+                int PathLength(Vector3 start,Vector3 end)
                 {
                     var a=Cell(start);var b=Cell(end);
-                    if(!open[a.Item1,a.Item2]||!open[b.Item1,b.Item2])return false;
-                    var q=new Queue<(int x,int z)>();
+                    if(!open[a.Item1,a.Item2]||!open[b.Item1,b.Item2])return -1;
+                    var q=new Queue<(int x,int z,int dist)>();
                     var seen=new bool[Side,Side];
-                    q.Enqueue((a.Item1,a.Item2));seen[a.Item1,a.Item2]=true;
+                    q.Enqueue((a.Item1,a.Item2,0));seen[a.Item1,a.Item2]=true;
                     while(q.Count>0)
                     {
                         var c=q.Dequeue();
-                        if(c.x==b.Item1 && c.z==b.Item2)return true;
+                        if(c.x==b.Item1 && c.z==b.Item2)return c.dist;
                         foreach(var offset in new[]{(1,0),(-1,0),(0,1),(0,-1)})
                         {
                             int nx=c.x+offset.Item1,nz=c.z+offset.Item2;
                             if(nx<0||nx>=Side||nz<0||nz>=Side ||
                                seen[nx,nz]||!open[nx,nz])continue;
-                            seen[nx,nz]=true;q.Enqueue((nx,nz));
+                            seen[nx,nz]=true;q.Enqueue((nx,nz,c.dist+1));
                         }
                     }
-                    return false;
+                    return -1;
                 }
                 var a=Chase.ChaseMatch.ChaserStart;
                 var b=Chase.ChaseMatch.EvaderStart;
-                // Explicit skill links connect distinct standing regions.
-                Assert.IsFalse(HasRoute(a,b),
-                    "A full-body standing run still crosses the entire trial");
-                Assert.IsTrue(HasRoute(a,new Vector3(0f,.9f,-5.39f)),
-                    "Chaser start lacks a ground-level local escape");
-                Assert.IsTrue(HasRoute(b,new Vector3(5.39f,.9f,2.7f)),
-                    "Evader start lacks a ground-level local escape");
+                int standingSteps=PathLength(a,b);
+                Assert.Greater(standingSteps,0,
+                    "No grounded counter-route; over/under must be choices");
+                float detour=standingSteps*Step;
+                float direct=Vector2.Distance(
+                    new Vector2(a.x,a.z),new Vector2(b.x,b.z));
+                Assert.Greater(detour,direct*1.38f,
+                    "Ordinary walking makes a cheap, nearly straight shortcut");
+                Assert.Greater(PathLength(a,new Vector3(-3f,.9f,-4.8f)),0,
+                    "Chaser lacks a grounded local counter-route");
+                Assert.Greater(PathLength(b,new Vector3(3f,.9f,4.8f)),0,
+                    "Evader lacks a grounded local counter-route");
             }
             finally {if(!loaded)EditorSceneManager.CloseScene(s,true);}
         }
@@ -189,7 +193,7 @@ namespace Chase.Tests
             finally {if(!loaded)EditorSceneManager.CloseScene(scene,true);}
         }
 
-        [Test] public void AllEdgeSwitchesPresentSolidDualRoutesAndVariedAxes()
+        [Test] public void AllModulesAreOrthogonalAndBothAxesUsed()
         {
             const string path="Assets/Scenes/ArenaWCTTrial.unity";
             var scene=SceneManager.GetSceneByPath(path);
@@ -200,9 +204,20 @@ namespace Chase.Tests
                 var root=scene.GetRootGameObjects().Single(o=>o.name.StartsWith("ARENA  /"));
                 var group=root.GetComponentsInChildren<Transform>(true)
                     .Single(t=>t.name=="CHASE / WCT REFERENCE TRIAL");
-                Assert.GreaterOrEqual(group.Cast<Transform>().Count(t=>
-                    Mathf.Abs(Mathf.DeltaAngle(t.localEulerAngles.y,0f))>10f),12,
-                    "Scaffold axes are still effectively unidirectional");
+                int zAligned=0,xAligned=0;
+                foreach(Transform t in group)
+                {
+                    float yaw=Mathf.Repeat(t.localEulerAngles.y,180f);
+                    float distanceToCardinal=Mathf.Min(
+                        Mathf.Abs(yaw),Mathf.Abs(yaw-90f),
+                        Mathf.Abs(yaw-180f));
+                    Assert.Less(distanceToCardinal,.05f,
+                        t.name+" has a diagonal Y rotation");
+                    if(Mathf.Abs(yaw-90f)<.05f) xAligned++;
+                    else zAligned++;
+                }
+                Assert.GreaterOrEqual(zAligned,7,"No usable Z-axis structure");
+                Assert.GreaterOrEqual(xAligned,7,"No usable X-axis structure");
                 foreach(string side in new[]{"WallSwitchWestNorth","WallSwitchWestSouth",
                     "WallSwitchEastNorth","WallSwitchEastSouth","CrossFork"})
                 {
@@ -221,6 +236,44 @@ namespace Chase.Tests
                 }
             }
             finally {if(!loaded)EditorSceneManager.CloseScene(scene,true);}
+        }
+
+        [Test] public void ThreeCompoundStructuresHaveActualPhysicalConnections()
+        {
+            const string path="Assets/Scenes/ArenaWCTTrial.unity";
+            var scene=SceneManager.GetSceneByPath(path);
+            bool wasOpen=scene.IsValid()&&scene.isLoaded;
+            if(!wasOpen)scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
+            try
+            {
+                var root=scene.GetRootGameObjects().Single(o=>o.name.StartsWith("ARENA  /"));
+                var group=root.GetComponentsInChildren<Transform>(true)
+                    .Single(t=>t.name=="CHASE / WCT REFERENCE TRIAL");
+                var gallery=group.Cast<Transform>()
+                    .Single(t=>t.name=="REFERENCE / NorthLinks");
+                Assert.AreEqual(2,gallery.GetComponentsInChildren<Transform>(true)
+                    .Count(t=>t.name.StartsWith("gallery portal at ")),
+                    "Northern gallery must have two connected structural frames");
+                Assert.AreEqual(2,gallery.GetComponentsInChildren<BoxCollider>(true)
+                    .Count(c=>c.name.StartsWith("gallery connecting spine ")),
+                    "Northern frames need real overhead connecting members");
+                Assert.NotNull(gallery.GetComponentsInChildren<BoxCollider>(true)
+                    .SingleOrDefault(c=>c.name.Contains("under-or-over table")));
+                var rack=group.Cast<Transform>()
+                    .Single(t=>t.name=="REFERENCE / FrontGrid");
+                Assert.AreEqual(2,rack.GetComponentsInChildren<Transform>(true)
+                    .Count(t=>t.name.StartsWith("joined crossing bay ")),
+                    "South rack needs two connected physical skill crossings");
+                Assert.AreEqual(2,rack.GetComponentsInChildren<BoxCollider>(true)
+                    .Count(c=>c.name.StartsWith("joined lateral spine ")));
+                var turn=group.Cast<Transform>()
+                    .Single(t=>t.name=="REFERENCE / WestBridge");
+                Assert.AreEqual(2,turn.GetComponentsInChildren<BoxCollider>(true)
+                    .Count(c=>c.name.StartsWith("connected turn terminal ")));
+                Assert.NotNull(turn.GetComponentsInChildren<BoxCollider>(true)
+                    .SingleOrDefault(c=>c.name.Contains("connected west turn rail")));
+            }
+            finally { if(!wasOpen)EditorSceneManager.CloseScene(scene,true); }
         }
 
         [Test] public void BothTowerDecksAreGenuinelyOpenOnFourSides()

@@ -27,29 +27,29 @@ public static class ChaseReferenceArenaBuilder
         { this.prefab=prefab; position=new Vector3(x,0,z); this.yaw=yaw; }
     }
 
-    // Reference image: alternating long- and cross-axis frames, four angled
-    // connections, two open elevated piers and a deliberately interrupted
-    // perimeter. Crossings offer slide/dive shortcuts while a slower grounded
-    // counter-route remains possible. All numbers are authored, not surveyed.
+    // Strict 0/90 degree orthogonal course: parallel X/Z sightlines,
+    // WCT-style joined frames and physically executable under/over
+    // choices. No diagonal placements or uncontrolled scatter.
+    // Distances are hand-authored, NOT surveyed reference dimensions.
     // Spawns retain their fixed certified side-entry positions.
     public static readonly LayoutPart[] Layout = {
-        new LayoutPart("WestPortal",-4.05f,3.82f,28f),
+        new LayoutPart("WestPortal",-4.05f,3.82f),
         new LayoutPart("NorthLinks",-2.34f,4.35f,90f),
-        new LayoutPart("BackBench",-.51f,4.74f,15f),
-        new LayoutPart("CrownTower",1.60f,3.68f,-12f),
+        new LayoutPart("BackBench",-.51f,4.74f),
+        new LayoutPart("CrownTower",1.60f,3.68f),
         new LayoutPart("NorthEastTruss",4.13f,4.78f,90f),
-        new LayoutPart("EastRamp",4.40f,.40f,-90f),
+        new LayoutPart("EastRamp",4.40f,.40f,270f),
         new LayoutPart("EastDeck",3.63f,-1.25f,90f),
-        new LayoutPart("SouthEastTower",3.70f,-3.62f,-18f),
-        new LayoutPart("EastCrossbar",1.72f,.95f,62f),
-        new LayoutPart("CenterDeck",.10f,-.24f,-28f),
+        new LayoutPart("SouthEastTower",3.70f,-3.62f),
+        new LayoutPart("EastCrossbar",1.72f,.95f,90f),
+        new LayoutPart("CenterDeck",.10f,-.24f),
         new LayoutPart("FrontGrid",.06f,-3.13f,90f),
-        new LayoutPart("FrontBench",1.64f,-4.51f,45f),
-        new LayoutPart("WestBridge",-2.71f,.31f,40f),
-        new LayoutPart("WestSnake",-3.39f,-3.59f,-30f),
-        new LayoutPart("SouthWestRails",-1.41f,-4.40f,70f),
-        new LayoutPart("NorthInnerRail",-1.41f,2.35f,45f),
-        new LayoutPart("UnderOverRail",-.06f,-1.79f,-30f),
+        new LayoutPart("FrontBench",1.64f,-4.51f),
+        new LayoutPart("WestBridge",-2.71f,.31f,90f),
+        new LayoutPart("WestSnake",-3.39f,-3.59f),
+        new LayoutPart("SouthWestRails",-1.41f,-4.40f,90f),
+        new LayoutPart("NorthInnerRail",-1.41f,2.35f),
+        new LayoutPart("UnderOverRail",-.06f,-1.79f),
         new LayoutPart("UnderOverBench",-3.39f,-2.16f,90f),
         // Edge controls cross the long wall run, instead of adding random
         // obstructions deep in the middle. Both ends allow a standing detour.
@@ -235,8 +235,22 @@ public static class ChaseReferenceArenaBuilder
                     new Vector3(.09f,.10f,.70f),gold);
                 break;
             case "NorthLinks":
-                Portal(p,1.28f,1.93f,false);
-                Deck(p,"high link tabletop",1.36f,.52f,1.07f,false);
+                // ONE connected, framed gallery: two matching portals,
+                // high structural side rails, and an accessible deck.
+                // The horizontal members JOIN the portal frames into one
+                // continuous rigid physical module, not a floating obstacle.
+                foreach(float z in new[]{-.70f,.70f})
+                {
+                    var frame=Node(p,"gallery portal at "+z,
+                        new Vector3(0,0,z));
+                    Portal(frame,1.28f,2.05f,false);
+                }
+                foreach(float x in new[]{-.64f,.64f})
+                    Rail(p,"gallery connecting spine "+x,
+                        new Vector3(x,2.0f,0),
+                        new Vector3(.09f,.09f,1.48f),slate);
+                var deck=Node(p,"gallery central high deck",Vector3.zero);
+                Deck(deck,"under-or-over table",1.36f,.76f,1.07f,false);
                 break;
             case "BackBench":
                 Deck(p,"rear long running bench",1.50f,.56f,1.07f);
@@ -267,16 +281,34 @@ public static class ChaseReferenceArenaBuilder
                 Deck(p,"central decision slab",1.40f,.92f,1.07f);
                 break;
             case "FrontGrid":
-                LowCross(p,1.78f,.93f);
-                // A staggered parallel bar reproduces the foreground lattice.
-                Rail(p,"parallel grid",new Vector3(.1f,.57f,.33f),
-                    new Vector3(1.76f,.095f,.10f),mint);
+                // Connected foreground two-bay rail rack. Parallel
+                // crossing gates share overhead side members. Both bays
+                // provide real, independent timed traversal opportunities.
+                foreach(float z in new[]{-.53f,.53f})
+                {
+                    var gate=Node(p,"joined crossing bay "+z,new Vector3(0,0,z));
+                    LowCross(gate,1.78f,z<0?.93f:1.01f);
+                }
+                foreach(float x in new[]{-.89f,.89f})
+                    Rail(p,"joined lateral spine "+x,
+                        new Vector3(x,1.37f,0),
+                        new Vector3(.09f,.08f,1.14f),slate);
+                Art(p,"connected rack signature",new Vector3(.89f,1.42f,0),
+                    new Vector3(.035f,.03f,1.0f),mint);
                 break;
             case "FrontBench":
                 Deck(p,"front small table",1.40f,.75f,1.08f);
                 break;
             case "WestBridge":
                 Deck(p,"west long switchback",1.89f,.70f,1.08f);
+                // Extend ONE side into a joined turning rail, making a
+                // choice between immediate slide/dive and looping around
+                // the end. The narrow rail touches the deck's end support.
+                Rail(p,"connected west turn rail",
+                    new Vector3(1.30f,.98f,0),
+                    new Vector3(.74f,.10f,.14f),gold,false,true);
+                foreach(float z in new[]{-.29f,.29f})
+                    Post(p,"connected turn terminal "+z,1.67f,z,1.20f,.10f);
                 break;
             case "WestSnake":
                 Portal(p,1.64f,1.96f,false);
