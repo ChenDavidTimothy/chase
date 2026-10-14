@@ -86,8 +86,15 @@ namespace Chase
             if (showFrontEnd)
             {
                 SetActorsVisible(false);
-                menuShowcase=gameObject.AddComponent<ChaseMenuShowcase>();
-                menuShowcase.Initialize(arenaCamera);
+                // The baked footage depicts only the original Arena 01.
+                // The reference-study scene shows its own static geometry
+                // instead of replaying impossible movements through new solids.
+                if (SceneManager.GetActiveScene().name != "ArenaWCTTrial")
+                {
+                    menuShowcase=gameObject.AddComponent<ChaseMenuShowcase>();
+                    menuShowcase.Initialize(arenaCamera);
+                }
+                SyncPresentation();
             }
         }
 
@@ -101,6 +108,20 @@ namespace Chase
         {
             if (!showFrontEnd) return;
             if (menuShowcase!=null) menuShowcase.SetPage(MenuPage);
+            else if (SceneManager.GetActiveScene().name=="ArenaWCTTrial" &&
+                     MenuPage!=ChaseMenuPage.InMatch)
+            {
+                // Trial uses a static REAL course preview, never the old
+                // baked choreography. Keep the established legible menu
+                // framing without hidden actors or a new camera system.
+                arenaCamera.fieldOfView=40f;
+                arenaCamera.transform.rotation=Quaternion.Euler(
+                    ChaseCameraRig.ArenaPitch,ChaseCameraRig.ArenaYaw,0f);
+                var previewCenter=new Vector3(-.6f,1.15f,0f);
+                arenaCamera.transform.position=previewCenter-
+                    arenaCamera.transform.forward*19.3f-
+                    arenaCamera.transform.right*3.2f;
+            }
         }
 
         ChaseMotor CreateCompetitor(string label, ChaseRole role, Color color)

@@ -215,7 +215,8 @@ namespace Chase
                         SmallButton(new Rect(x+34,y+469,142,40),"QUIT",
                             new Color(.16f,.28f,.36f),match.QuitGame,3);
                     Label(new Rect(x+36,y+ph-40,455,20),
-                        "ARENA 01   /   MASTERED ROUTES",micro);
+                        ReferenceTrial?"ARENA 01   /   REFERENCE TRIAL":
+                            "ARENA 01   /   MASTERED ROUTES",micro);
                     break;
                 case ChaseMenuPage.Difficulty:
                     Back(x+33,y+166);
@@ -233,14 +234,16 @@ namespace Chase
                     Label(new Rect(x+35,y+240,440,28),"SELECT ARENA",small);
                     Tile(new Rect(x+34,y+286,452,167),
                         new Color(.09f,.21f,.29f,.96f));
-                    Label(new Rect(x+57,y+303,410,34),"01   /   MASTERED ROUTES",
+                    Label(new Rect(x+57,y+303,410,34),ReferenceTrial?"01   /   WCT REFERENCE STUDY":
+                            "01   /   MASTERED ROUTES",
                         Text(24,Cream,FontStyle.Bold));
                     Tile(new Rect(x+57,y+352,57,5),Gold);
                     Label(new Rect(x+57,y+373,396,28),
-                        "Crossline   ·   Switchback   ·   Elevation",
+                        ReferenceTrial?"Portals   ·   Tables   ·   Angled Routes":
+                            "Crossline   ·   Switchback   ·   Elevation",
                         Text(16,Cream));
                     Label(new Rect(x+57,y+410,390,25),
-                        "One arena. Countless lines.",small);
+                        ReferenceTrial?"Experimental authored course.":"One arena. Countless lines.",small);
                     if(Button(new Rect(x+34,y+481,452,64),"PLAY ARENA  >",Mint,true,1))
                         match.StartSelectedArena();
                     break;
@@ -450,6 +453,9 @@ namespace Chase
                 new Color(.22f,.37f,.45f),match.ReturnToMenu,2);
         }
 
+        bool ReferenceTrial =>
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name=="ArenaWCTTrial";
+
         void OnGUI()
         {
             if(match==null)return;
@@ -472,7 +478,8 @@ namespace Chase
                 // This texture is captured from the real authored arena and
                 // costs no additional camera or physics simulation.
                 var showcase=match.GetComponent<ChaseMenuShowcase>();
-                if(match.MenuPage!=ChaseMenuPage.Arena && arenaStill!=null)
+                if(match.MenuPage!=ChaseMenuPage.Arena && arenaStill!=null &&
+                   !ReferenceTrial)
                 {
                     // Only paint the quiet opposite margin. Overlaying a
                     // still onto the moving Chibis would create double
@@ -499,7 +506,7 @@ namespace Chase
                 }
                 MenuPanel(w,h);
                 // The footage is a decorative recording, never a live match.
-                if(match.MenuPage!=ChaseMenuPage.Arena)
+                if(match.MenuPage!=ChaseMenuPage.Arena && showcase!=null)
                     Label(new Rect(w-166,h-32,147,18),"RECORDED CHASE",
                         Text(11,Muted,FontStyle.Bold,
                             TextAnchor.MiddleRight));

@@ -21,7 +21,8 @@ public static class ChaseReleaseBuild
         ChasePracticePlaygroundContract.Validate();
         var options = new BuildPlayerOptions
         {
-            scenes = scene=="Assets/Scenes/SampleScene.unity" ?
+            scenes = scene=="Assets/Scenes/SampleScene.unity" ||
+                scene==ChaseReferenceArenaBuilder.ScenePath ?
                 new[] { scene, ChasePracticePlaygroundBuilder.ScenePath } :
                 new[] { scene },
             target = target,
@@ -38,6 +39,14 @@ public static class ChaseReleaseBuild
 
     public static void WebGLProduction() => Build(BuildTarget.WebGL,
         "Assets/Scenes/SampleScene.unity", "Builds/ChaseWebGL");
+    // Explicitly isolated comparison build. Not part of production releases.
+    public static void WebGLReferenceTrial()
+    {
+        ChaseReferenceArenaContract.Validate();
+        Build(BuildTarget.WebGL,
+            ChaseReferenceArenaBuilder.ScenePath,"Builds/ChaseReferenceTrialWebGL");
+    }
+
     public static void WebGLGym() => Build(BuildTarget.WebGL,
         "Assets/Scenes/MovementGym.unity", "Builds/ChaseAnimationGymWebGL");
     public static void LinuxProduction() => Build(BuildTarget.StandaloneLinux64,

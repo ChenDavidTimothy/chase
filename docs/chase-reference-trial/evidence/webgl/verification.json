@@ -1,0 +1,30 @@
+{
+  "clicks": [
+    [
+      "play",
+      [
+        499,
+        325
+      ]
+    ],
+    [
+      "runner",
+      [
+        591,
+        306
+      ]
+    ],
+    [
+      "play-arena",
+      [
+        268,
+        447
+      ]
+    ]
+  ],
+  "browser": "Google Chrome CDP",
+  "build": "WCT reference trial",
+  "countdown_advanced": true,
+  "javascript_exceptions": 0,
+  "browser_errors": []
+}
