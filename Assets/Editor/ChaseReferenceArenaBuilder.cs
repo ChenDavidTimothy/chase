@@ -160,20 +160,34 @@ public static class ChaseReferenceArenaBuilder
     }
     static void Tower(Transform p,float w,float d,bool tall)
     {
-        // Full four-sided entrance under each high deck. The old .70m
-        // underside under the low tower could not admit a slide collider.
-        // Both piers now have at least .97m of REAL physical clearance.
-        float floor=tall?1.16f:1.10f;
+        // The four corner posts are intentional. However the original four
+        // upper rails enclosed a podium with no usable athletic approach.
+        // Crown opens toward -Z (center arena), southeast tower toward -X.
+        // A 1.02m deck is reachable by the real 7m/s jump (peak ~1.11m)
+        // and still offers .89m of solid clearance for a .82m slide body.
+        const float floor=1.02f;
         foreach(float x in new[]{-w*.5f,w*.5f})
             foreach(float z in new[]{-d*.5f,d*.5f})
                 Post(p,"four-post tower "+x+"/"+z,x,z,2.27f,.115f);
         Deck(p,"full elevated deck",w-.02f,d-.02f,floor,false);
+        // Exactly THREE overhead perimeter members. The center of the
+        // fourth side remains physically clear, not an invisible trigger.
         foreach(float z in new[]{-d*.5f,d*.5f})
-            Rail(p,"upper bridge "+z,new Vector3(0,2.20f,z),
-                new Vector3(w,.085f,.085f),slate);
+            if(!tall || z>0f) // taller Crown: open SOUTH (-Z)
+                Rail(p,"upper bridge "+z,new Vector3(0,2.20f,z),
+                    new Vector3(w,.085f,.085f),slate);
         foreach(float x in new[]{-w*.5f,w*.5f})
-            Rail(p,"tower side crown "+x,new Vector3(x,2.20f,0),
-                new Vector3(.085f,.085f,d),slate);
+            if(tall || x>0f) // southeast: open WEST (-X)
+                Rail(p,"tower side crown "+x,new Vector3(x,2.20f,0),
+                    new Vector3(.085f,.085f,d),slate);
+        if(tall)
+            Art(p,"clear entry / mint threshold",
+                new Vector3(0,floor+.016f,-d*.5f-.03f),
+                new Vector3(w-.24f,.024f,.035f),mint);
+        else
+            Art(p,"clear entry / mint threshold",
+                new Vector3(-w*.5f-.03f,floor+.016f,0),
+                new Vector3(.035f,.024f,d-.22f),mint);
         // No skirt or opaque podium box. A skinned front face falsely
         // communicated a closed body and visually hid the playable passage.
         // Identifying color is confined to a thin NONPHYSICAL rim above

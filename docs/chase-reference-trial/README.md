@@ -19,7 +19,7 @@ This is an authored reconstruction of the uploaded chase-tag obstacle reference,
 
 ## Verification
 
-The trial validator checks source prefab links, deterministic placement, floor and match retention, original scene separation, renderer/solid separation, bounds, role spawn safety, and zero inter-module penetrations. Nine dedicated EditMode tests check source-linked geometry, strict cardinal alignment, three genuine joined obstacle assemblies, open podium interiors, interrupted side-wall running, a measurable standing-only detour versus direct travel, bot navigation via genuine low passages, and both slide and dive over/under crossings using the actual motor in both directions. The existing PlayMode motor physics suite remains unchanged.
+The trial validator checks source prefab links, deterministic placement, floor and match retention, original scene separation, renderer/solid separation, bounds, role spawn safety, and zero inter-module penetrations. Eleven dedicated EditMode tests check source-linked geometry, strict cardinal alignment, three genuine joined obstacle assemblies, open podium interiors, interrupted side-wall running, a measurable standing-only detour versus direct travel, bot navigation via genuine low passages, and both slide and dive over/under crossings using the actual motor in both directions. The existing PlayMode motor physics suite remains unchanged.
 
 **Limitations:** Exact reproduction is impossible from this one perspective image. The bot planner recognizes passage links, but a real Editor Runner match against a stationary Evader confirmed that the bot can still **stall in SlideRecovery under WestBridge** after crossing the first west-side rail. This issue is unresolved; it is not competitively acceptable and is a blocker to replacing production Arena 01. Human-versus-human balance, exhaustive approach windows, and measured shortcut-vs-detour times also remain unproven. These are reasons to keep this as a trial.
 
@@ -35,7 +35,7 @@ User-provided perspective render of an open, scaffold-heavy chase-tag quad, supp
 
 ## Evidence from this implementation
 
-- Current EditMode suite: **42/42 passed** (33 pre-existing + 9 trial-specific).
+- Current EditMode suite: **44/44 passed** (33 pre-existing + 11 trial-specific).
 - Current PlayMode suite: **103/103 passed**, without modifying the production motor.
 - Trial and production Editor scene contracts: **both passed**.
 - Unity Editor trial round: menu, arena selection, countdown, physical tag, and results observed.
@@ -66,3 +66,14 @@ Three modules now contain structural **joined physical subassemblies**, rather t
 These compounds intentionally create identifiable route landmarks rather than adding five more isolated obstacles. The four wall interruptions and the two original certified crossing modules remain. The actual Collider bodies stay non-trigger and physically verified.
 
 **Trade-off:** orthogonalizing the layout reopens a **longer standing-only counter-route** between role starts. We now validate that it is at least 1.38 times their straight-line distance, alongside actual physically traversable skill links. This is intentional counterplay, not a claim that walking is impossible. Tests do not yet prove that the over/under links are faster than *every* possible counter-route during a human chase. The earlier WestBridge bot stall should still be treated as an unresolved issue, not a certified fix. An Editor Runner observation of this iteration showed movement into the course but no tag by timeout; that is not proof of competitive AI readiness.
+
+
+## Iteration 4: reachable podium entrances
+
+Both high podiums (CrownTower and SouthEastTower) formerly had four overhead perimeter rails. Their deck height also made the Crown podium difficult to access with CHASE's normal jump. The new source prefab geometry retains four solid corner posts and **three solid upper rails**, leaving exactly one visibly open, arena-facing approach. CrownTower opens toward **local -Z / center arena**, and SouthEastTower opens toward **local -X / center arena**. A thin mint edge marking identifies each entrance; this art is non-colliding.
+
+Both deck tops are now at **1.02 m**, reachable using the real 7 m/s jump (maximum ideal vertical rise approximately 1.11 m), while their lower face remains **0.89 m** above the floor to preserve real sliding below. No movement tuning, capsule collisions, scripts, cameras, or prefabs outside the trial have been changed.
+
+Two new EditMode PhysX tests instantiate each saved tower prefab alongside the real ChaseMotor, run in at physical sprint speed, execute a genuine jump, and require the actor to become grounded *on* its deck. The existing underpass, source-link, layout and competition tests continue to pass. Editor evidence: evidence/editor/podium-crown-open.png and evidence/editor/podium-southeast-open.png. The isolated trial WebGL build and Chrome menu-to-round smoke were repeated successfully.
+
+This fixes platform ingress. It is not evidence that every platform approach is equally viable, or that the existing trial bot's independently documented WestBridge recovery stall is fixed.

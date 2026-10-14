@@ -54,6 +54,52 @@ namespace Chase.Tests
             Physics.Simulate(Dt);
             clock+=Dt;
         }
+        [TestCase("CrownTower", false)]
+        [TestCase("SouthEastTower", true)]
+        public void PodiumHasRealJumpAccessibleOpening(string name,bool westFacing)
+        {
+            var asset=AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Obstacles/WCTTrial/"+name+".prefab");
+            Assert.NotNull(asset);
+            var fixture=Object.Instantiate(asset);
+            fixture.transform.position=new Vector3(X,0,0);
+            spawned.Add(fixture);
+            var deck=fixture.GetComponentsInChildren<BoxCollider>()
+                .Single(c=>c.name.Contains("full elevated deck / solid"));
+            var guards=fixture.GetComponentsInChildren<BoxCollider>()
+                .Where(c=>c.name.Contains("upper bridge") ||
+                          c.name.Contains("tower side crown")).ToArray();
+            Assert.AreEqual(3,guards.Length,"Podium should have exactly one open side");
+            Assert.Greater(deck.bounds.min.y,.82f,
+                "Podium must also preserve the genuine underpass");
+            // Certified production jump is ~1.11m high. The real top must
+            // fit that reach, with some margin for imperfect timing.
+            Assert.Less(deck.bounds.max.y,1.07f);
+            Vector3 approach=westFacing?Vector3.right:Vector3.forward;
+            float startDistance=westFacing?2.85f:2.65f;
+            var m=Actor(0f);
+            m.Body.position=new Vector3(X,.9f,0)-approach*startDistance;
+            m.Body.linearVelocity=approach*6f;
+            Physics.SyncTransforms();
+            bool entered=false;
+            for(int i=0;i<85;i++)
+            {
+                m.Simulate(new ChaseAction(
+                    new Vector2(approach.x,approach.z),i==0,false,false,false),
+                    Dt,clock);
+                Physics.Simulate(Dt);
+                clock+=Dt;
+                // Contact with the REAL top, inside the actual platform,
+                // rather than jumping beside it or flying above it.
+                Vector3 pos=m.Body.position;
+                bool inside=Mathf.Abs(pos.x-X)<.55f && Mathf.Abs(pos.z)<.55f;
+                if(inside && m.Grounded && pos.y>1.65f)
+                    entered=true;
+            }
+            Assert.IsTrue(entered,
+                name+" has no physically reachable entry to its upper deck");
+        }
+
         [TestCase("WallSwitchWestNorth")]
         [TestCase("CrossFork")]
         public void SkillChoiceHasTwoRealTraversalsInBothDirections(string name)

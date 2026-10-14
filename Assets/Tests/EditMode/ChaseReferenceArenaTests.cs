@@ -276,7 +276,7 @@ namespace Chase.Tests
             finally { if(!wasOpen)EditorSceneManager.CloseScene(scene,true); }
         }
 
-        [Test] public void BothTowerDecksAreGenuinelyOpenOnFourSides()
+        [Test] public void BothTowerDecksHaveThreeRailsAndOpenArenaFacingEntry()
         {
             string path="Assets/Scenes/ArenaWCTTrial.unity";
             var scene=SceneManager.GetSceneByPath(path);
@@ -301,6 +301,20 @@ namespace Chase.Tests
                     var standing=new Bounds(new Vector3(tower.position.x,.9f,tower.position.z),
                         new Vector3(.70f,1.77f,.70f));
                     var cs=tower.GetComponentsInChildren<BoxCollider>(true);
+                    var rails=cs.Where(c=>
+                        c.name.StartsWith("upper bridge ") ||
+                        c.name.StartsWith("tower side crown ")).ToArray();
+                    Assert.AreEqual(3,rails.Length,
+                        id+" has no open side at deck height");
+                    if(id=="CrownTower")
+                        Assert.IsFalse(rails.Any(c=>c.name.StartsWith("upper bridge -")),
+                            "Rear podium entrance should face center (-Z)");
+                    else
+                        Assert.IsFalse(rails.Any(c=>c.name.StartsWith("tower side crown -")),
+                            "Southeast podium entrance should face center (-X)");
+                    Assert.IsTrue(tower.GetComponentsInChildren<Transform>(true)
+                        .Any(t=>t.name.StartsWith("clear entry / mint threshold")),
+                        "Approach side needs a readable entrance marker");
                     Assert.IsFalse(cs.Any(c=>c.bounds.Intersects(small)),
                         id+" has no actual crawl/slide underpass");
                     Assert.IsTrue(cs.Any(c=>c.bounds.Intersects(standing)),
